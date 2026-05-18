@@ -1,26 +1,41 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState, lazy, Suspense } from "react";
+
+const Configurator = lazy(() => import("@/components/garage/Configurator"));
 
 export const Route = createFileRoute("/")({
   component: Index,
+  head: () => ({
+    meta: [
+      { title: "Steel Garage Configurator — Parametrický 3D CAD" },
+      { name: "description", content: "Parametrický 3D konfigurátor oceľovej garáže: jakl konštrukcia, opláštenie, brána, okná. Export .glb." },
+    ],
+  }),
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
-
 function Index() {
-  return <PlaceholderIndex />;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-[#0e1116] font-mono text-sm text-white/60">
+        Initializing CAD viewport…
+      </div>
+    );
+  }
+
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen w-screen items-center justify-center bg-[#0e1116] font-mono text-sm text-emerald-300/80">
+          Loading geometry kernel…
+        </div>
+      }
+    >
+      <Configurator />
+    </Suspense>
+  );
 }
