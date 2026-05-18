@@ -1,3 +1,4 @@
+import "@react-three/fiber";
 import { useMemo } from "react";
 import * as THREE from "three";
 
