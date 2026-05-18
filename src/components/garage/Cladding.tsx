@@ -1,21 +1,20 @@
 import "@react-three/fiber";
 import { useMemo } from "react";
 import * as THREE from "three";
-import { useTexture } from "@react-three/drei";
 import type { GarageParams } from "@/lib/garage/types";
 import { ridgeHeight, highEave } from "./Structure";
 import { makeTrapezoidTexture } from "@/lib/garage/textures";
 
 interface Rect {
-  x: number; // center
-  y: number;
+  cx: number; // hole center along panel width (panel local X)
+  cy: number; // hole center from bottom of panel (panel local Y, 0 = ground)
   w: number;
   h: number;
 }
 
 /**
- * Build a flat panel (in local XY) with rectangular holes.
- * Returns a mesh facing +Z (normal).
+ * Flat rectangular panel with holes.
+ * Local: bottom-left at (-width/2, 0). Normal: +Z.
  */
 function PanelWithHoles({
   width,
@@ -37,18 +36,17 @@ function PanelWithHoles({
   const geometry = useMemo(() => {
     const shape = new THREE.Shape();
     const w2 = width / 2;
-    const h2 = height / 2;
-    shape.moveTo(-w2, -h2);
-    shape.lineTo(w2, -h2);
-    shape.lineTo(w2, h2);
-    shape.lineTo(-w2, h2);
-    shape.lineTo(-w2, -h2);
+    shape.moveTo(-w2, 0);
+    shape.lineTo(w2, 0);
+    shape.lineTo(w2, height);
+    shape.lineTo(-w2, height);
+    shape.lineTo(-w2, 0);
     for (const r of holes) {
       const path = new THREE.Path();
-      const x0 = r.x - r.w / 2;
-      const x1 = r.x + r.w / 2;
-      const y0 = r.y - r.h / 2;
-      const y1 = r.y + r.h / 2;
+      const x0 = r.cx - r.w / 2;
+      const x1 = r.cx + r.w / 2;
+      const y0 = r.cy - r.h / 2;
+      const y1 = r.cy + r.h / 2;
       path.moveTo(x0, y0);
       path.lineTo(x1, y0);
       path.lineTo(x1, y1);
@@ -79,6 +77,26 @@ function PanelWithHoles({
   );
 }
 
+/** Triangle gable infill (front/back) for gable roof. */
+function GableTriangle({ width, eave, ridge, color, wireframe }: { width: number; eave: number; ridge: number; color: string; wireframe: boolean }) {
+  const geom = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    const verts = new Float32Array([
+      -width / 2, eave, 0,
+      width / 2, eave, 0,
+      0, ridge, 0,
+    ]);
+    g.setAttribute("position", new THREE.BufferAttribute(verts, 3));
+    g.computeVertexNormals();
+    return g;
+  }, [width, eave, ridge]);
+  return (
+    <mesh geometry={geom} castShadow receiveShadow>
+      <meshStandardMaterial color={color} side={THREE.DoubleSide} metalness={0.55} roughness={0.55} wireframe={wireframe} />
+    </mesh>
+  );
+}
+
 export function Cladding({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   const wallTex = useMemo(() => makeTrapezoidTexture(p.claddingColor, 50), [p.claddingColor]);
   const roofTex = useMemo(() => makeTrapezoidTexture(p.roofColor, 50), [p.roofColor]);
@@ -89,39 +107,16 @@ export function Cladding({ p, explodeY }: { p: GarageParams; explodeY: number })
   const Hridge = ridgeHeight(p);
   const Hhi = highEave(p);
 
-  // texture repeats
-  const wallRepX = Math.max(1, Math.round(L / 0.6));
-  wallTex.repeat.set(wallRepX, 1);
-  const roofRepX = Math.max(1, Math.round(L / 0.6));
-  roofTex.repeat.set(roofRepX, 1);
+  wallTex.repeat.set(Math.max(1, Math.round(L / 0.6)), 1);
+  roofTex.repeat.set(Math.max(1, Math.round(L / 0.6)), 1);
 
-  // OPENINGS placement
-  // Front wall (z = -L/2): sectional door centered
-  const doorHole: Rect = { x: 0, y: p.doorHeight / 2 + 0.05, w: p.doorWidth, h: p.doorHeight };
-  // Personal door + windows on side
-  const personalHole: Rect | null = p.hasPersonalDoor
-    ? { x: -L / 4, y: 1.0, w: 0.9, h: 2.0 }
-    : null;
-  const windowHoles: Rect[] = [];
-  for (let i = 0; i < p.windowCount; i++) {
-    const spacing = L / (p.windowCount + 1);
-    windowHoles.push({
-      x: -L / 2 + (i + 1) * spacing - L / 2 + L / 2, // along Z
-      y: 1.6,
-      w: p.windowWidth,
-      h: p.windowHeight,
-    });
-  }
-  // simpler: distribute windows evenly along length
+  // openings
+  const doorHole: Rect = { cx: 0, cy: p.doorHeight / 2 + 0.02, w: p.doorWidth, h: p.doorHeight };
+  const personalHole: Rect = { cx: -L / 4, cy: 1.0, w: 0.9, h: 2.0 };
   const winSpread: Rect[] = [];
   for (let i = 0; i < p.windowCount; i++) {
     const t = (i + 1) / (p.windowCount + 1);
-    winSpread.push({
-      x: -L / 2 + t * L,
-      y: 1.6,
-      w: p.windowWidth,
-      h: p.windowHeight,
-    });
+    winSpread.push({ cx: -L / 2 + t * L, cy: 1.6, w: p.windowWidth, h: p.windowHeight });
   }
 
   const ex = explodeY;
@@ -133,54 +128,30 @@ export function Cladding({ p, explodeY }: { p: GarageParams; explodeY: number })
 
   return (
     <group>
-      {/* FRONT WALL (z = -L/2, normal pointing -Z) - rotate so normal faces -Z */}
+      {/* FRONT (z=-L/2), normal -Z */}
       <group position={[0, 0, -L / 2 + offFront]} rotation={[0, Math.PI, 0]}>
-        <PanelWithHoles
-          width={W}
-          height={Heave}
-          holes={[doorHole]}
-          texture={wallTex}
-          color={p.claddingColor}
-          wireframe={p.wireframe}
-        />
-        {/* gable triangle infill */}
-        {p.roofType === "gable" && (
-          <mesh position={[0, Heave + (Hridge - Heave) / 2 - Heave / 2, 0]} castShadow receiveShadow>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                args={[new Float32Array([
-                  -W / 2, Heave / 2, 0,
-                  W / 2, Heave / 2, 0,
-                  0, Heave / 2 + (Hridge - Heave), 0,
-                ]), 3]}
-              />
-            </bufferGeometry>
-            <meshStandardMaterial color={p.claddingColor} side={THREE.DoubleSide} metalness={0.55} roughness={0.55} wireframe={p.wireframe} />
-          </mesh>
-        )}
+        <PanelWithHoles width={W} height={Heave} holes={[doorHole]} texture={wallTex} color={p.claddingColor} wireframe={p.wireframe} />
       </group>
-      {/* compensate position offset for triangle above (it placed wrong); render gable triangle as separate */}
 
-      {/* BACK WALL */}
+      {/* BACK (z=+L/2), normal +Z */}
       <group position={[0, 0, L / 2 + offBack]}>
         <PanelWithHoles
           width={W}
           height={Heave}
-          holes={p.personalDoorSide === "back" && p.hasPersonalDoor ? [{ x: 0, y: 1.0, w: 0.9, h: 2.0 }] : []}
+          holes={p.personalDoorSide === "back" && p.hasPersonalDoor ? [{ cx: 0, cy: 1.0, w: 0.9, h: 2.0 }] : []}
           texture={wallTex}
           color={p.claddingColor}
           wireframe={p.wireframe}
         />
       </group>
 
-      {/* LEFT WALL (x=-W/2, normal -X) */}
+      {/* LEFT (x=-W/2), normal -X. Panel width along Z. */}
       <group position={[-W / 2 + offLeft, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
         <PanelWithHoles
           width={L}
           height={Heave}
           holes={[
-            ...(p.personalDoorSide === "left" && personalHole ? [personalHole] : []),
+            ...(p.personalDoorSide === "left" && p.hasPersonalDoor ? [personalHole] : []),
             ...winSpread,
           ]}
           texture={wallTex}
@@ -189,13 +160,13 @@ export function Cladding({ p, explodeY }: { p: GarageParams; explodeY: number })
         />
       </group>
 
-      {/* RIGHT WALL (x=+W/2, normal +X) */}
+      {/* RIGHT (x=+W/2), normal +X */}
       <group position={[W / 2 + offRight, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
         <PanelWithHoles
           width={L}
           height={p.roofType === "shed" ? Hhi : Heave}
           holes={[
-            ...(p.personalDoorSide === "right" && personalHole ? [{ x: personalHole.x, y: personalHole.y, w: personalHole.w, h: personalHole.h }] : []),
+            ...(p.personalDoorSide === "right" && p.hasPersonalDoor ? [personalHole] : []),
           ]}
           texture={wallTex}
           color={p.claddingColor}
@@ -203,25 +174,15 @@ export function Cladding({ p, explodeY }: { p: GarageParams; explodeY: number })
         />
       </group>
 
-      {/* GABLE TRIANGLES (front + back) */}
+      {/* GABLE TRIANGLES on front/back */}
       {p.roofType === "gable" && (
         <>
-          {[-1, 1].map((s) => {
-            const z = (s * L) / 2 + (s < 0 ? offFront : offBack);
-            const verts = new Float32Array([
-              -W / 2, Heave, z,
-              W / 2, Heave, z,
-              0, Hridge, z,
-            ]);
-            return (
-              <mesh key={`gable-${s}`} castShadow receiveShadow>
-                <bufferGeometry>
-                  <bufferAttribute attach="attributes-position" args={[verts, 3]} />
-                </bufferGeometry>
-                <meshStandardMaterial color={p.claddingColor} side={THREE.DoubleSide} metalness={0.55} roughness={0.55} wireframe={p.wireframe} />
-              </mesh>
-            );
-          })}
+          <group position={[0, 0, -L / 2 + offFront]}>
+            <GableTriangle width={W} eave={Heave} ridge={Hridge} color={p.claddingColor} wireframe={p.wireframe} />
+          </group>
+          <group position={[0, 0, L / 2 + offBack]}>
+            <GableTriangle width={W} eave={Heave} ridge={Hridge} color={p.claddingColor} wireframe={p.wireframe} />
+          </group>
         </>
       )}
 
@@ -236,7 +197,7 @@ export function Cladding({ p, explodeY }: { p: GarageParams; explodeY: number })
               <group
                 key={`roof-${s}`}
                 position={[(s * halfW) / 2, (Heave + Hridge) / 2 + offRoof, 0]}
-                rotation={[Math.PI / 2, 0, -s * angle + (s < 0 ? Math.PI : 0)]}
+                rotation={[-Math.PI / 2, 0, s * angle]}
               >
                 <mesh castShadow receiveShadow>
                   <planeGeometry args={[slopeLen, L]} />
@@ -256,7 +217,7 @@ export function Cladding({ p, explodeY }: { p: GarageParams; explodeY: number })
       ) : (
         <group
           position={[0, (Heave + Hhi) / 2 + offRoof, 0]}
-          rotation={[Math.PI / 2, 0, Math.atan2(Hhi - Heave, W)]}
+          rotation={[-Math.PI / 2, 0, Math.atan2(Hhi - Heave, W)]}
         >
           <mesh castShadow receiveShadow>
             <planeGeometry args={[Math.hypot(W, Hhi - Heave), L]} />
