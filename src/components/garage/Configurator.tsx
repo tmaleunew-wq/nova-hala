@@ -1,7 +1,7 @@
 import "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { OrbitControls, Environment, Grid, GizmoHelper, GizmoViewport } from "@react-three/drei";
+import { OrbitControls, Grid, GizmoHelper, GizmoViewport } from "@react-three/drei";
 import { useControls, folder, button, Leva } from "leva";
 import * as THREE from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
@@ -29,7 +29,7 @@ function Scene({ params, exportRef }: { params: GarageParams; exportRef: React.M
         shadow-camera-bottom={-15}
       />
       <directionalLight position={[-6, 8, -4]} intensity={0.35} />
-      <Environment preset="city" />
+      <hemisphereLight args={["#cbd5e1", "#1f2937", 0.5]} />
 
       <group ref={exportRef}>
         {params.showFoundation && <Foundation p={params} />}
