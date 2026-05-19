@@ -53,10 +53,10 @@ export const DEFAULT_PARAMS: GarageParams = {
   windowCount: 1,
   windowWidth: 0.6,
   windowHeight: 0.4,
-  showCladding: true,
+  showCladding: false,
   showStructure: true,
   wireframe: false,
   explode: 0,
-  showFoundation: true,
-  showAccessories: true,
+  showFoundation: false,
+  showAccessories: false,
 };
