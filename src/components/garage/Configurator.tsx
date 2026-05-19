@@ -42,10 +42,10 @@ function Scene({ params, exportRef }: { params: GarageParams; exportRef: React.M
         args={[40, 40]}
         cellSize={0.5}
         cellThickness={0.5}
-        cellColor="#2a2f37"
+        cellColor="#c0c4ca"
         sectionSize={2}
         sectionThickness={1}
-        sectionColor="#4a525c"
+        sectionColor="#8a8f97"
         fadeDistance={30}
         fadeStrength={1.2}
         infiniteGrid
