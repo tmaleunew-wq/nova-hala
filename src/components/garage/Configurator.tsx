@@ -200,8 +200,8 @@ export default function Configurator() {
         camera={{ position: [10, 8, 10], fov: 35, near: 0.1, far: 200 }}
         gl={{ antialias: true, preserveDrawingBuffer: true }}
       >
-        <color attach="background" args={["#0e1116"]} />
-        <fog attach="fog" args={["#0e1116", 25, 70]} />
+        <color attach="background" args={["#f5f5f5"]} />
+        <fog attach="fog" args={["#f5f5f5", 30, 90]} />
         <Scene params={typedParams} exportRef={exportRef} />
         <OrbitControls makeDefault enableDamping dampingFactor={0.08} target={[0, typedParams.clearHeight / 2, 0]} />
         <CameraRig preset={preset} params={typedParams} />
