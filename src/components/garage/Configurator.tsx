@@ -42,10 +42,10 @@ function Scene({ params, exportRef }: { params: GarageParams; exportRef: React.M
         args={[40, 40]}
         cellSize={0.5}
         cellThickness={0.5}
-        cellColor="#2a2f37"
+        cellColor="#c0c4ca"
         sectionSize={2}
         sectionThickness={1}
-        sectionColor="#4a525c"
+        sectionColor="#8a8f97"
         fadeDistance={30}
         fadeStrength={1.2}
         infiniteGrid
@@ -200,8 +200,8 @@ export default function Configurator() {
         camera={{ position: [10, 8, 10], fov: 35, near: 0.1, far: 200 }}
         gl={{ antialias: true, preserveDrawingBuffer: true }}
       >
-        <color attach="background" args={["#0e1116"]} />
-        <fog attach="fog" args={["#0e1116", 25, 70]} />
+        <color attach="background" args={["#f5f5f5"]} />
+        <fog attach="fog" args={["#f5f5f5", 30, 90]} />
         <Scene params={typedParams} exportRef={exportRef} />
         <OrbitControls makeDefault enableDamping dampingFactor={0.08} target={[0, typedParams.clearHeight / 2, 0]} />
         <CameraRig preset={preset} params={typedParams} />
