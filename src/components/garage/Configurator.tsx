@@ -260,6 +260,26 @@ export default function Configurator() {
 
   return (
     <div className="relative h-screen w-screen bg-[oklch(0.16_0.01_240)]">
+      <Canvas
+        shadows
+        camera={{ position: [10, 8, 10], fov: 35, near: 0.1, far: 200 }}
+        gl={{ antialias: true, preserveDrawingBuffer: true }}
+      >
+        <color attach="background" args={["#f5f5f5"]} />
+        <fog attach="fog" args={["#f5f5f5", 30, 90]} />
+        <Scene
+          params={typedParams}
+          exportRef={exportRef}
+          removedPanels={removedPanels}
+          onTogglePanel={togglePanel}
+        />
+        <OrbitControls makeDefault enableDamping dampingFactor={0.08} target={[0, typedParams.clearHeight / 2, 0]} />
+        <CameraRig preset={preset} params={typedParams} />
+        <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
+          <GizmoViewport axisColors={["#ef4444", "#22c55e", "#3b82f6"]} labelColor="white" />
+        </GizmoHelper>
+      </Canvas>
+
       {/* Top bar */}
       <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between border-b border-white/5 bg-black/40 px-4 py-2 backdrop-blur">
         <div className="flex items-center gap-3">
@@ -303,26 +323,6 @@ export default function Configurator() {
       <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded border border-white/10 bg-black/50 px-3 py-1.5 font-mono text-[10px] text-white/60 backdrop-blur">
         Drag = orbit · Scroll = zoom · Right-drag = pan · Profily {(typedParams.profileSize * 1000).toFixed(0)}×{(typedParams.profileSize * 1000).toFixed(0)}×{(typedParams.profileThickness * 1000).toFixed(0)} mm
       </div>
-
-      <Canvas
-        shadows
-        camera={{ position: [10, 8, 10], fov: 35, near: 0.1, far: 200 }}
-        gl={{ antialias: true, preserveDrawingBuffer: true }}
-      >
-        <color attach="background" args={["#f5f5f5"]} />
-        <fog attach="fog" args={["#f5f5f5", 30, 90]} />
-        <Scene
-          params={typedParams}
-          exportRef={exportRef}
-          removedPanels={removedPanels}
-          onTogglePanel={togglePanel}
-        />
-        <OrbitControls makeDefault enableDamping dampingFactor={0.08} target={[0, typedParams.clearHeight / 2, 0]} />
-        <CameraRig preset={preset} params={typedParams} />
-        <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
-          <GizmoViewport axisColors={["#ef4444", "#22c55e", "#3b82f6"]} labelColor="white" />
-        </GizmoHelper>
-      </Canvas>
 
       <Leva
         titleBar={{ title: "Parametre", drag: true, filter: false }}
