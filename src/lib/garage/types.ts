@@ -16,6 +16,7 @@ export interface GarageParams {
   claddingColor: string;     // hex
   roofColor: string;         // hex
   panelType: "trapezoid" | "sandwich";
+  claddingOrientation: "vertical" | "horizontal";
   // openings
   doorWidth: number;
   doorHeight: number;
@@ -45,7 +46,8 @@ export const DEFAULT_PARAMS: GarageParams = {
   steelColor: "#6e7681",
   claddingColor: "#3a4048",
   roofColor: "#2b2f36",
-  panelType: "trapezoid",
+  panelType: "sandwich",
+  claddingOrientation: "horizontal",
   doorWidth: 2.5,
   doorHeight: 2.2,
   hasPersonalDoor: true,
@@ -53,7 +55,7 @@ export const DEFAULT_PARAMS: GarageParams = {
   windowCount: 1,
   windowWidth: 0.6,
   windowHeight: 0.4,
-  showCladding: false,
+  showCladding: true,
   showStructure: true,
   wireframe: false,
   explode: 0,
