@@ -2,6 +2,7 @@ import "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, Grid, GizmoHelper, GizmoViewport } from "@react-three/drei";
+import { toast } from "sonner";
 import { useControls, folder, button, Leva } from "leva";
 import * as THREE from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
@@ -138,47 +139,70 @@ function downloadGLB(group: THREE.Group, filename = "garage.glb") {
   );
 }
 
+function getParamsFromURL(): Partial<GarageParams> {
+  if (typeof window === "undefined") return {};
+  const searchParams = new URLSearchParams(window.location.search);
+  const parsed: Partial<GarageParams> = {};
+
+  const keys = Object.keys(DEFAULT_PARAMS) as (keyof GarageParams)[];
+  for (const key of keys) {
+    const val = searchParams.get(key);
+    if (val !== null) {
+      if (typeof DEFAULT_PARAMS[key] === "number") {
+        parsed[key] = parseFloat(val) as any;
+      } else if (typeof DEFAULT_PARAMS[key] === "boolean") {
+        parsed[key] = (val === "true") as any;
+      } else {
+        parsed[key] = val as any;
+      }
+    }
+  }
+  return parsed;
+}
+
 export default function Configurator() {
   const exportRef = useRef<THREE.Group | null>(null);
   const [preset, setPreset] = useState<ViewPreset>("iso");
   const [removedPanels, setRemovedPanels] = useState<Record<string, boolean>>({});
 
+  const [initialUrlParams] = useState(() => getParamsFromURL());
+
   const params = useControls({
     "Geometria": folder({
-      width: { value: DEFAULT_PARAMS.width, min: 2.5, max: 8, step: 0.1, label: "Šírka X [m]" },
-      length: { value: DEFAULT_PARAMS.length, min: 3, max: 12, step: 0.1, label: "Dĺžka Y [m]" },
-      clearHeight: { value: DEFAULT_PARAMS.clearHeight, min: 2.0, max: 4.0, step: 0.1, label: "Svetlá výška Z [m]" },
-      roofType: { value: DEFAULT_PARAMS.roofType, options: { "Sedlová": "gable", "Pultová": "shed" }, label: "Strecha" },
-      roofPitchDeg: { value: DEFAULT_PARAMS.roofPitchDeg, min: 5, max: 35, step: 1, label: "Spád strechy [°]" },
+      width: { value: initialUrlParams.width ?? DEFAULT_PARAMS.width, min: 2.5, max: 8, step: 0.1, label: "Šírka X [m]" },
+      length: { value: initialUrlParams.length ?? DEFAULT_PARAMS.length, min: 3, max: 12, step: 0.1, label: "Dĺžka Y [m]" },
+      clearHeight: { value: initialUrlParams.clearHeight ?? DEFAULT_PARAMS.clearHeight, min: 2.0, max: 4.0, step: 0.1, label: "Svetlá výška Z [m]" },
+      roofType: { value: initialUrlParams.roofType ?? DEFAULT_PARAMS.roofType, options: { "Sedlová": "gable", "Pultová": "shed" }, label: "Strecha" },
+      roofPitchDeg: { value: initialUrlParams.roofPitchDeg ?? DEFAULT_PARAMS.roofPitchDeg, min: 5, max: 35, step: 1, label: "Spád strechy [°]" },
     }),
     "Konštrukcia": folder({
-      bayCount: { value: DEFAULT_PARAMS.bayCount, min: 2, max: 8, step: 1, label: "Počet polí" },
-      profileSize: { value: DEFAULT_PARAMS.profileSize, min: 0.06, max: 0.16, step: 0.01, label: "Jakl strana [m]" },
-      profileThickness: { value: DEFAULT_PARAMS.profileThickness, min: 0.002, max: 0.008, step: 0.001, label: "Hrúbka steny [m]" },
-      steelColor: { value: DEFAULT_PARAMS.steelColor, label: "Farba ocele" },
+      bayCount: { value: initialUrlParams.bayCount ?? DEFAULT_PARAMS.bayCount, min: 2, max: 8, step: 1, label: "Počet polí" },
+      profileSize: { value: initialUrlParams.profileSize ?? DEFAULT_PARAMS.profileSize, min: 0.06, max: 0.16, step: 0.01, label: "Jakl strana [m]" },
+      profileThickness: { value: initialUrlParams.profileThickness ?? DEFAULT_PARAMS.profileThickness, min: 0.002, max: 0.008, step: 0.001, label: "Hrúbka steny [m]" },
+      steelColor: { value: initialUrlParams.steelColor ?? DEFAULT_PARAMS.steelColor, label: "Farba ocele" },
     }),
     "Opláštenie": folder({
-      claddingColor: { value: DEFAULT_PARAMS.claddingColor, label: "Steny RAL" },
-      roofColor: { value: DEFAULT_PARAMS.roofColor, label: "Strecha RAL" },
-      panelType: { value: DEFAULT_PARAMS.panelType, options: { "Trapézový plech": "trapezoid", "Sendvičové panely": "sandwich" }, label: "Typ" },
-      claddingOrientation: { value: DEFAULT_PARAMS.claddingOrientation, options: { "Vertikálne": "vertical", "Pozdĺžne": "horizontal" }, label: "Smer panelov" },
+      claddingColor: { value: initialUrlParams.claddingColor ?? DEFAULT_PARAMS.claddingColor, label: "Steny RAL" },
+      roofColor: { value: initialUrlParams.roofColor ?? DEFAULT_PARAMS.roofColor, label: "Strecha RAL" },
+      panelType: { value: initialUrlParams.panelType ?? DEFAULT_PARAMS.panelType, options: { "Trapézový plech": "trapezoid", "Sendvičové panely": "sandwich" }, label: "Typ" },
+      claddingOrientation: { value: initialUrlParams.claddingOrientation ?? DEFAULT_PARAMS.claddingOrientation, options: { "Vertikálne": "vertical", "Pozdĺžne": "horizontal" }, label: "Smer panelov" },
     }),
     "Otvory": folder({
-      doorWidth: { value: DEFAULT_PARAMS.doorWidth, min: 2, max: 4, step: 0.1, label: "Brána Š [m]" },
-      doorHeight: { value: DEFAULT_PARAMS.doorHeight, min: 1.8, max: 3, step: 0.1, label: "Brána V [m]" },
-      hasPersonalDoor: { value: DEFAULT_PARAMS.hasPersonalDoor, label: "Personálne dvere" },
-      personalDoorSide: { value: DEFAULT_PARAMS.personalDoorSide, options: ["left", "right", "back"], label: "Strana dverí" },
-      windowCount: { value: DEFAULT_PARAMS.windowCount, min: 0, max: 4, step: 1, label: "Počet okien" },
-      windowWidth: { value: DEFAULT_PARAMS.windowWidth, min: 0.3, max: 1.5, step: 0.1, label: "Okno Š [m]" },
-      windowHeight: { value: DEFAULT_PARAMS.windowHeight, min: 0.3, max: 1.2, step: 0.1, label: "Okno V [m]" },
+      doorWidth: { value: initialUrlParams.doorWidth ?? DEFAULT_PARAMS.doorWidth, min: 2, max: 4, step: 0.1, label: "Brána Š [m]" },
+      doorHeight: { value: initialUrlParams.doorHeight ?? DEFAULT_PARAMS.doorHeight, min: 1.8, max: 3, step: 0.1, label: "Brána V [m]" },
+      hasPersonalDoor: { value: initialUrlParams.hasPersonalDoor ?? DEFAULT_PARAMS.hasPersonalDoor, label: "Personálne dvere" },
+      personalDoorSide: { value: initialUrlParams.personalDoorSide ?? DEFAULT_PARAMS.personalDoorSide, options: ["left", "right", "back"], label: "Strana dverí" },
+      windowCount: { value: initialUrlParams.windowCount ?? DEFAULT_PARAMS.windowCount, min: 0, max: 4, step: 1, label: "Počet okien" },
+      windowWidth: { value: initialUrlParams.windowWidth ?? DEFAULT_PARAMS.windowWidth, min: 0.3, max: 1.5, step: 0.1, label: "Okno Š [m]" },
+      windowHeight: { value: initialUrlParams.windowHeight ?? DEFAULT_PARAMS.windowHeight, min: 0.3, max: 1.2, step: 0.1, label: "Okno V [m]" },
     }),
     "Zobrazenie": folder({
-      showStructure: { value: DEFAULT_PARAMS.showStructure, label: "Konštrukcia" },
-      showCladding: { value: DEFAULT_PARAMS.showCladding, label: "Opláštenie" },
-      showAccessories: { value: DEFAULT_PARAMS.showAccessories, label: "Príslušenstvo" },
-      showFoundation: { value: DEFAULT_PARAMS.showFoundation, label: "Základová doska" },
-      wireframe: { value: DEFAULT_PARAMS.wireframe, label: "Wireframe" },
-      explode: { value: DEFAULT_PARAMS.explode, min: 0, max: 1, step: 0.01, label: "Exploded view" },
+      showStructure: { value: initialUrlParams.showStructure ?? DEFAULT_PARAMS.showStructure, label: "Konštrukcia" },
+      showCladding: { value: initialUrlParams.showCladding ?? DEFAULT_PARAMS.showCladding, label: "Opláštenie" },
+      showAccessories: { value: initialUrlParams.showAccessories ?? DEFAULT_PARAMS.showAccessories, label: "Príslušenstvo" },
+      showFoundation: { value: initialUrlParams.showFoundation ?? DEFAULT_PARAMS.showFoundation, label: "Základová doska" },
+      wireframe: { value: initialUrlParams.wireframe ?? DEFAULT_PARAMS.wireframe, label: "Wireframe" },
+      explode: { value: initialUrlParams.explode ?? DEFAULT_PARAMS.explode, min: 0, max: 1, step: 0.01, label: "Exploded view" },
     }),
     "Export": folder({
       "Stiahnuť .glb": button(() => {
@@ -216,6 +240,23 @@ export default function Configurator() {
     setRemovedPanels(hidden);
   };
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const searchParams = new URLSearchParams();
+    const keys = Object.keys(DEFAULT_PARAMS) as (keyof GarageParams)[];
+    for (const key of keys) {
+      searchParams.set(key, String(typedParams[key]));
+    }
+    const newRelativePathQuery = window.location.pathname + "?" + searchParams.toString();
+    window.history.replaceState(null, "", newRelativePathQuery);
+  }, [typedParams]);
+
+  const handleShare = () => {
+    if (typeof window === "undefined") return;
+    navigator.clipboard.writeText(window.location.href);
+    toast.success("Odkaz na konfiguráciu bol skopírovaný do schránky!");
+  };
+
   return (
     <div className="relative h-screen w-screen bg-[oklch(0.16_0.01_240)]">
       {/* Top bar */}
@@ -243,6 +284,12 @@ export default function Configurator() {
               {v === "iso" ? "Axonometria" : v === "plan" ? "Pôdorys" : v === "front" ? "Čelo" : "Bok"}
             </button>
           ))}
+          <button
+            onClick={handleShare}
+            className="ml-2 flex items-center gap-1.5 rounded bg-emerald-400/20 px-3 py-1 font-mono text-xs uppercase tracking-wider text-emerald-300 ring-1 ring-emerald-400/40 transition hover:bg-emerald-400/30"
+          >
+            Zdieľať
+          </button>
         </div>
         <div className="font-mono text-[10px] text-white/40">
           {typedParams.width.toFixed(1)} × {typedParams.length.toFixed(1)} × {typedParams.clearHeight.toFixed(1)} m
