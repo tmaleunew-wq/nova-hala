@@ -10,10 +10,33 @@ import { Structure } from "./Structure";
 import { Cladding } from "./Cladding";
 import { Accessories } from "./Accessories";
 import { Foundation } from "./Foundation";
+import { setupProceduralEnvMap } from "@/lib/garage/pbrMaterialHelper";
 
 type ViewPreset = "iso" | "plan" | "front" | "side";
 
-function Scene({ params, exportRef }: { params: GarageParams; exportRef: React.MutableRefObject<THREE.Group | null> }) {
+function Scene({
+  params,
+  exportRef,
+  removedPanels,
+  onTogglePanel,
+}: {
+  params: GarageParams;
+  exportRef: React.MutableRefObject<THREE.Group | null>;
+  removedPanels: Record<string, boolean>;
+  onTogglePanel: (id: string) => void;
+}) {
+  const { gl, scene } = useThree();
+
+  useEffect(() => {
+    const envMap = setupProceduralEnvMap(scene, gl);
+    return () => {
+      if (scene.environment === envMap) {
+        scene.environment = null;
+      }
+      envMap.dispose();
+    };
+  }, [gl, scene]);
+
   return (
     <>
       <ambientLight intensity={0.55} />
@@ -34,7 +57,14 @@ function Scene({ params, exportRef }: { params: GarageParams; exportRef: React.M
       <group ref={exportRef}>
         {params.showFoundation && <Foundation p={params} />}
         {params.showStructure && <Structure p={params} explodeY={params.explode} />}
-        {params.showCladding && <Cladding p={params} explodeY={params.explode} />}
+        {params.showCladding && (
+          <Cladding
+            p={params}
+            explodeY={params.explode}
+            removedPanels={removedPanels}
+            onTogglePanel={onTogglePanel}
+          />
+        )}
         {params.showAccessories && <Accessories p={params} explodeY={params.explode} />}
       </group>
 
@@ -111,6 +141,7 @@ function downloadGLB(group: THREE.Group, filename = "garage.glb") {
 export default function Configurator() {
   const exportRef = useRef<THREE.Group | null>(null);
   const [preset, setPreset] = useState<ViewPreset>("iso");
+  const [removedPanels, setRemovedPanels] = useState<Record<string, boolean>>({});
 
   const params = useControls({
     "Geometria": folder({
@@ -130,6 +161,7 @@ export default function Configurator() {
       claddingColor: { value: DEFAULT_PARAMS.claddingColor, label: "Steny RAL" },
       roofColor: { value: DEFAULT_PARAMS.roofColor, label: "Strecha RAL" },
       panelType: { value: DEFAULT_PARAMS.panelType, options: { "Trapézový plech": "trapezoid", "Sendvičové panely": "sandwich" }, label: "Typ" },
+      claddingOrientation: { value: DEFAULT_PARAMS.claddingOrientation, options: { "Vertikálne": "vertical", "Pozdĺžne": "horizontal" }, label: "Smer panelov" },
     }),
     "Otvory": folder({
       doorWidth: { value: DEFAULT_PARAMS.doorWidth, min: 2, max: 4, step: 0.1, label: "Brána Š [m]" },
@@ -156,6 +188,33 @@ export default function Configurator() {
   });
 
   const typedParams: GarageParams = params as GarageParams;
+
+  const togglePanel = (id: string) => {
+    setRemovedPanels((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const showAllPanels = () => {
+    setRemovedPanels({});
+  };
+
+  const hideAllPanels = () => {
+    const hidden: Record<string, boolean> = {};
+    hidden["front"] = true;
+    hidden["back"] = true;
+    hidden["gable-front"] = true;
+    hidden["gable-back"] = true;
+    for (let i = 0; i < typedParams.bayCount; i++) {
+      hidden[`left-${i}`] = true;
+      hidden[`right-${i}`] = true;
+      hidden[`roof-left-${i}`] = true;
+      hidden[`roof-right-${i}`] = true;
+      hidden[`roof-${i}`] = true;
+    }
+    setRemovedPanels(hidden);
+  };
 
   return (
     <div className="relative h-screen w-screen bg-[oklch(0.16_0.01_240)]">
@@ -190,6 +249,7 @@ export default function Configurator() {
         </div>
       </div>
 
+
       {/* Dimensions strip */}
       <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded border border-white/10 bg-black/50 px-3 py-1.5 font-mono text-[10px] text-white/60 backdrop-blur">
         Drag = orbit · Scroll = zoom · Right-drag = pan · Profily {(typedParams.profileSize * 1000).toFixed(0)}×{(typedParams.profileSize * 1000).toFixed(0)}×{(typedParams.profileThickness * 1000).toFixed(0)} mm
@@ -202,7 +262,12 @@ export default function Configurator() {
       >
         <color attach="background" args={["#f5f5f5"]} />
         <fog attach="fog" args={["#f5f5f5", 30, 90]} />
-        <Scene params={typedParams} exportRef={exportRef} />
+        <Scene
+          params={typedParams}
+          exportRef={exportRef}
+          removedPanels={removedPanels}
+          onTogglePanel={togglePanel}
+        />
         <OrbitControls makeDefault enableDamping dampingFactor={0.08} target={[0, typedParams.clearHeight / 2, 0]} />
         <CameraRig preset={preset} params={typedParams} />
         <GizmoHelper alignment="bottom-right" margin={[80, 80]}>

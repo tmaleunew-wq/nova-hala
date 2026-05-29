@@ -1,9 +1,10 @@
 import "@react-three/fiber";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import * as THREE from "three";
 import type { GarageParams } from "@/lib/garage/types";
-import { ridgeHeight, highEave } from "./Structure";
+import { ridgeHeight, highEave, getFrameZ } from "./Structure";
 import { makeTrapezoidTexture } from "@/lib/garage/textures";
+import { createPBRCladdingMaterial } from "@/lib/garage/pbrMaterialHelper";
 
 interface Rect {
   cx: number; // hole center along panel width (panel local X)
@@ -12,35 +13,46 @@ interface Rect {
   h: number;
 }
 
-/**
- * Flat rectangular panel with holes.
- * Local: bottom-left at (-width/2, 0). Normal: +Z.
- */
-function PanelWithHoles({
+function PurPanel({
+  id,
   width,
   height,
-  holes,
+  holes = [],
   texture,
   color,
-  thickness = 0.02,
+  thickness = 0.08,
   wireframe = false,
+  visible = true,
+  onToggle,
+  isSandwich = true,
+  claddingOrientation = "vertical",
 }: {
+  id: string;
   width: number;
   height: number;
-  holes: Rect[];
+  holes?: Rect[];
   texture?: THREE.Texture;
   color: string;
   thickness?: number;
   wireframe?: boolean;
+  visible?: boolean;
+  onToggle?: () => void;
+  isSandwich?: boolean;
+  claddingOrientation?: "vertical" | "horizontal";
 }) {
-  const geometry = useMemo(() => {
-    const shape = new THREE.Shape();
+  const [hovered, setHovered] = useState(false);
+
+  const activeColor = hovered ? new THREE.Color(color).clone().multiplyScalar(1.15).getHexString() : color;
+  const activeColorStr = hovered ? `#${activeColor}` : color;
+
+  const shape = useMemo(() => {
+    const s = new THREE.Shape();
     const w2 = width / 2;
-    shape.moveTo(-w2, 0);
-    shape.lineTo(w2, 0);
-    shape.lineTo(w2, height);
-    shape.lineTo(-w2, height);
-    shape.lineTo(-w2, 0);
+    s.moveTo(-w2, 0);
+    s.lineTo(w2, 0);
+    s.lineTo(w2, height);
+    s.lineTo(-w2, height);
+    s.lineTo(-w2, 0);
     for (const r of holes) {
       const path = new THREE.Path();
       const x0 = r.cx - r.w / 2;
@@ -52,52 +64,287 @@ function PanelWithHoles({
       path.lineTo(x1, y1);
       path.lineTo(x0, y1);
       path.lineTo(x0, y0);
-      shape.holes.push(path);
+      s.holes.push(path);
     }
+    return s;
+  }, [width, height, holes]);
+
+  const pbrMaterial = useMemo(() => {
+    if (wireframe) return null;
+    const isRoof = id.startsWith("roof");
+    const isHorizontal = !isRoof && claddingOrientation === "horizontal";
+    const orient = isHorizontal ? "horizontal" : "vertical";
+    const repeats = isRoof || isHorizontal
+      ? Math.max(1, Math.round(height / 0.6))
+      : Math.max(1, Math.round(width / 0.6));
+
+    const mat = createPBRCladdingMaterial(activeColorStr, orient, repeats);
+
+    const textures = [mat.map, mat.normalMap, mat.roughnessMap, mat.metalnessMap].filter(
+      Boolean,
+    ) as THREE.Texture[];
+    for (const t of textures) {
+      if (isRoof || isHorizontal) {
+        t.rotation = Math.PI / 2;
+        t.center.set(0.5, 0.5);
+      } else {
+        t.rotation = 0;
+      }
+      t.needsUpdate = true;
+    }
+    return mat;
+  }, [activeColorStr, width, height, id, claddingOrientation, wireframe]);
+
+  const outerGeom = useMemo(() => {
+    const depth = isSandwich ? 0.002 : thickness;
     const g = new THREE.ExtrudeGeometry(shape, {
-      depth: thickness,
+      depth,
       bevelEnabled: false,
-      curveSegments: 1,
+      curveSegments: 2,
+    });
+    g.translate(0, 0, thickness / 2 - depth);
+    return g;
+  }, [shape, thickness, isSandwich]);
+
+  const coreGeom = useMemo(() => {
+    if (!isSandwich) return null;
+    const depth = thickness - 0.004;
+    const g = new THREE.ExtrudeGeometry(shape, {
+      depth,
+      bevelEnabled: false,
+      curveSegments: 2,
+    });
+    g.translate(0, 0, -depth / 2);
+    return g;
+  }, [shape, thickness, isSandwich]);
+
+  const innerGeom = useMemo(() => {
+    if (!isSandwich) return null;
+    const depth = 0.002;
+    const g = new THREE.ExtrudeGeometry(shape, {
+      depth,
+      bevelEnabled: false,
+      curveSegments: 2,
     });
     g.translate(0, 0, -thickness / 2);
     return g;
-  }, [width, height, holes, thickness]);
+  }, [shape, thickness, isSandwich]);
+
+  const handlePointerOver = (e: any) => {
+    e.stopPropagation();
+    setHovered(true);
+    document.body.style.cursor = "pointer";
+  };
+
+  const handlePointerOut = (e: any) => {
+    e.stopPropagation();
+    setHovered(false);
+    document.body.style.cursor = "default";
+  };
+
+  const handleClick = (e: any) => {
+    e.stopPropagation();
+    if (onToggle) onToggle();
+  };
+
+  if (!visible) {
+    return (
+      <mesh
+        position={[0, height / 2, 0]}
+        castShadow={false}
+        receiveShadow={false}
+        onPointerOver={handlePointerOver}
+        onPointerOut={handlePointerOut}
+        onClick={handleClick}
+      >
+        <boxGeometry args={[width, height, thickness]} />
+        <meshStandardMaterial
+          color={hovered ? "#34d399" : "#3b82f6"}
+          transparent
+          opacity={hovered ? 0.35 : 0.1}
+          wireframe
+        />
+      </mesh>
+    );
+  }
 
   return (
-    <mesh geometry={geometry} castShadow receiveShadow>
-      <meshStandardMaterial
-        map={texture}
-        color={color}
-        metalness={0.55}
-        roughness={0.55}
-        side={THREE.DoubleSide}
-        wireframe={wireframe}
-      />
-    </mesh>
+    <group
+      onPointerOver={handlePointerOver}
+      onPointerOut={handlePointerOut}
+      onClick={handleClick}
+    >
+      <mesh geometry={outerGeom} castShadow receiveShadow material={pbrMaterial || undefined}>
+        {wireframe && (
+          <meshStandardMaterial
+            color={activeColorStr}
+            side={THREE.DoubleSide}
+            wireframe
+          />
+        )}
+      </mesh>
+      {isSandwich && coreGeom && (
+        <mesh geometry={coreGeom} castShadow receiveShadow>
+          <meshStandardMaterial
+            color={hovered ? "#faf3cc" : "#e6dfb3"} // Polyurethane core yellow
+            metalness={0.05}
+            roughness={0.9}
+            side={THREE.DoubleSide}
+            wireframe={wireframe}
+          />
+        </mesh>
+      )}
+      {isSandwich && innerGeom && (
+        <mesh geometry={innerGeom} castShadow receiveShadow>
+          <meshStandardMaterial
+            color={hovered ? "#ffffff" : "#f1f3f5"} // Off-white inner skin
+            metalness={0.55}
+            roughness={0.55}
+            side={THREE.DoubleSide}
+            wireframe={wireframe}
+          />
+        </mesh>
+      )}
+    </group>
   );
 }
 
-/** Triangle gable infill (front/back) for gable roof. */
-function GableTriangle({ width, eave, ridge, color, wireframe }: { width: number; eave: number; ridge: number; color: string; wireframe: boolean }) {
-  const geom = useMemo(() => {
-    const g = new THREE.BufferGeometry();
-    const verts = new Float32Array([
-      -width / 2, eave, 0,
-      width / 2, eave, 0,
-      0, ridge, 0,
-    ]);
-    g.setAttribute("position", new THREE.BufferAttribute(verts, 3));
-    g.computeVertexNormals();
-    return g;
+function PurGableTriangle({
+  width,
+  eave,
+  ridge,
+  color,
+  thickness = 0.08,
+  wireframe = false,
+  visible = true,
+  onToggle,
+  isSandwich = true,
+}: {
+  width: number;
+  eave: number;
+  ridge: number;
+  color: string;
+  thickness?: number;
+  wireframe?: boolean;
+  visible?: boolean;
+  onToggle?: () => void;
+  isSandwich?: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  const activeColor = hovered ? new THREE.Color(color).clone().multiplyScalar(1.15).getHexString() : color;
+  const activeColorStr = hovered ? `#${activeColor}` : color;
+
+  const shape = useMemo(() => {
+    const s = new THREE.Shape();
+    s.moveTo(-width / 2, eave);
+    s.lineTo(width / 2, eave);
+    s.lineTo(0, ridge);
+    s.lineTo(-width / 2, eave);
+    return s;
   }, [width, eave, ridge]);
+
+  const pbrMaterial = useMemo(() => {
+    if (wireframe) return null;
+    return createPBRCladdingMaterial(activeColorStr, "vertical", Math.max(1, Math.round(width / 0.6)));
+  }, [activeColorStr, width, wireframe]);
+
+  const outerGeom = useMemo(() => {
+    const depth = isSandwich ? 0.002 : thickness;
+    const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 1 });
+    g.translate(0, 0, thickness / 2 - depth);
+    return g;
+  }, [shape, thickness, isSandwich]);
+
+  const coreGeom = useMemo(() => {
+    if (!isSandwich) return null;
+    const depth = thickness - 0.004;
+    const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 1 });
+    g.translate(0, 0, -depth / 2);
+    return g;
+  }, [shape, thickness, isSandwich]);
+
+  const innerGeom = useMemo(() => {
+    if (!isSandwich) return null;
+    const depth = 0.002;
+    const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 1 });
+    g.translate(0, 0, -thickness / 2);
+    return g;
+  }, [shape, thickness, isSandwich]);
+
+  const handlePointerOver = (e: any) => {
+    e.stopPropagation();
+    setHovered(true);
+    document.body.style.cursor = "pointer";
+  };
+
+  const handlePointerOut = (e: any) => {
+    e.stopPropagation();
+    setHovered(false);
+    document.body.style.cursor = "default";
+  };
+
+    const handleClick = (e: any) => {
+    e.stopPropagation();
+    if (onToggle) onToggle();
+  };
+
+  if (!visible) {
+    const ghostGeom = useMemo(() => {
+      const g = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false, curveSegments: 1 });
+      g.translate(0, 0, -thickness / 2);
+      return g;
+    }, [shape, thickness]);
+    return (
+      <mesh
+        geometry={ghostGeom}
+        onPointerOver={handlePointerOver}
+        onPointerOut={handlePointerOut}
+        onClick={handleClick}
+      >
+        <meshStandardMaterial
+          color={hovered ? "#34d399" : "#3b82f6"}
+          transparent
+          opacity={hovered ? 0.35 : 0.1}
+          wireframe
+        />
+      </mesh>
+    );
+  }
+
   return (
-    <mesh geometry={geom} castShadow receiveShadow>
-      <meshStandardMaterial color={color} side={THREE.DoubleSide} metalness={0.55} roughness={0.55} wireframe={wireframe} />
-    </mesh>
+    <group
+      onPointerOver={handlePointerOver}
+      onPointerOut={handlePointerOut}
+      onClick={handleClick}
+    >
+      <mesh geometry={outerGeom} castShadow receiveShadow material={pbrMaterial || undefined}>
+        {wireframe && <meshStandardMaterial color={activeColorStr} side={THREE.DoubleSide} wireframe />}
+      </mesh>
+      {isSandwich && coreGeom && (
+        <mesh geometry={coreGeom} castShadow receiveShadow>
+          <meshStandardMaterial color={hovered ? "#faf3cc" : "#e6dfb3"} side={THREE.DoubleSide} metalness={0.05} roughness={0.9} wireframe={wireframe} />
+        </mesh>
+      )}
+      {isSandwich && innerGeom && (
+        <mesh geometry={innerGeom} castShadow receiveShadow>
+          <meshStandardMaterial color={hovered ? "#ffffff" : "#f1f3f5"} side={THREE.DoubleSide} metalness={0.55} roughness={0.55} wireframe={wireframe} />
+        </mesh>
+      )}
+    </group>
   );
 }
-
-export function Cladding({ p, explodeY }: { p: GarageParams; explodeY: number }) {
+export function Cladding({
+  p,
+  explodeY,
+  removedPanels = {},
+  onTogglePanel,
+}: {
+  p: GarageParams;
+  explodeY: number;
+  removedPanels?: Record<string, boolean>;
+  onTogglePanel?: (id: string) => void;
+}) {
   const wallTex = useMemo(() => makeTrapezoidTexture(p.claddingColor, 50), [p.claddingColor]);
   const roofTex = useMemo(() => makeTrapezoidTexture(p.roofColor, 50), [p.roofColor]);
 
@@ -107,8 +354,8 @@ export function Cladding({ p, explodeY }: { p: GarageParams; explodeY: number })
   const Hridge = ridgeHeight(p);
   const Hhi = highEave(p);
 
-  wallTex.repeat.set(Math.max(1, Math.round(L / 0.6)), 1);
-  roofTex.repeat.set(Math.max(1, Math.round(L / 0.6)), 1);
+  const panelThickness = p.panelType === "sandwich" ? 0.08 : 0.01;
+  const isSand = p.panelType === "sandwich";
 
   // openings
   const doorHole: Rect = { cx: 0, cy: p.doorHeight / 2 + 0.02, w: p.doorWidth, h: p.doorHeight };
@@ -126,62 +373,172 @@ export function Cladding({ p, explodeY }: { p: GarageParams; explodeY: number })
   const offRight = ex * 1.5;
   const offRoof = ex * 1.2;
 
+  const zs = useMemo(() => getFrameZ(p), [p]);
+
   return (
     <group>
       {/* FRONT (z=-L/2), normal -Z */}
       <group position={[0, 0, -L / 2 + offFront]} rotation={[0, Math.PI, 0]}>
-        <PanelWithHoles width={W} height={Heave} holes={[doorHole]} texture={wallTex} color={p.claddingColor} wireframe={p.wireframe} />
+        <PurPanel
+          id="front"
+          width={W}
+          height={Heave}
+          holes={[doorHole]}
+          texture={wallTex}
+          color={p.claddingColor}
+          wireframe={p.wireframe}
+          visible={!removedPanels["front"]}
+          onToggle={() => onTogglePanel?.("front")}
+          thickness={panelThickness}
+          isSandwich={isSand}
+          claddingOrientation={p.claddingOrientation}
+        />
       </group>
 
       {/* BACK (z=+L/2), normal +Z */}
       <group position={[0, 0, L / 2 + offBack]}>
-        <PanelWithHoles
+        <PurPanel
+          id="back"
           width={W}
           height={Heave}
           holes={p.personalDoorSide === "back" && p.hasPersonalDoor ? [{ cx: 0, cy: 1.0, w: 0.9, h: 2.0 }] : []}
           texture={wallTex}
           color={p.claddingColor}
           wireframe={p.wireframe}
+          visible={!removedPanels["back"]}
+          onToggle={() => onTogglePanel?.("back")}
+          thickness={panelThickness}
+          isSandwich={isSand}
+          claddingOrientation={p.claddingOrientation}
         />
       </group>
 
       {/* LEFT (x=-W/2), normal -X. Panel width along Z. */}
       <group position={[-W / 2 + offLeft, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
-        <PanelWithHoles
-          width={L}
-          height={Heave}
-          holes={[
-            ...(p.personalDoorSide === "left" && p.hasPersonalDoor ? [personalHole] : []),
-            ...winSpread,
-          ]}
-          texture={wallTex}
-          color={p.claddingColor}
-          wireframe={p.wireframe}
-        />
+        {zs.map((z, i) => {
+          if (i === zs.length - 1) return null;
+          const zStart = zs[i];
+          const zEnd = zs[i + 1];
+          const zCenter = (zStart + zEnd) / 2;
+          const w = zEnd - zStart;
+
+          // Find holes in this bay
+          const bayHoles: Rect[] = [];
+          if (p.personalDoorSide === "left" && p.hasPersonalDoor) {
+            if (personalHole.cx + personalHole.w / 2 > zStart && personalHole.cx - personalHole.w / 2 < zEnd) {
+              bayHoles.push({
+                cx: personalHole.cx - zCenter,
+                cy: personalHole.cy,
+                w: personalHole.w,
+                h: personalHole.h,
+              });
+            }
+          }
+          for (const wRect of winSpread) {
+            if (wRect.cx + wRect.w / 2 > zStart && wRect.cx - wRect.w / 2 < zEnd) {
+              bayHoles.push({
+                cx: wRect.cx - zCenter,
+                cy: wRect.cy,
+                w: wRect.w,
+                h: wRect.h,
+              });
+            }
+          }
+
+          const id = `left-${i}`;
+          return (
+            <group key={id} position={[zCenter, 0, 0]}>
+              <PurPanel
+                id={id}
+                width={w}
+                height={Heave}
+                holes={bayHoles}
+                texture={wallTex}
+                color={p.claddingColor}
+                wireframe={p.wireframe}
+                visible={!removedPanels[id]}
+                onToggle={() => onTogglePanel?.(id)}
+                thickness={panelThickness}
+                isSandwich={isSand}
+                claddingOrientation={p.claddingOrientation}
+              />
+            </group>
+          );
+        })}
       </group>
 
-      {/* RIGHT (x=+W/2), normal +X */}
+      {/* RIGHT (x=+W/2), normal +X. Panel width along Z. */}
       <group position={[W / 2 + offRight, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <PanelWithHoles
-          width={L}
-          height={p.roofType === "shed" ? Hhi : Heave}
-          holes={[
-            ...(p.personalDoorSide === "right" && p.hasPersonalDoor ? [personalHole] : []),
-          ]}
-          texture={wallTex}
-          color={p.claddingColor}
-          wireframe={p.wireframe}
-        />
+        {zs.map((z, i) => {
+          if (i === zs.length - 1) return null;
+          const zStart = zs[i];
+          const zEnd = zs[i + 1];
+          const zCenter = (zStart + zEnd) / 2;
+          const w = zEnd - zStart;
+
+          // Find holes in this bay
+          const bayHoles: Rect[] = [];
+          if (p.personalDoorSide === "right" && p.hasPersonalDoor) {
+            if (personalHole.cx + personalHole.w / 2 > zStart && personalHole.cx - personalHole.w / 2 < zEnd) {
+              bayHoles.push({
+                cx: zCenter - personalHole.cx,
+                cy: personalHole.cy,
+                w: personalHole.w,
+                h: personalHole.h,
+              });
+            }
+          }
+
+          const id = `right-${i}`;
+          return (
+            <group key={id} position={[-zCenter, 0, 0]}>
+              <PurPanel
+                id={id}
+                width={w}
+                height={p.roofType === "shed" ? Hhi : Heave}
+                holes={bayHoles}
+                texture={wallTex}
+                color={p.claddingColor}
+                wireframe={p.wireframe}
+                visible={!removedPanels[id]}
+                onToggle={() => onTogglePanel?.(id)}
+                thickness={panelThickness}
+                isSandwich={isSand}
+                claddingOrientation={p.claddingOrientation}
+              />
+            </group>
+          );
+        })}
       </group>
 
       {/* GABLE TRIANGLES on front/back */}
       {p.roofType === "gable" && (
         <>
           <group position={[0, 0, -L / 2 + offFront]}>
-            <GableTriangle width={W} eave={Heave} ridge={Hridge} color={p.claddingColor} wireframe={p.wireframe} />
+            <PurGableTriangle
+              width={W}
+              eave={Heave}
+              ridge={Hridge}
+              color={p.claddingColor}
+              wireframe={p.wireframe}
+              visible={!removedPanels["gable-front"]}
+              onToggle={() => onTogglePanel?.("gable-front")}
+              thickness={panelThickness}
+              isSandwich={isSand}
+            />
           </group>
           <group position={[0, 0, L / 2 + offBack]}>
-            <GableTriangle width={W} eave={Heave} ridge={Hridge} color={p.claddingColor} wireframe={p.wireframe} />
+            <PurGableTriangle
+              width={W}
+              eave={Heave}
+              ridge={Hridge}
+              color={p.claddingColor}
+              wireframe={p.wireframe}
+              visible={!removedPanels["gable-back"]}
+              onToggle={() => onTogglePanel?.("gable-back")}
+              thickness={panelThickness}
+              isSandwich={isSand}
+            />
           </group>
         </>
       )}
@@ -193,25 +550,43 @@ export function Cladding({ p, explodeY }: { p: GarageParams; explodeY: number })
             const halfW = W / 2;
             const slopeLen = Math.hypot(halfW, Hridge - Heave);
             const angle = Math.atan2(Hridge - Heave, halfW);
-            return [-1, 1].map((s) => (
-              <group
-                key={`roof-${s}`}
-                position={[(s * halfW) / 2, (Heave + Hridge) / 2 + offRoof, 0]}
-                rotation={[-Math.PI / 2, 0, s * angle]}
-              >
-                <mesh castShadow receiveShadow>
-                  <planeGeometry args={[slopeLen, L]} />
-                  <meshStandardMaterial
-                    map={roofTex}
-                    color={p.roofColor}
-                    metalness={0.55}
-                    roughness={0.55}
-                    side={THREE.DoubleSide}
-                    wireframe={p.wireframe}
-                  />
-                </mesh>
-              </group>
-            ));
+            return [-1, 1].map((s) => {
+              const sideName = s === -1 ? "left" : "right";
+              return (
+                <group
+                  key={`roof-${sideName}`}
+                  position={[(s * halfW) / 2, (Heave + Hridge) / 2 + offRoof, 0]}
+                  rotation={[-Math.PI / 2, 0, -s * angle]}
+                >
+                  {zs.map((z, i) => {
+                    if (i === zs.length - 1) return null;
+                    const zStart = zs[i];
+                    const zEnd = zs[i + 1];
+                    const w = zEnd - zStart;
+
+                    const id = `roof-${sideName}-${i}`;
+                    return (
+                      <group key={id} position={[0, zStart, panelThickness / 2]}>
+                        <PurPanel
+                          id={id}
+                          width={slopeLen}
+                          height={w}
+                          holes={[]}
+                          texture={roofTex}
+                          color={p.roofColor}
+                          wireframe={p.wireframe}
+                          visible={!removedPanels[id]}
+                          onToggle={() => onTogglePanel?.(id)}
+                          thickness={panelThickness}
+                          isSandwich={isSand}
+                          claddingOrientation={p.claddingOrientation}
+                        />
+                      </group>
+                    );
+                  })}
+                </group>
+              );
+            });
           })()}
         </>
       ) : (
@@ -219,17 +594,33 @@ export function Cladding({ p, explodeY }: { p: GarageParams; explodeY: number })
           position={[0, (Heave + Hhi) / 2 + offRoof, 0]}
           rotation={[-Math.PI / 2, 0, Math.atan2(Hhi - Heave, W)]}
         >
-          <mesh castShadow receiveShadow>
-            <planeGeometry args={[Math.hypot(W, Hhi - Heave), L]} />
-            <meshStandardMaterial
-              map={roofTex}
-              color={p.roofColor}
-              metalness={0.55}
-              roughness={0.55}
-              side={THREE.DoubleSide}
-              wireframe={p.wireframe}
-            />
-          </mesh>
+          {zs.map((z, i) => {
+            if (i === zs.length - 1) return null;
+            const zStart = zs[i];
+            const zEnd = zs[i + 1];
+            const w = zEnd - zStart;
+            const slopeLen = Math.hypot(W, Hhi - Heave);
+
+            const id = `roof-${i}`;
+            return (
+              <group key={id} position={[0, zStart, panelThickness / 2]}>
+                <PurPanel
+                  id={id}
+                  width={slopeLen}
+                  height={w}
+                  holes={[]}
+                  texture={roofTex}
+                  color={p.roofColor}
+                  wireframe={p.wireframe}
+                  visible={!removedPanels[id]}
+                  onToggle={() => onTogglePanel?.(id)}
+                  thickness={panelThickness}
+                  isSandwich={isSand}
+                  claddingOrientation={p.claddingOrientation}
+                />
+              </group>
+            );
+          })}
         </group>
       )}
     </group>
