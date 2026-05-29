@@ -556,7 +556,7 @@ export function Cladding({
                 <group
                   key={`roof-${sideName}`}
                   position={[(s * halfW) / 2, (Heave + Hridge) / 2 + offRoof, 0]}
-                  rotation={[-Math.PI / 2, 0, -s * angle]}
+                  rotation={[-Math.PI / 2, -s * angle, 0]}
                 >
                   {zs.map((z, i) => {
                     if (i === zs.length - 1) return null;
@@ -592,7 +592,7 @@ export function Cladding({
       ) : (
         <group
           position={[0, (Heave + Hhi) / 2 + offRoof, 0]}
-          rotation={[-Math.PI / 2, 0, Math.atan2(Hhi - Heave, W)]}
+          rotation={[-Math.PI / 2, Math.atan2(Hhi - Heave, W), 0]}
         >
           {zs.map((z, i) => {
             if (i === zs.length - 1) return null;
