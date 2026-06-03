@@ -13,6 +13,7 @@ import { Accessories } from "./Accessories";
 import { Foundation } from "./Foundation";
 import { setupProceduralEnvMap } from "@/lib/garage/pbrMaterialHelper";
 import { PriceCalculator } from "./PriceCalculator";
+import { PremiumSpecPanel } from "./PremiumSpecPanel";
 
 type ViewPreset = "iso" | "plan" | "front" | "side";
 
