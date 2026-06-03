@@ -400,7 +400,6 @@ export function Accessories({ p, explodeY }: { p: GarageParams; explodeY: number
       <SectionalDoor p={p} explodeY={explodeY} />
       <PersonalDoor p={p} explodeY={explodeY} />
       <Windows p={p} explodeY={explodeY} />
-      <Gutters p={p} explodeY={explodeY} />
       <CornerFlashings p={p} explodeY={explodeY} />
       <Bargeboards p={p} explodeY={explodeY} />
       <EaveFlashings p={p} explodeY={explodeY} />
