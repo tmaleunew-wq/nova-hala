@@ -402,7 +402,6 @@ export function Accessories({ p, explodeY }: { p: GarageParams; explodeY: number
       <Windows p={p} explodeY={explodeY} />
       <Gutters p={p} explodeY={explodeY} />
       <CornerFlashings p={p} explodeY={explodeY} />
-      <JointFlashings p={p} explodeY={explodeY} />
       <Bargeboards p={p} explodeY={explodeY} />
       <EaveFlashings p={p} explodeY={explodeY} />
       {/* Ridge cap */}
