@@ -144,7 +144,7 @@ function CornerFlashings({ p, explodeY }: { p: GarageParams; explodeY: number })
   
   const wallThickness = p.panelType === "sandwich" ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
   const sz = p.profileSize;
-  const trimWidth = 0.12; // 120mm flashing legs
+  const trimWidth = 0.18; // 180mm flashing legs to overlap and cover panel edges
   const trimThick = 0.002;
   const color = p.claddingColor || "#2a2d33"; // Use wall cladding color
   

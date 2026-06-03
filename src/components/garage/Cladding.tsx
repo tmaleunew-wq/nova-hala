@@ -760,10 +760,12 @@ export function Cladding({
                     if (i === zs.length - 1) return null;
                     const zStart = zs[i];
                     const zEnd = zs[i + 1];
-                    const w = zEnd - zStart;
+                    const actualStart = i === 0 ? zStart - (sz / 2 + panelThickness) : zStart;
+                    const actualEnd = i === zs.length - 2 ? zEnd + (sz / 2 + panelThickness) : zEnd;
+                    const w = actualEnd - actualStart;
                     const id = `roof-${sideName}-${i}`;
                     return (
-                      <group key={id} position={[0, zStart, sz / 2 + roofPanelThickness / 2]}>
+                      <group key={id} position={[0, actualStart, sz / 2 + roofPanelThickness / 2]}>
                         <PurPanel
                           id={id}
                           width={slopeLen}
@@ -795,11 +797,13 @@ export function Cladding({
             if (i === zs.length - 1) return null;
             const zStart = zs[i];
             const zEnd = zs[i + 1];
-            const w = zEnd - zStart;
+            const actualStart = i === 0 ? zStart - (sz / 2 + panelThickness) : zStart;
+            const actualEnd = i === zs.length - 2 ? zEnd + (sz / 2 + panelThickness) : zEnd;
+            const w = actualEnd - actualStart;
             const slopeLen = Math.hypot(W, Hhi - Heave);
             const id = `roof-${i}`;
             return (
-              <group key={id} position={[0, zStart, sz / 2 + roofPanelThickness / 2]}>
+              <group key={id} position={[0, actualStart, sz / 2 + roofPanelThickness / 2]}>
                 <PurPanel
                   id={id}
                   width={slopeLen}
