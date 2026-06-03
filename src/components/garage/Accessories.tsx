@@ -139,26 +139,55 @@ function CornerFlashings({ p, explodeY }: { p: GarageParams; explodeY: number })
   const L = p.length;
   const Heave = p.clearHeight;
   const Hhi = highEave(p);
-  const ex = explodeY * 0.6;
-  const t = 0.015;
-  const cw = 0.12;
-  // 4 vertical corners
-  const corners: { pos: [number, number, number]; h: number }[] = [
-    { pos: [-W / 2 - ex, Heave / 2, -L / 2 - ex], h: Heave },
-    { pos: [W / 2 + ex, (p.roofType === "shed" ? Hhi : Heave) / 2, -L / 2 - ex], h: p.roofType === "shed" ? Hhi : Heave },
-    { pos: [-W / 2 - ex, Heave / 2, L / 2 + ex], h: Heave },
-    { pos: [W / 2 + ex, (p.roofType === "shed" ? Hhi : Heave) / 2, L / 2 + ex], h: p.roofType === "shed" ? Hhi : Heave },
+  const ex = explodeY * 1.5; // align with Cladding's explode speed
+  
+  const wallThickness = p.panelType === "sandwich" ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+  const sz = p.profileSize;
+  const trimWidth = 0.12; // 120mm flashing legs
+  const trimThick = 0.002;
+  const color = p.claddingColor || "#2a2d33"; // Use wall cladding color
+  
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: color,
+    metalness: 0.5,
+    roughness: 0.5,
+  }), [color]);
+
+  // Corner definitions: xSign, zSign
+  const config = [
+    { xSign: -1, zSign: -1, h: Heave }, // left-front
+    { xSign: 1, zSign: -1, h: p.roofType === "shed" ? Hhi : Heave },  // right-front
+    { xSign: -1, zSign: 1, h: Heave },  // left-back
+    { xSign: 1, zSign: 1, h: p.roofType === "shed" ? Hhi : Heave },   // right-back
   ];
+
   return (
     <group>
-      {corners.map((c, i) => (
-        <group key={i} position={c.pos} rotation={[0, (i % 2 === 0 ? 1 : -1) * Math.PI / 4, 0]}>
-          <mesh castShadow>
-            <boxGeometry args={[cw, c.h, t]} />
-            <meshStandardMaterial color="#2a2d33" metalness={0.7} roughness={0.45} wireframe={p.wireframe} />
-          </mesh>
-        </group>
-      ))}
+      {config.map((c, i) => {
+        const xc = c.xSign * (W / 2 + sz / 2 + wallThickness) + c.xSign * ex;
+        const zc = c.zSign * (L / 2 + sz / 2 + wallThickness) + c.zSign * ex;
+        const yPos = c.h / 2;
+
+        return (
+          <group key={i}>
+            {/* Face parallel to Front/Back wall (X-axis) */}
+            <mesh position={[xc - c.xSign * (trimWidth / 2), yPos, zc + c.zSign * (trimThick / 2 + 0.001)]} castShadow>
+              <boxGeometry args={[trimWidth, c.h, trimThick]} />
+              <primitive object={mat} attach="material" />
+            </mesh>
+
+            {/* Face parallel to Left/Right wall (Z-axis) */}
+            <mesh 
+              position={[xc + c.xSign * (trimThick / 2 + 0.001), yPos, zc - c.zSign * (trimWidth / 2)]} 
+              rotation={[0, Math.PI / 2, 0]} 
+              castShadow
+            >
+              <boxGeometry args={[trimWidth, c.h, trimThick]} />
+              <primitive object={mat} attach="material" />
+            </mesh>
+          </group>
+        );
+      })}
     </group>
   );
 }
@@ -206,6 +235,105 @@ function JointFlashings({ p, explodeY }: { p: GarageParams; explodeY: number }) 
   );
 }
 
+function Bargeboards({ p, explodeY }: { p: GarageParams; explodeY: number }) {
+  const W = p.width;
+  const L = p.length;
+  const Heave = p.clearHeight;
+  const Hridge = ridgeHeight(p);
+  const Hhi = highEave(p);
+  const ex = explodeY;
+
+  const wallThickness = p.panelType === "sandwich" ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+  const roofThickness = p.panelType === "sandwich" ? Math.max(0.04, p.roofPanelThicknessMm / 1000) : 0.01;
+  const sz = p.profileSize;
+
+  const color = p.roofColor || p.claddingColor || "#2a2d33";
+
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: color,
+    metalness: 0.5,
+    roughness: 0.5,
+  }), [color]);
+
+  const slopes = useMemo(() => {
+    if (p.roofType === "gable") {
+      const halfW = W / 2;
+      return [
+        { xStart: -halfW, yStart: Heave, xEnd: 0, yEnd: Hridge },
+        { xStart: 0, yStart: Hridge, xEnd: halfW, yEnd: Heave },
+      ];
+    } else {
+      return [
+        { xStart: -W / 2, yStart: Heave, xEnd: W / 2, yEnd: Hhi },
+      ];
+    }
+  }, [W, Heave, Hridge, Hhi, p.roofType]);
+
+  const t = 0.002; // thickness of sheet metal
+  const fh = 0.18; // height of the vertical face flange
+  const roofOffset = sz / 2 + roofThickness;
+  const gapWidth = sz / 2 + wallThickness;
+  const sideLen = gapWidth + 0.04; // covers gap and overlaps roof panel by 4cm
+
+  const items: React.ReactNode[] = [];
+
+  slopes.forEach((slope, sIndex) => {
+    const dx = slope.xEnd - slope.xStart;
+    const dy = slope.yEnd - slope.yStart;
+    const len = Math.hypot(dx, dy);
+    const rotZ = Math.atan2(dy, dx);
+
+    const nx = -Math.sin(rotZ);
+    const ny = Math.cos(rotZ);
+
+    const xMid = (slope.xStart + slope.xEnd) / 2;
+    const yMid = (slope.yStart + slope.yEnd) / 2;
+
+    const offsetFace = roofOffset - fh / 2 + 0.01;
+    const xFace = xMid + nx * offsetFace;
+    const yFace = yMid + ny * offsetFace;
+
+    const xSide = xMid + nx * (roofOffset + t / 2);
+    const ySide = yMid + ny * (roofOffset + t / 2);
+
+    // Render for front (zSign = -1) and back (zSign = 1)
+    [-1, 1].forEach((zSign) => {
+      const zc = zSign * (L / 2 + gapWidth) + zSign * ex * 1.5;
+      
+      const zFace = zc + zSign * (t / 2 + 0.001);
+      const zSide = zSign * (L / 2 + (gapWidth - 0.04) / 2) + zSign * ex * 1.5;
+
+      const keyBase = `barge-${sIndex}-${zSign}`;
+
+      items.push(
+        <group key={keyBase}>
+          {/* Vertical face flange */}
+          <mesh
+            position={[xFace, yFace, zFace]}
+            rotation={[0, 0, rotZ]}
+            castShadow
+            material={mat}
+          >
+            <boxGeometry args={[len + 0.02, fh, t]} />
+          </mesh>
+
+          {/* Top/Side flange covering roof edge and gap */}
+          <mesh
+            position={[xSide, ySide, zSide]}
+            rotation={[0, 0, rotZ]}
+            castShadow
+            material={mat}
+          >
+            <boxGeometry args={[len + 0.02, t, sideLen]} />
+          </mesh>
+        </group>
+      );
+    });
+  });
+
+  return <group>{items}</group>;
+}
+
 export function Accessories({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   return (
     <group>
@@ -215,6 +343,7 @@ export function Accessories({ p, explodeY }: { p: GarageParams; explodeY: number
       <Gutters p={p} explodeY={explodeY} />
       <CornerFlashings p={p} explodeY={explodeY} />
       <JointFlashings p={p} explodeY={explodeY} />
+      <Bargeboards p={p} explodeY={explodeY} />
       {/* Ridge cap */}
       {p.roofType === "gable" && (
         <mesh position={[0, ridgeHeight(p) + 0.02 + explodeY * 1.4, 0]} castShadow>
