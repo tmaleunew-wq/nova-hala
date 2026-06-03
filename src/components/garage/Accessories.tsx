@@ -99,6 +99,7 @@ function Gutters({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   const Heave = p.clearHeight;
   const Hhi = highEave(p);
   const ex = explodeY * 0.4;
+  const color = p.claddingColor || "#2a2d33";
   // gutter half-tube along each eave
   const radius = 0.06;
   const geom = useMemo(() => {
@@ -111,11 +112,11 @@ function Gutters({ p, explodeY }: { p: GarageParams; explodeY: number }) {
     <group>
       {/* left eave gutter */}
       <mesh position={[-W / 2 - 0.08 + ex * -1, Heave - 0.05, 0]} geometry={geom} rotation={[0, 0, Math.PI]} castShadow>
-        <meshStandardMaterial color="#cdd3da" metalness={0.6} roughness={0.4} side={THREE.DoubleSide} wireframe={p.wireframe} />
+        <meshStandardMaterial color={color} metalness={0.6} roughness={0.4} side={THREE.DoubleSide} wireframe={p.wireframe} />
       </mesh>
       {/* right eave gutter */}
       <mesh position={[W / 2 + 0.08 + ex, Hhi - 0.05, 0]} geometry={geom} castShadow>
-        <meshStandardMaterial color="#cdd3da" metalness={0.6} roughness={0.4} side={THREE.DoubleSide} wireframe={p.wireframe} />
+        <meshStandardMaterial color={color} metalness={0.6} roughness={0.4} side={THREE.DoubleSide} wireframe={p.wireframe} />
       </mesh>
       {/* downpipes */}
       {[-1, 1].map((sz) =>
@@ -126,7 +127,7 @@ function Gutters({ p, explodeY }: { p: GarageParams; explodeY: number }) {
             castShadow
           >
             <cylinderGeometry args={[0.04, 0.04, Heave - 0.05, 16]} />
-            <meshStandardMaterial color="#cdd3da" metalness={0.6} roughness={0.4} wireframe={p.wireframe} />
+            <meshStandardMaterial color={color} metalness={0.6} roughness={0.4} wireframe={p.wireframe} />
           </mesh>
         )),
       )}
@@ -247,7 +248,7 @@ function Bargeboards({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   const roofThickness = p.panelType === "sandwich" ? Math.max(0.04, p.roofPanelThicknessMm / 1000) : 0.01;
   const sz = p.profileSize;
 
-  const color = p.roofColor || p.claddingColor || "#2a2d33";
+  const color = p.claddingColor || "#2a2d33";
 
   const mat = useMemo(() => new THREE.MeshStandardMaterial({
     color: color,
@@ -334,6 +335,59 @@ function Bargeboards({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   return <group>{items}</group>;
 }
 
+function EaveFlashings({ p, explodeY }: { p: GarageParams; explodeY: number }) {
+  const W = p.width;
+  const L = p.length;
+  const Heave = p.clearHeight;
+  const Hhi = highEave(p);
+  const ex = explodeY;
+
+  const wallThickness = p.panelType === "sandwich" ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+  const sz = p.profileSize;
+
+  const color = p.claddingColor || "#2a2d33";
+
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: color,
+    metalness: 0.5,
+    roughness: 0.5,
+  }), [color]);
+
+  const t = 0.002;
+  const fh = 0.10; // 100mm height
+  const gapWidth = sz / 2 + wallThickness;
+
+  const leftH = Heave;
+  const rightH = p.roofType === "shed" ? Hhi : Heave;
+
+  const leftX = -W / 2 - gapWidth - ex * 1.5;
+  const rightX = W / 2 + gapWidth + ex * 1.5;
+
+  return (
+    <group>
+      {/* Left Eave Flashing */}
+      <mesh
+        position={[leftX - t / 2 - 0.001, leftH + 0.03, 0]}
+        rotation={[0, -Math.PI / 2, 0]}
+        castShadow
+        material={mat}
+      >
+        <boxGeometry args={[L + 0.02, fh, t]} />
+      </mesh>
+
+      {/* Right Eave Flashing */}
+      <mesh
+        position={[rightX + t / 2 + 0.001, rightH + 0.03, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+        castShadow
+        material={mat}
+      >
+        <boxGeometry args={[L + 0.02, fh, t]} />
+      </mesh>
+    </group>
+  );
+}
+
 export function Accessories({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   return (
     <group>
@@ -344,6 +398,7 @@ export function Accessories({ p, explodeY }: { p: GarageParams; explodeY: number
       <CornerFlashings p={p} explodeY={explodeY} />
       <JointFlashings p={p} explodeY={explodeY} />
       <Bargeboards p={p} explodeY={explodeY} />
+      <EaveFlashings p={p} explodeY={explodeY} />
       {/* Ridge cap */}
       {p.roofType === "gable" && (
         <mesh position={[0, ridgeHeight(p) + 0.02 + explodeY * 1.4, 0]} castShadow>

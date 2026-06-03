@@ -220,6 +220,7 @@ function PurGableTriangle({
   visible = true,
   onToggle,
   isSandwich = true,
+  claddingOrientation = "vertical",
 }: {
   width: number;
   eave: number;
@@ -230,6 +231,7 @@ function PurGableTriangle({
   visible?: boolean;
   onToggle?: () => void;
   isSandwich?: boolean;
+  claddingOrientation?: "vertical" | "horizontal";
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -247,8 +249,28 @@ function PurGableTriangle({
 
   const pbrMaterial = useMemo(() => {
     if (wireframe) return null;
-    return createPBRCladdingMaterial(activeColorStr, "vertical", Math.max(1, Math.round(width / 0.6)));
-  }, [activeColorStr, width, wireframe]);
+    const isHorizontal = claddingOrientation === "horizontal";
+    const orient = isHorizontal ? "horizontal" : "vertical";
+    const repeats = isHorizontal
+      ? Math.max(1, Math.round(ridge / 0.6))
+      : Math.max(1, Math.round(width / 0.6));
+
+    const mat = createPBRCladdingMaterial(activeColorStr, orient, repeats);
+
+    const textures = [mat.map, mat.normalMap, mat.roughnessMap, mat.metalnessMap].filter(
+      Boolean,
+    ) as THREE.Texture[];
+    for (const t of textures) {
+      if (isHorizontal) {
+        t.rotation = Math.PI / 2;
+        t.center.set(0.5, 0.5);
+      } else {
+        t.rotation = 0;
+      }
+      t.needsUpdate = true;
+    }
+    return mat;
+  }, [activeColorStr, width, ridge, claddingOrientation, wireframe]);
 
   const outerGeom = useMemo(() => {
     const depth = isSandwich ? 0.002 : thickness;
@@ -341,6 +363,7 @@ function PurShedTriangle({
   onToggle,
   isSandwich = true,
   slopeDirection = "left-to-right",
+  claddingOrientation = "vertical",
 }: {
   width: number;
   eave: number;
@@ -352,6 +375,7 @@ function PurShedTriangle({
   onToggle?: () => void;
   isSandwich?: boolean;
   slopeDirection: "left-to-right" | "right-to-left";
+  claddingOrientation?: "vertical" | "horizontal";
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -376,8 +400,28 @@ function PurShedTriangle({
 
   const pbrMaterial = useMemo(() => {
     if (wireframe) return null;
-    return createPBRCladdingMaterial(activeColorStr, "vertical", Math.max(1, Math.round(width / 0.6)));
-  }, [activeColorStr, width, wireframe]);
+    const isHorizontal = claddingOrientation === "horizontal";
+    const orient = isHorizontal ? "horizontal" : "vertical";
+    const repeats = isHorizontal
+      ? Math.max(1, Math.round(highEave / 0.6))
+      : Math.max(1, Math.round(width / 0.6));
+
+    const mat = createPBRCladdingMaterial(activeColorStr, orient, repeats);
+
+    const textures = [mat.map, mat.normalMap, mat.roughnessMap, mat.metalnessMap].filter(
+      Boolean,
+    ) as THREE.Texture[];
+    for (const t of textures) {
+      if (isHorizontal) {
+        t.rotation = Math.PI / 2;
+        t.center.set(0.5, 0.5);
+      } else {
+        t.rotation = 0;
+      }
+      t.needsUpdate = true;
+    }
+    return mat;
+  }, [activeColorStr, width, highEave, claddingOrientation, wireframe]);
 
   const outerGeom = useMemo(() => {
     const depth = isSandwich ? 0.002 : thickness;
@@ -641,6 +685,7 @@ export function Cladding({
               onToggle={() => onTogglePanel?.("gable-front")}
               thickness={panelThickness}
               isSandwich={isSand}
+              claddingOrientation={p.claddingOrientation}
             />
           </group>
           <group position={[0, 0, L / 2 + (sz / 2 + panelThickness / 2) + offBack]}>
@@ -654,6 +699,7 @@ export function Cladding({
               onToggle={() => onTogglePanel?.("gable-back")}
               thickness={panelThickness}
               isSandwich={isSand}
+              claddingOrientation={p.claddingOrientation}
             />
           </group>
         </>
@@ -674,6 +720,7 @@ export function Cladding({
               thickness={panelThickness}
               isSandwich={isSand}
               slopeDirection="right-to-left"
+              claddingOrientation={p.claddingOrientation}
             />
           </group>
           <group position={[0, 0, L / 2 + (sz / 2 + panelThickness / 2) + offBack]}>
@@ -688,6 +735,7 @@ export function Cladding({
               thickness={panelThickness}
               isSandwich={isSand}
               slopeDirection="left-to-right"
+              claddingOrientation={p.claddingOrientation}
             />
           </group>
         </>
