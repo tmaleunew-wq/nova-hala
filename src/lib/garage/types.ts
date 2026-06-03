@@ -17,6 +17,19 @@ export interface GarageParams {
   roofColor: string;         // hex
   panelType: "trapezoid" | "sandwich";
   claddingOrientation: "vertical" | "horizontal";
+  // premium sandwich spec
+  insulationCore: "PIR" | "PUR" | "EPS" | "mineral";
+  wallPanelThicknessMm: number;   // core thickness [mm]
+  roofPanelThicknessMm: number;   // core thickness [mm]
+  outerSheetMm: number;           // outer steel sheet [mm]
+  innerSheetMm: number;           // inner steel sheet [mm]
+  coatingType: "HDX" | "Pural" | "PVDF" | "Polyester";
+  coatingThicknessUm: number;     // µm
+  zincCoatingGsm: number;         // g/m²
+  hiddenFastening: boolean;       // hidden joint for wall panels
+  fastenerGrade: "A2" | "A4" | "carbon";
+  sealingSystem: boolean;         // permanently flexible sealants + compression tapes
+  flashingMatchesPanels: boolean; // system trims same finish
   // openings
   doorWidth: number;
   doorHeight: number;
@@ -48,6 +61,18 @@ export const DEFAULT_PARAMS: GarageParams = {
   roofColor: "#2b2f36",
   panelType: "sandwich",
   claddingOrientation: "horizontal",
+  insulationCore: "PIR",
+  wallPanelThicknessMm: 100,
+  roofPanelThicknessMm: 120,
+  outerSheetMm: 0.6,
+  innerSheetMm: 0.5,
+  coatingType: "HDX",
+  coatingThicknessUm: 50,
+  zincCoatingGsm: 275,
+  hiddenFastening: true,
+  fastenerGrade: "A2",
+  sealingSystem: true,
+  flashingMatchesPanels: true,
   doorWidth: 2.5,
   doorHeight: 2.2,
   hasPersonalDoor: true,

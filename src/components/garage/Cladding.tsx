@@ -483,8 +483,10 @@ export function Cladding({
   const Hridge = ridgeHeight(p);
   const Hhi = highEave(p);
 
-  const panelThickness = p.panelType === "sandwich" ? (claddingConfig.wallCoreThickness / 1000) : 0.01;
-  const roofPanelThickness = p.panelType === "sandwich" ? (claddingConfig.roofCoreThickness / 1000) : 0.01;
+  const wallThickness = p.panelType === "sandwich" ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+  const roofThickness = p.panelType === "sandwich" ? Math.max(0.04, p.roofPanelThicknessMm / 1000) : 0.01;
+  const panelThickness = wallThickness;
+  const roofPanelThickness = roofThickness;
   const isSand = p.panelType === "sandwich";
   const sz = p.profileSize;
 
