@@ -98,7 +98,12 @@ function Gutters({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   const W = p.width;
   const Heave = p.clearHeight;
   const Hhi = highEave(p);
-  const ex = explodeY * 0.4;
+  const ex = explodeY * 1.5;
+
+  const wallThickness = p.panelType === "sandwich" ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+  const sz = p.profileSize;
+  const gapWidth = sz / 2 + wallThickness;
+
   const color = p.claddingColor || "#2a2d33";
   // gutter half-tube along each eave
   const radius = 0.06;
@@ -111,19 +116,19 @@ function Gutters({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   return (
     <group>
       {/* left eave gutter */}
-      <mesh position={[-W / 2 - 0.08 + ex * -1, Heave - 0.05, 0]} geometry={geom} rotation={[0, 0, Math.PI]} castShadow>
+      <mesh position={[-W / 2 - gapWidth - 0.08 - ex, Heave - 0.05, 0]} geometry={geom} rotation={[0, 0, Math.PI]} castShadow>
         <meshStandardMaterial color={color} metalness={0.6} roughness={0.4} side={THREE.DoubleSide} wireframe={p.wireframe} />
       </mesh>
       {/* right eave gutter */}
-      <mesh position={[W / 2 + 0.08 + ex, Hhi - 0.05, 0]} geometry={geom} castShadow>
+      <mesh position={[W / 2 + gapWidth + 0.08 + ex, Hhi - 0.05, 0]} geometry={geom} castShadow>
         <meshStandardMaterial color={color} metalness={0.6} roughness={0.4} side={THREE.DoubleSide} wireframe={p.wireframe} />
       </mesh>
       {/* downpipes */}
-      {[-1, 1].map((sz) =>
+      {[-1, 1].map((szSign) =>
         [-1, 1].map((sx) => (
           <mesh
-            key={`dp-${sx}-${sz}`}
-            position={[sx * (W / 2 + 0.1) + ex * sx, (Heave) / 2 - 0.05, sz * (L / 2 - 0.2)]}
+            key={`dp-${sx}-${szSign}`}
+            position={[sx * (W / 2 + gapWidth + 0.1) + ex * sx, (Heave) / 2 - 0.05, szSign * (L / 2 - 0.2)]}
             castShadow
           >
             <cylinderGeometry args={[0.04, 0.04, Heave - 0.05, 16]} />
