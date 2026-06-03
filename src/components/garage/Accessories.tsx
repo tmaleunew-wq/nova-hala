@@ -369,6 +369,8 @@ function EaveFlashings({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   const leftX = -W / 2 - gapWidth - ex * 1.5;
   const rightX = W / 2 + gapWidth + ex * 1.5;
 
+  const legWidth = gapWidth + 0.04;
+
   return (
     <group>
       {/* Left Eave Flashing */}
@@ -380,6 +382,14 @@ function EaveFlashings({ p, explodeY }: { p: GarageParams; explodeY: number }) {
       >
         <boxGeometry args={[L + 0.02, fh, t]} />
       </mesh>
+      {/* Left Eave Flashing Horizontal Leg */}
+      <mesh
+        position={[leftX + legWidth / 2, leftH + sz / 2 - t / 2, 0]}
+        castShadow
+        material={mat}
+      >
+        <boxGeometry args={[legWidth, t, L + 0.02]} />
+      </mesh>
 
       {/* Right Eave Flashing */}
       <mesh
@@ -389,6 +399,14 @@ function EaveFlashings({ p, explodeY }: { p: GarageParams; explodeY: number }) {
         material={mat}
       >
         <boxGeometry args={[L + 0.02, fh, t]} />
+      </mesh>
+      {/* Right Eave Flashing Horizontal Leg */}
+      <mesh
+        position={[rightX - legWidth / 2, rightH + sz / 2 - t / 2, 0]}
+        castShadow
+        material={mat}
+      >
+        <boxGeometry args={[legWidth, t, L + 0.02]} />
       </mesh>
     </group>
   );
