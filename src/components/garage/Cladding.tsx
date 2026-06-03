@@ -354,7 +354,9 @@ export function Cladding({
   const Hridge = ridgeHeight(p);
   const Hhi = highEave(p);
 
-  const panelThickness = p.panelType === "sandwich" ? 0.08 : 0.01;
+  const wallThickness = p.panelType === "sandwich" ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+  const roofThickness = p.panelType === "sandwich" ? Math.max(0.04, p.roofPanelThicknessMm / 1000) : 0.01;
+  const panelThickness = wallThickness;
   const isSand = p.panelType === "sandwich";
 
   // openings
@@ -566,7 +568,7 @@ export function Cladding({
 
                     const id = `roof-${sideName}-${i}`;
                     return (
-                      <group key={id} position={[0, zStart, panelThickness / 2]}>
+                      <group key={id} position={[0, zStart, roofThickness / 2]}>
                         <PurPanel
                           id={id}
                           width={slopeLen}
@@ -577,7 +579,7 @@ export function Cladding({
                           wireframe={p.wireframe}
                           visible={!removedPanels[id]}
                           onToggle={() => onTogglePanel?.(id)}
-                          thickness={panelThickness}
+                          thickness={roofThickness}
                           isSandwich={isSand}
                           claddingOrientation={p.claddingOrientation}
                         />
@@ -603,7 +605,7 @@ export function Cladding({
 
             const id = `roof-${i}`;
             return (
-              <group key={id} position={[0, zStart, panelThickness / 2]}>
+              <group key={id} position={[0, zStart, roofThickness / 2]}>
                 <PurPanel
                   id={id}
                   width={slopeLen}
@@ -614,7 +616,7 @@ export function Cladding({
                   wireframe={p.wireframe}
                   visible={!removedPanels[id]}
                   onToggle={() => onTogglePanel?.(id)}
-                  thickness={panelThickness}
+                  thickness={roofThickness}
                   isSandwich={isSand}
                   claddingOrientation={p.claddingOrientation}
                 />

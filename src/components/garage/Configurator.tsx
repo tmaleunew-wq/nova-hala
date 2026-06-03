@@ -13,6 +13,7 @@ import { Accessories } from "./Accessories";
 import { Foundation } from "./Foundation";
 import { setupProceduralEnvMap } from "@/lib/garage/pbrMaterialHelper";
 import { PriceCalculator } from "./PriceCalculator";
+import { PremiumSpecPanel } from "./PremiumSpecPanel";
 
 type ViewPreset = "iso" | "plan" | "front" | "side";
 
@@ -188,6 +189,32 @@ export default function Configurator() {
       panelType: { value: initialUrlParams.panelType ?? DEFAULT_PARAMS.panelType, options: { "Trapézový plech": "trapezoid", "Sendvičové panely": "sandwich" }, label: "Typ" },
       claddingOrientation: { value: initialUrlParams.claddingOrientation ?? DEFAULT_PARAMS.claddingOrientation, options: { "Vertikálne": "vertical", "Pozdĺžne": "horizontal" }, label: "Smer panelov" },
     }),
+    "Prémiový sendvič": folder({
+      insulationCore: {
+        value: initialUrlParams.insulationCore ?? DEFAULT_PARAMS.insulationCore,
+        options: { "PIR (odporúčané)": "PIR", "PUR": "PUR", "EPS": "EPS", "Minerálna vlna": "mineral" },
+        label: "Jadro",
+      },
+      wallPanelThicknessMm: { value: initialUrlParams.wallPanelThicknessMm ?? DEFAULT_PARAMS.wallPanelThicknessMm, min: 60, max: 200, step: 10, label: "Stena [mm]" },
+      roofPanelThicknessMm: { value: initialUrlParams.roofPanelThicknessMm ?? DEFAULT_PARAMS.roofPanelThicknessMm, min: 80, max: 240, step: 10, label: "Strecha [mm]" },
+      outerSheetMm: { value: initialUrlParams.outerSheetMm ?? DEFAULT_PARAMS.outerSheetMm, min: 0.4, max: 1.0, step: 0.05, label: "Vonk. plech [mm]" },
+      innerSheetMm: { value: initialUrlParams.innerSheetMm ?? DEFAULT_PARAMS.innerSheetMm, min: 0.4, max: 0.8, step: 0.05, label: "Vnút. plech [mm]" },
+      coatingType: {
+        value: initialUrlParams.coatingType ?? DEFAULT_PARAMS.coatingType,
+        options: { "HDX (PU 50µm)": "HDX", "Pural (PU 50µm)": "Pural", "PVDF": "PVDF", "Polyester": "Polyester" },
+        label: "Povrch",
+      },
+      coatingThicknessUm: { value: initialUrlParams.coatingThicknessUm ?? DEFAULT_PARAMS.coatingThicknessUm, min: 25, max: 100, step: 5, label: "Lak [µm]" },
+      zincCoatingGsm: { value: initialUrlParams.zincCoatingGsm ?? DEFAULT_PARAMS.zincCoatingGsm, min: 100, max: 450, step: 25, label: "Zinok [g/m²]" },
+      hiddenFastening: { value: initialUrlParams.hiddenFastening ?? DEFAULT_PARAMS.hiddenFastening, label: "Skryté kotvenie" },
+      fastenerGrade: {
+        value: initialUrlParams.fastenerGrade ?? DEFAULT_PARAMS.fastenerGrade,
+        options: { "Nerez A2": "A2", "Nerez A4 (prímorské)": "A4", "Pozinkovaná oceľ": "carbon" },
+        label: "Skrutky",
+      },
+      sealingSystem: { value: initialUrlParams.sealingSystem ?? DEFAULT_PARAMS.sealingSystem, label: "Tesnenia a tmely" },
+      flashingMatchesPanels: { value: initialUrlParams.flashingMatchesPanels ?? DEFAULT_PARAMS.flashingMatchesPanels, label: "Systémové klampiarstvo" },
+    }),
     "Otvory": folder({
       doorWidth: { value: initialUrlParams.doorWidth ?? DEFAULT_PARAMS.doorWidth, min: 2, max: 4, step: 0.1, label: "Brána Š [m]" },
       doorHeight: { value: initialUrlParams.doorHeight ?? DEFAULT_PARAMS.doorHeight, min: 1.8, max: 3, step: 0.1, label: "Brána V [m]" },
@@ -318,6 +345,7 @@ export default function Configurator() {
       </div>
 
       <PriceCalculator p={typedParams} />
+      <PremiumSpecPanel p={typedParams} />
 
       {/* Dimensions strip */}
       <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded border border-white/10 bg-black/50 px-3 py-1.5 font-mono text-[10px] text-white/60 backdrop-blur">
