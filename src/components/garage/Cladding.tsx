@@ -5,10 +5,11 @@ import type { GarageParams } from "@/lib/garage/types";
 import { ridgeHeight, highEave, getFrameZ } from "./Structure";
 import { makeTrapezoidTexture } from "@/lib/garage/textures";
 import { createPBRCladdingMaterial } from "@/lib/garage/pbrMaterialHelper";
+import { getCladdingConfig } from "@/lib/garage/configHelper";
 
 interface Rect {
-  cx: number; // hole center along panel width (panel local X)
-  cy: number; // hole center from bottom of panel (panel local Y, 0 = ground)
+  cx: number;
+  cy: number;
   w: number;
   h: number;
 }
@@ -186,7 +187,7 @@ function PurPanel({
       {isSandwich && coreGeom && (
         <mesh geometry={coreGeom} castShadow receiveShadow>
           <meshStandardMaterial
-            color={hovered ? "#faf3cc" : "#e6dfb3"} // Polyurethane core yellow
+            color={hovered ? "#faf3cc" : "#e6dfb3"}
             metalness={0.05}
             roughness={0.9}
             side={THREE.DoubleSide}
@@ -197,7 +198,7 @@ function PurPanel({
       {isSandwich && innerGeom && (
         <mesh geometry={innerGeom} castShadow receiveShadow>
           <meshStandardMaterial
-            color={hovered ? "#ffffff" : "#f1f3f5"} // Off-white inner skin
+            color={hovered ? "#ffffff" : "#f1f3f5"}
             metalness={0.55}
             roughness={0.55}
             side={THREE.DoubleSide}
@@ -284,20 +285,14 @@ function PurGableTriangle({
     document.body.style.cursor = "default";
   };
 
-    const handleClick = (e: any) => {
+  const handleClick = (e: any) => {
     e.stopPropagation();
     if (onToggle) onToggle();
   };
 
   if (!visible) {
-    const ghostGeom = useMemo(() => {
-      const g = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false, curveSegments: 1 });
-      g.translate(0, 0, -thickness / 2);
-      return g;
-    }, [shape, thickness]);
     return (
       <mesh
-        geometry={ghostGeom}
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
         onClick={handleClick}
@@ -334,6 +329,7 @@ function PurGableTriangle({
     </group>
   );
 }
+
 export function Cladding({
   p,
   explodeY,
@@ -345,6 +341,9 @@ export function Cladding({
   removedPanels?: Record<string, boolean>;
   onTogglePanel?: (id: string) => void;
 }) {
+  const clientName = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("client") : null;
+  const claddingConfig = getCladdingConfig(clientName);
+
   const wallTex = useMemo(() => makeTrapezoidTexture(p.claddingColor, 50), [p.claddingColor]);
   const roofTex = useMemo(() => makeTrapezoidTexture(p.roofColor, 50), [p.roofColor]);
 
@@ -354,8 +353,10 @@ export function Cladding({
   const Hridge = ridgeHeight(p);
   const Hhi = highEave(p);
 
-  const panelThickness = p.panelType === "sandwich" ? 0.08 : 0.01;
+  const panelThickness = p.panelType === "sandwich" ? (claddingConfig.wallCoreThickness / 1000) : 0.01;
+  const roofPanelThickness = p.panelType === "sandwich" ? (claddingConfig.roofCoreThickness / 1000) : 0.01;
   const isSand = p.panelType === "sandwich";
+  const sz = p.profileSize;
 
   // openings
   const doorHole: Rect = { cx: 0, cy: p.doorHeight / 2 + 0.02, w: p.doorWidth, h: p.doorHeight };
@@ -378,7 +379,7 @@ export function Cladding({
   return (
     <group>
       {/* FRONT (z=-L/2), normal -Z */}
-      <group position={[0, 0, -L / 2 + offFront]} rotation={[0, Math.PI, 0]}>
+      <group position={[0, 0, -L / 2 - (sz / 2 + panelThickness / 2) + offFront]} rotation={[0, Math.PI, 0]}>
         <PurPanel
           id="front"
           width={W}
@@ -396,7 +397,7 @@ export function Cladding({
       </group>
 
       {/* BACK (z=+L/2), normal +Z */}
-      <group position={[0, 0, L / 2 + offBack]}>
+      <group position={[0, 0, L / 2 + (sz / 2 + panelThickness / 2) + offBack]}>
         <PurPanel
           id="back"
           width={W}
@@ -414,7 +415,7 @@ export function Cladding({
       </group>
 
       {/* LEFT (x=-W/2), normal -X. Panel width along Z. */}
-      <group position={[-W / 2 + offLeft, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
+      <group position={[-W / 2 - (sz / 2 + panelThickness / 2) + offLeft, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
         {zs.map((z, i) => {
           if (i === zs.length - 1) return null;
           const zStart = zs[i];
@@ -422,26 +423,15 @@ export function Cladding({
           const zCenter = (zStart + zEnd) / 2;
           const w = zEnd - zStart;
 
-          // Find holes in this bay
           const bayHoles: Rect[] = [];
           if (p.personalDoorSide === "left" && p.hasPersonalDoor) {
             if (personalHole.cx + personalHole.w / 2 > zStart && personalHole.cx - personalHole.w / 2 < zEnd) {
-              bayHoles.push({
-                cx: personalHole.cx - zCenter,
-                cy: personalHole.cy,
-                w: personalHole.w,
-                h: personalHole.h,
-              });
+              bayHoles.push({ cx: personalHole.cx - zCenter, cy: personalHole.cy, w: personalHole.w, h: personalHole.h });
             }
           }
           for (const wRect of winSpread) {
             if (wRect.cx + wRect.w / 2 > zStart && wRect.cx - wRect.w / 2 < zEnd) {
-              bayHoles.push({
-                cx: wRect.cx - zCenter,
-                cy: wRect.cy,
-                w: wRect.w,
-                h: wRect.h,
-              });
+              bayHoles.push({ cx: wRect.cx - zCenter, cy: wRect.cy, w: wRect.w, h: wRect.h });
             }
           }
 
@@ -468,7 +458,7 @@ export function Cladding({
       </group>
 
       {/* RIGHT (x=+W/2), normal +X. Panel width along Z. */}
-      <group position={[W / 2 + offRight, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+      <group position={[W / 2 + (sz / 2 + panelThickness / 2) + offRight, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
         {zs.map((z, i) => {
           if (i === zs.length - 1) return null;
           const zStart = zs[i];
@@ -476,16 +466,10 @@ export function Cladding({
           const zCenter = (zStart + zEnd) / 2;
           const w = zEnd - zStart;
 
-          // Find holes in this bay
           const bayHoles: Rect[] = [];
           if (p.personalDoorSide === "right" && p.hasPersonalDoor) {
             if (personalHole.cx + personalHole.w / 2 > zStart && personalHole.cx - personalHole.w / 2 < zEnd) {
-              bayHoles.push({
-                cx: zCenter - personalHole.cx,
-                cy: personalHole.cy,
-                w: personalHole.w,
-                h: personalHole.h,
-              });
+              bayHoles.push({ cx: zCenter - personalHole.cx, cy: personalHole.cy, w: personalHole.w, h: personalHole.h });
             }
           }
 
@@ -514,7 +498,7 @@ export function Cladding({
       {/* GABLE TRIANGLES on front/back */}
       {p.roofType === "gable" && (
         <>
-          <group position={[0, 0, -L / 2 + offFront]}>
+          <group position={[0, 0, -L / 2 - (sz / 2 + panelThickness / 2) + offFront]}>
             <PurGableTriangle
               width={W}
               eave={Heave}
@@ -527,7 +511,7 @@ export function Cladding({
               isSandwich={isSand}
             />
           </group>
-          <group position={[0, 0, L / 2 + offBack]}>
+          <group position={[0, 0, L / 2 + (sz / 2 + panelThickness / 2) + offBack]}>
             <PurGableTriangle
               width={W}
               eave={Heave}
@@ -556,17 +540,16 @@ export function Cladding({
                 <group
                   key={`roof-${sideName}`}
                   position={[(s * halfW) / 2, (Heave + Hridge) / 2 + offRoof, 0]}
-                  rotation={[-Math.PI / 2, -s * angle, 0]}
+                  rotation={[-Math.PI / 2, s * angle, 0]}
                 >
                   {zs.map((z, i) => {
                     if (i === zs.length - 1) return null;
                     const zStart = zs[i];
                     const zEnd = zs[i + 1];
                     const w = zEnd - zStart;
-
                     const id = `roof-${sideName}-${i}`;
                     return (
-                      <group key={id} position={[0, zStart, panelThickness / 2]}>
+                      <group key={id} position={[0, zStart, sz / 2 + roofPanelThickness / 2]}>
                         <PurPanel
                           id={id}
                           width={slopeLen}
@@ -577,7 +560,7 @@ export function Cladding({
                           wireframe={p.wireframe}
                           visible={!removedPanels[id]}
                           onToggle={() => onTogglePanel?.(id)}
-                          thickness={panelThickness}
+                          thickness={roofPanelThickness}
                           isSandwich={isSand}
                           claddingOrientation={p.claddingOrientation}
                         />
@@ -600,10 +583,9 @@ export function Cladding({
             const zEnd = zs[i + 1];
             const w = zEnd - zStart;
             const slopeLen = Math.hypot(W, Hhi - Heave);
-
             const id = `roof-${i}`;
             return (
-              <group key={id} position={[0, zStart, panelThickness / 2]}>
+              <group key={id} position={[0, zStart, sz / 2 + roofPanelThickness / 2]}>
                 <PurPanel
                   id={id}
                   width={slopeLen}
@@ -614,7 +596,7 @@ export function Cladding({
                   wireframe={p.wireframe}
                   visible={!removedPanels[id]}
                   onToggle={() => onTogglePanel?.(id)}
-                  thickness={panelThickness}
+                  thickness={roofPanelThickness}
                   isSandwich={isSand}
                   claddingOrientation={p.claddingOrientation}
                 />

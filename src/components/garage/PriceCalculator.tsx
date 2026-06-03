@@ -2,12 +2,16 @@ import { useState } from "react";
 import type { GarageParams } from "@/lib/garage/types";
 import { ridgeHeight, highEave } from "./Structure";
 import { toast } from "sonner";
+import { getCladdingConfig } from "@/lib/garage/configHelper";
 
 interface PriceCalculatorProps {
   p: GarageParams;
 }
 
 export function PriceCalculator({ p }: PriceCalculatorProps) {
+  const clientName = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("client") : null;
+  const claddingConfig = getCladdingConfig(clientName);
+
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -101,7 +105,7 @@ export function PriceCalculator({ p }: PriceCalculatorProps) {
     roofArea = Math.hypot(W, Hhi - Heave) * L;
   }
   const totalCladdingArea = wallArea + gableArea + roofArea;
-  const panelPricePerSqM = p.panelType === "sandwich" ? 32.50 : 16.80; // EUR/m2
+  const panelPricePerSqM = p.panelType === "sandwich" ? claddingConfig.sandwichPricePerSqM : claddingConfig.trapezoidPricePerSqM; // EUR/m2
   const claddingCost = totalCladdingArea * panelPricePerSqM;
 
   // 3. Components
@@ -191,6 +195,23 @@ export function PriceCalculator({ p }: PriceCalculatorProps) {
           </div>
         </div>
 
+        {/* Špecifikácia opláštenia */}
+        <div className="mt-3 border-t border-white/10 pt-2 text-[10px] text-white/70 space-y-1">
+          <div className="font-bold text-emerald-400 uppercase tracking-wider text-[9px] mb-1">Špecifikácia opláštenia</div>
+          <div className="leading-snug">Izolant: <span className="text-white">{claddingConfig.insulationMaterial}</span></div>
+          {p.panelType === "sandwich" && (
+            <>
+              <div>Hrúbka jadra (steny): <span className="text-white">{claddingConfig.wallCoreThickness} mm</span></div>
+              <div>Hrúbka jadra (strecha): <span className="text-white">{claddingConfig.roofCoreThickness} mm</span></div>
+              <div className="leading-snug">Spoje a kotvenie: <span className="text-white">{claddingConfig.jointType}</span></div>
+            </>
+          )}
+          <div>Plechy: <span className="text-white">vonk. {claddingConfig.sheetThicknessOuter} mm / vnút. {claddingConfig.sheetThicknessInner} mm</span></div>
+          <div className="leading-snug">Povrch a zinok: <span className="text-white">{claddingConfig.surfaceCoating}, {claddingConfig.galvanization}</span></div>
+          <div className="leading-snug">Kotvenie: <span className="text-white">{claddingConfig.fasteners}</span></div>
+          <div className="leading-snug">Detaily a tesnenie: <span className="text-white">{claddingConfig.flashingsAndSeals}</span></div>
+        </div>
+
         <button
           onClick={() => setShowForm(true)}
           className="mt-3 w-full rounded bg-emerald-400 py-1.5 text-center text-xs font-bold text-black transition hover:bg-emerald-300"
@@ -273,6 +294,18 @@ export function PriceCalculator({ p }: PriceCalculatorProps) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {claddingConfig.staticWarning && (
+        <div className="absolute top-16 left-4 z-10 max-w-xs rounded-lg border border-amber-500/30 bg-black/85 p-3.5 font-mono text-white shadow-2xl backdrop-blur-md">
+          <div className="flex items-start gap-2.5">
+            <span className="text-amber-400 text-lg">⚠️</span>
+            <div className="space-y-1">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-amber-400">STATICKÉ UPOZORNENIE</h4>
+              <p className="text-[10px] text-amber-200/90 leading-relaxed">{claddingConfig.staticWarning}</p>
+            </div>
           </div>
         </div>
       )}

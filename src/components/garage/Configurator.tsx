@@ -243,10 +243,16 @@ export default function Configurator() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const currentParams = new URLSearchParams(window.location.search);
+    const client = currentParams.get("client");
+
     const searchParams = new URLSearchParams();
     const keys = Object.keys(DEFAULT_PARAMS) as (keyof GarageParams)[];
     for (const key of keys) {
       searchParams.set(key, String(typedParams[key]));
+    }
+    if (client) {
+      searchParams.set("client", client);
     }
     const newRelativePathQuery = window.location.pathname + "?" + searchParams.toString();
     window.history.replaceState(null, "", newRelativePathQuery);

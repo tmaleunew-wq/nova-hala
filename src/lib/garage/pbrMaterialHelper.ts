@@ -20,13 +20,13 @@ export function createPBRCladdingMaterial(
   const map = makeTrapezoidTexture(color, repeats);
 
   // 2. Generate high-resolution Normal map to simulate 3D corrugation (prevents Z-fighting)
-  const normalMap = makeTrapezoidNormalTexture(repeats, orientation, 0.15, 60);
+  const normalMap = makeTrapezoidNormalTexture(repeats, "vertical", 0.15, 60);
 
   // 3. Generate Roughness map for realistic micro-surface reflection variations
-  const roughnessMap = makeTrapezoidRoughnessTexture(repeats, orientation, 0.45);
+  const roughnessMap = makeTrapezoidRoughnessTexture(repeats, "vertical", 0.45);
 
   // 4. Generate Metalness map representing a sheet-metal panel
-  const metalnessMap = makeTrapezoidMetalnessTexture(repeats, orientation, 0.85);
+  const metalnessMap = makeTrapezoidMetalnessTexture(repeats, "vertical", 0.85);
 
   // Configure wrapping, repeats, and filters for all texture layers
   const textures = [map, normalMap, roughnessMap, metalnessMap];

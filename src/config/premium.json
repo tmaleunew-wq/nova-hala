@@ -1,0 +1,15 @@
+{
+  "insulationMaterial": "PIR (Polyizokyanurát) pre vysokú požiarnu odolnosť a tepelnú stabilitu",
+  "wallCoreThickness": 100,
+  "roofCoreThickness": 120,
+  "sheetThicknessOuter": 0.6,
+  "sheetThicknessInner": 0.5,
+  "surfaceCoating": "Hrubovrstvý polyuretán (napr. HDX, Pural, hrúbka min. 50 µm)",
+  "galvanization": "Z275 g/m²",
+  "jointType": "Skrytý spoj (skryté kotvenie) pre stenové panely",
+  "fasteners": "Nerezové samovrtné skrutky (trieda A2 alebo A4) s EPDM podložkou, dimenzované na hrúbku steny podkladového jaklu",
+  "flashingsAndSeals": "Kompletný systém systémových klampiarskych prvkov zhodných s povrchovou úpravou panelov. Trvale pružné tmely a komprimačné pásky do spojov a rohov na zamedzenie infiltrácie vzduchu a tepelných mostov.",
+  "staticWarning": "Upozornenie: Existujúca konštrukcia musí byť overená na dodatočné zaťaženie sendvičovými panelmi (cca 11-15 kg/m² v závislosti od hrúbky) a sanie vetra. Pred objednaním musíte nechať statikovi prepočítať rozteč a únosnosť aktuálnych profilov. Opláštenie je len tak kvalitné, ako podklad, na ktorom drží.",
+  "sandwichPricePerSqM": 54.80,
+  "trapezoidPricePerSqM": 16.80
+}

@@ -1,0 +1,16 @@
+{
+  "panelType": "sandwich",
+  "insulationMaterial": "PUR (Polyuretán)",
+  "wallCoreThickness": 80,
+  "roofCoreThickness": 100,
+  "sheetThicknessOuter": 0.5,
+  "sheetThicknessInner": 0.4,
+  "surfaceCoating": "Polyester (PES) 25 µm",
+  "galvanization": "Z225 g/m²",
+  "jointType": "Viditeľný spoj",
+  "fasteners": "Pozinkované skrutky s EPDM podložkou",
+  "flashingsAndSeals": "Štandardné klampiarske prvky",
+  "staticWarning": "",
+  "sandwichPricePerSqM": 32.50,
+  "trapezoidPricePerSqM": 16.80
+}
