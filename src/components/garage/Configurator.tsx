@@ -149,14 +149,14 @@ function getParamsFromURL(): Partial<GarageParams> {
   const keys = Object.keys(DEFAULT_PARAMS) as (keyof GarageParams)[];
   for (const key of keys) {
     const val = searchParams.get(key);
-    if (val !== null) {
-      if (typeof DEFAULT_PARAMS[key] === "number") {
-        parsed[key] = parseFloat(val) as any;
-      } else if (typeof DEFAULT_PARAMS[key] === "boolean") {
-        parsed[key] = (val === "true") as any;
-      } else {
-        parsed[key] = val as any;
-      }
+    if (val === null || val === "undefined" || val === "NaN") continue;
+    if (typeof DEFAULT_PARAMS[key] === "number") {
+      const n = parseFloat(val);
+      if (Number.isFinite(n)) parsed[key] = n as any;
+    } else if (typeof DEFAULT_PARAMS[key] === "boolean") {
+      parsed[key] = (val === "true") as any;
+    } else {
+      parsed[key] = val as any;
     }
   }
   return parsed;
