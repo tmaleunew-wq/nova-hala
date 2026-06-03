@@ -2,7 +2,7 @@ import "@react-three/fiber";
 import * as THREE from "three";
 import { useMemo } from "react";
 import type { GarageParams } from "@/lib/garage/types";
-import { ridgeHeight, highEave } from "./Structure";
+import { ridgeHeight, highEave, getFrameZ } from "./Structure";
 
 /** Sectional door panels (front). */
 function SectionalDoor({ p, explodeY }: { p: GarageParams; explodeY: number }) {
@@ -163,6 +163,49 @@ function CornerFlashings({ p, explodeY }: { p: GarageParams; explodeY: number })
   );
 }
 
+function JointFlashings({ p, explodeY }: { p: GarageParams; explodeY: number }) {
+  const W = p.width;
+  const Heave = p.clearHeight;
+  const Hhi = highEave(p);
+  const ex = explodeY * 1.5;
+  const wallThickness = p.panelType === "sandwich" ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+  const sz = p.profileSize;
+
+  const t = 0.002; // very thin flashing
+  const jw = 0.08; // 80mm width to cover the joint neatly
+  const color = p.claddingColor || "#3a4048";
+
+  const zs = getFrameZ(p);
+  const intermediateZs = zs.slice(1, -1); // skip corners
+
+  return (
+    <group>
+      {intermediateZs.map((z, i) => {
+        const rH = p.roofType === "shed" ? Hhi : Heave;
+        return (
+          <group key={i}>
+            {/* Left wall joint flashing */}
+            <group position={[-W / 2 - (sz / 2 + wallThickness) - ex - t / 2 - 0.001, Heave / 2, z]} rotation={[0, -Math.PI / 2, 0]}>
+              <mesh castShadow receiveShadow>
+                <boxGeometry args={[jw, Heave, t]} />
+                <meshStandardMaterial color={color} metalness={0.5} roughness={0.5} wireframe={p.wireframe} />
+              </mesh>
+            </group>
+
+            {/* Right wall joint flashing */}
+            <group position={[W / 2 + (sz / 2 + wallThickness) + ex + t / 2 + 0.001, rH / 2, z]} rotation={[0, Math.PI / 2, 0]}>
+              <mesh castShadow receiveShadow>
+                <boxGeometry args={[jw, rH, t]} />
+                <meshStandardMaterial color={color} metalness={0.5} roughness={0.5} wireframe={p.wireframe} />
+              </mesh>
+            </group>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
 export function Accessories({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   return (
     <group>
@@ -171,6 +214,7 @@ export function Accessories({ p, explodeY }: { p: GarageParams; explodeY: number
       <Windows p={p} explodeY={explodeY} />
       <Gutters p={p} explodeY={explodeY} />
       <CornerFlashings p={p} explodeY={explodeY} />
+      <JointFlashings p={p} explodeY={explodeY} />
       {/* Ridge cap */}
       {p.roofType === "gable" && (
         <mesh position={[0, ridgeHeight(p) + 0.02 + explodeY * 1.4, 0]} castShadow>
