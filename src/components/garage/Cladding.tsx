@@ -568,7 +568,7 @@ export function Cladding({
 
                     const id = `roof-${sideName}-${i}`;
                     return (
-                      <group key={id} position={[0, zStart, panelThickness / 2]}>
+                      <group key={id} position={[0, zStart, roofThickness / 2]}>
                         <PurPanel
                           id={id}
                           width={slopeLen}
@@ -579,7 +579,7 @@ export function Cladding({
                           wireframe={p.wireframe}
                           visible={!removedPanels[id]}
                           onToggle={() => onTogglePanel?.(id)}
-                          thickness={panelThickness}
+                          thickness={roofThickness}
                           isSandwich={isSand}
                           claddingOrientation={p.claddingOrientation}
                         />
@@ -605,7 +605,7 @@ export function Cladding({
 
             const id = `roof-${i}`;
             return (
-              <group key={id} position={[0, zStart, panelThickness / 2]}>
+              <group key={id} position={[0, zStart, roofThickness / 2]}>
                 <PurPanel
                   id={id}
                   width={slopeLen}
@@ -616,7 +616,7 @@ export function Cladding({
                   wireframe={p.wireframe}
                   visible={!removedPanels[id]}
                   onToggle={() => onTogglePanel?.(id)}
-                  thickness={panelThickness}
+                  thickness={roofThickness}
                   isSandwich={isSand}
                   claddingOrientation={p.claddingOrientation}
                 />
