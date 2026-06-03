@@ -138,22 +138,23 @@ function CornerFlashings({ p, explodeY }: { p: GarageParams; explodeY: number })
   const W = p.width;
   const L = p.length;
   const Heave = p.clearHeight;
+  const Hhi = highEave(p);
   const ex = explodeY * 0.6;
   const t = 0.015;
   const cw = 0.12;
   // 4 vertical corners
-  const corners: [number, number, number][] = [
-    [-W / 2 - ex, Heave / 2, -L / 2 - ex],
-    [W / 2 + ex, Heave / 2, -L / 2 - ex],
-    [-W / 2 - ex, Heave / 2, L / 2 + ex],
-    [W / 2 + ex, Heave / 2, L / 2 + ex],
+  const corners: { pos: [number, number, number]; h: number }[] = [
+    { pos: [-W / 2 - ex, Heave / 2, -L / 2 - ex], h: Heave },
+    { pos: [W / 2 + ex, (p.roofType === "shed" ? Hhi : Heave) / 2, -L / 2 - ex], h: p.roofType === "shed" ? Hhi : Heave },
+    { pos: [-W / 2 - ex, Heave / 2, L / 2 + ex], h: Heave },
+    { pos: [W / 2 + ex, (p.roofType === "shed" ? Hhi : Heave) / 2, L / 2 + ex], h: p.roofType === "shed" ? Hhi : Heave },
   ];
   return (
     <group>
-      {corners.map((pos, i) => (
-        <group key={i} position={pos} rotation={[0, (i % 2 === 0 ? 1 : -1) * Math.PI / 4, 0]}>
+      {corners.map((c, i) => (
+        <group key={i} position={c.pos} rotation={[0, (i % 2 === 0 ? 1 : -1) * Math.PI / 4, 0]}>
           <mesh castShadow>
-            <boxGeometry args={[cw, Heave, t]} />
+            <boxGeometry args={[cw, c.h, t]} />
             <meshStandardMaterial color="#2a2d33" metalness={0.7} roughness={0.45} wireframe={p.wireframe} />
           </mesh>
         </group>

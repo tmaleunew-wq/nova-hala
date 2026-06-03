@@ -61,9 +61,9 @@ function PurPanel({
       const y0 = r.cy - r.h / 2;
       const y1 = r.cy + r.h / 2;
       path.moveTo(x0, y0);
-      path.lineTo(x1, y0);
-      path.lineTo(x1, y1);
       path.lineTo(x0, y1);
+      path.lineTo(x1, y1);
+      path.lineTo(x1, y0);
       path.lineTo(x0, y0);
       s.holes.push(path);
     }
@@ -330,6 +330,136 @@ function PurGableTriangle({
   );
 }
 
+function PurShedTriangle({
+  width,
+  eave,
+  highEave,
+  color,
+  thickness = 0.08,
+  wireframe = false,
+  visible = true,
+  onToggle,
+  isSandwich = true,
+  slopeDirection = "left-to-right",
+}: {
+  width: number;
+  eave: number;
+  highEave: number;
+  color: string;
+  thickness?: number;
+  wireframe?: boolean;
+  visible?: boolean;
+  onToggle?: () => void;
+  isSandwich?: boolean;
+  slopeDirection: "left-to-right" | "right-to-left";
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  const activeColor = hovered ? new THREE.Color(color).clone().multiplyScalar(1.15).getHexString() : color;
+  const activeColorStr = hovered ? `#${activeColor}` : color;
+
+  const shape = useMemo(() => {
+    const s = new THREE.Shape();
+    if (slopeDirection === "left-to-right") {
+      s.moveTo(-width / 2, eave);
+      s.lineTo(width / 2, eave);
+      s.lineTo(width / 2, highEave);
+      s.lineTo(-width / 2, eave);
+    } else {
+      s.moveTo(-width / 2, eave);
+      s.lineTo(width / 2, eave);
+      s.lineTo(-width / 2, highEave);
+      s.lineTo(-width / 2, eave);
+    }
+    return s;
+  }, [width, eave, highEave, slopeDirection]);
+
+  const pbrMaterial = useMemo(() => {
+    if (wireframe) return null;
+    return createPBRCladdingMaterial(activeColorStr, "vertical", Math.max(1, Math.round(width / 0.6)));
+  }, [activeColorStr, width, wireframe]);
+
+  const outerGeom = useMemo(() => {
+    const depth = isSandwich ? 0.002 : thickness;
+    const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 1 });
+    g.translate(0, 0, thickness / 2 - depth);
+    return g;
+  }, [shape, thickness, isSandwich]);
+
+  const coreGeom = useMemo(() => {
+    if (!isSandwich) return null;
+    const depth = thickness - 0.004;
+    const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 1 });
+    g.translate(0, 0, -depth / 2);
+    return g;
+  }, [shape, thickness, isSandwich]);
+
+  const innerGeom = useMemo(() => {
+    if (!isSandwich) return null;
+    const depth = 0.002;
+    const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 1 });
+    g.translate(0, 0, -thickness / 2);
+    return g;
+  }, [shape, thickness, isSandwich]);
+
+  const handlePointerOver = (e: any) => {
+    e.stopPropagation();
+    setHovered(true);
+    document.body.style.cursor = "pointer";
+  };
+
+  const handlePointerOut = (e: any) => {
+    e.stopPropagation();
+    setHovered(false);
+    document.body.style.cursor = "default";
+  };
+
+  const handleClick = (e: any) => {
+    e.stopPropagation();
+    if (onToggle) onToggle();
+  };
+
+  if (!visible) {
+    return (
+      <mesh
+        geometry={outerGeom}
+        onPointerOver={handlePointerOver}
+        onPointerOut={handlePointerOut}
+        onClick={handleClick}
+      >
+        <meshStandardMaterial
+          color={hovered ? "#34d399" : "#3b82f6"}
+          transparent
+          opacity={hovered ? 0.35 : 0.1}
+          wireframe
+        />
+      </mesh>
+    );
+  }
+
+  return (
+    <group
+      onPointerOver={handlePointerOver}
+      onPointerOut={handlePointerOut}
+      onClick={handleClick}
+    >
+      <mesh geometry={outerGeom} castShadow receiveShadow material={pbrMaterial || undefined}>
+        {wireframe && <meshStandardMaterial color={activeColorStr} side={THREE.DoubleSide} wireframe />}
+      </mesh>
+      {isSandwich && coreGeom && (
+        <mesh geometry={coreGeom} castShadow receiveShadow>
+          <meshStandardMaterial color={hovered ? "#faf3cc" : "#e6dfb3"} side={THREE.DoubleSide} metalness={0.05} roughness={0.9} wireframe={wireframe} />
+        </mesh>
+      )}
+      {isSandwich && innerGeom && (
+        <mesh geometry={innerGeom} castShadow receiveShadow>
+          <meshStandardMaterial color={hovered ? "#ffffff" : "#f1f3f5"} side={THREE.DoubleSide} metalness={0.55} roughness={0.55} wireframe={wireframe} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
 export function Cladding({
   p,
   explodeY,
@@ -527,6 +657,40 @@ export function Cladding({
         </>
       )}
 
+      {/* SHED TRIANGLES on front/back */}
+      {p.roofType === "shed" && (
+        <>
+          <group position={[0, 0, -L / 2 - (sz / 2 + panelThickness / 2) + offFront]} rotation={[0, Math.PI, 0]}>
+            <PurShedTriangle
+              width={W}
+              eave={Heave}
+              highEave={Hhi}
+              color={p.claddingColor}
+              wireframe={p.wireframe}
+              visible={!removedPanels["shed-front"]}
+              onToggle={() => onTogglePanel?.("shed-front")}
+              thickness={panelThickness}
+              isSandwich={isSand}
+              slopeDirection="right-to-left"
+            />
+          </group>
+          <group position={[0, 0, L / 2 + (sz / 2 + panelThickness / 2) + offBack]}>
+            <PurShedTriangle
+              width={W}
+              eave={Heave}
+              highEave={Hhi}
+              color={p.claddingColor}
+              wireframe={p.wireframe}
+              visible={!removedPanels["shed-back"]}
+              onToggle={() => onTogglePanel?.("shed-back")}
+              thickness={panelThickness}
+              isSandwich={isSand}
+              slopeDirection="left-to-right"
+            />
+          </group>
+        </>
+      )}
+
       {/* ROOF */}
       {p.roofType === "gable" ? (
         <>
@@ -575,7 +739,7 @@ export function Cladding({
       ) : (
         <group
           position={[0, (Heave + Hhi) / 2 + offRoof, 0]}
-          rotation={[-Math.PI / 2, Math.atan2(Hhi - Heave, W), 0]}
+          rotation={[-Math.PI / 2, -Math.atan2(Hhi - Heave, W), 0]}
         >
           {zs.map((z, i) => {
             if (i === zs.length - 1) return null;
