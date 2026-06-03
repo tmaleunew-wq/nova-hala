@@ -354,7 +354,7 @@ function EaveFlashings({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   }), [color]);
 
   const t = 0.002;
-  const fh = 0.10; // 100mm height
+  const fh = 0.18; // 180mm height to match bargeboard face
   const gapWidth = sz / 2 + wallThickness;
 
   const leftH = Heave;
