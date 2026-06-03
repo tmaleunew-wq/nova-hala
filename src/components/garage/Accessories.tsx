@@ -384,7 +384,7 @@ function EaveFlashings({ p, explodeY }: { p: GarageParams; explodeY: number }) {
       </mesh>
       {/* Left Eave Flashing Horizontal Leg */}
       <mesh
-        position={[leftX + legWidth / 2, leftH + sz / 2 - t / 2, 0]}
+        position={[leftX + legWidth / 2, leftH + t / 2 + 0.001, 0]}
         castShadow
         material={mat}
       >
@@ -402,7 +402,7 @@ function EaveFlashings({ p, explodeY }: { p: GarageParams; explodeY: number }) {
       </mesh>
       {/* Right Eave Flashing Horizontal Leg */}
       <mesh
-        position={[rightX - legWidth / 2, rightH + sz / 2 - t / 2, 0]}
+        position={[rightX - legWidth / 2, rightH + t / 2 + 0.001, 0]}
         castShadow
         material={mat}
       >
