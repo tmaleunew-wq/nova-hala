@@ -558,7 +558,7 @@ export function Cladding({
       <group position={[0, 0, -L / 2 - (sz / 2 + panelThickness / 2) + offFront]} rotation={[0, Math.PI, 0]}>
         <PurPanel
           id="front"
-          width={W}
+          width={W + sz + panelThickness}
           height={Heave}
           holes={[doorHole]}
           texture={wallTex}
@@ -576,7 +576,7 @@ export function Cladding({
       <group position={[0, 0, L / 2 + (sz / 2 + panelThickness / 2) + offBack]}>
         <PurPanel
           id="back"
-          width={W}
+          width={W + sz + panelThickness}
           height={Heave}
           holes={p.personalDoorSide === "back" && p.hasPersonalDoor ? [{ cx: 0, cy: 1.0, w: 0.9, h: 2.0 }] : []}
           texture={wallTex}
@@ -596,8 +596,10 @@ export function Cladding({
           if (i === zs.length - 1) return null;
           const zStart = zs[i];
           const zEnd = zs[i + 1];
-          const zCenter = (zStart + zEnd) / 2;
-          const w = zEnd - zStart;
+          const actualStart = i === 0 ? zStart - (sz / 2 + panelThickness / 2) : zStart;
+          const actualEnd = i === zs.length - 2 ? zEnd + (sz / 2 + panelThickness / 2) : zEnd;
+          const w = actualEnd - actualStart;
+          const zCenter = (actualStart + actualEnd) / 2;
 
           const bayHoles: Rect[] = [];
           if (p.personalDoorSide === "left" && p.hasPersonalDoor) {
@@ -639,8 +641,10 @@ export function Cladding({
           if (i === zs.length - 1) return null;
           const zStart = zs[i];
           const zEnd = zs[i + 1];
-          const zCenter = (zStart + zEnd) / 2;
-          const w = zEnd - zStart;
+          const actualStart = i === 0 ? zStart - (sz / 2 + panelThickness / 2) : zStart;
+          const actualEnd = i === zs.length - 2 ? zEnd + (sz / 2 + panelThickness / 2) : zEnd;
+          const w = actualEnd - actualStart;
+          const zCenter = (actualStart + actualEnd) / 2;
 
           const bayHoles: Rect[] = [];
           if (p.personalDoorSide === "right" && p.hasPersonalDoor) {
@@ -676,7 +680,7 @@ export function Cladding({
         <>
           <group position={[0, 0, -L / 2 - (sz / 2 + panelThickness / 2) + offFront]}>
             <PurGableTriangle
-              width={W}
+              width={W + sz + panelThickness}
               eave={Heave}
               ridge={Hridge}
               color={p.claddingColor}
@@ -690,7 +694,7 @@ export function Cladding({
           </group>
           <group position={[0, 0, L / 2 + (sz / 2 + panelThickness / 2) + offBack]}>
             <PurGableTriangle
-              width={W}
+              width={W + sz + panelThickness}
               eave={Heave}
               ridge={Hridge}
               color={p.claddingColor}
@@ -710,7 +714,7 @@ export function Cladding({
         <>
           <group position={[0, 0, -L / 2 - (sz / 2 + panelThickness / 2) + offFront]} rotation={[0, Math.PI, 0]}>
             <PurShedTriangle
-              width={W}
+              width={W + sz + panelThickness}
               eave={Heave}
               highEave={Hhi}
               color={p.claddingColor}
@@ -725,7 +729,7 @@ export function Cladding({
           </group>
           <group position={[0, 0, L / 2 + (sz / 2 + panelThickness / 2) + offBack]}>
             <PurShedTriangle
-              width={W}
+              width={W + sz + panelThickness}
               eave={Heave}
               highEave={Hhi}
               color={p.claddingColor}
