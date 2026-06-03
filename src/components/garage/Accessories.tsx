@@ -109,14 +109,15 @@ function Gutters({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   const radius = 0.06;
   const geom = useMemo(() => {
     const c = new THREE.CylinderGeometry(radius, radius, L, 24, 1, true, 0, Math.PI);
-    c.rotateZ(Math.PI / 2);
+    c.rotateX(Math.PI / 2);
+    c.rotateZ(Math.PI);
     return c;
   }, [L]);
 
   return (
     <group>
       {/* left eave gutter */}
-      <mesh position={[-W / 2 - gapWidth - 0.08 - ex, Heave - 0.05, 0]} geometry={geom} rotation={[0, 0, Math.PI]} castShadow>
+      <mesh position={[-W / 2 - gapWidth - 0.08 - ex, Heave - 0.05, 0]} geometry={geom} castShadow>
         <meshStandardMaterial color={color} metalness={0.6} roughness={0.4} side={THREE.DoubleSide} wireframe={p.wireframe} />
       </mesh>
       {/* right eave gutter */}
