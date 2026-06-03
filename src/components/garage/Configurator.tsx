@@ -345,6 +345,7 @@ export default function Configurator() {
       </div>
 
       <PriceCalculator p={typedParams} />
+      <PremiumSpecPanel p={typedParams} />
 
       {/* Dimensions strip */}
       <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded border border-white/10 bg-black/50 px-3 py-1.5 font-mono text-[10px] text-white/60 backdrop-blur">
