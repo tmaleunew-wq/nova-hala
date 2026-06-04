@@ -141,4 +141,9 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+  
+  select option {
+    background-color: #161b22 !important;
+    color: #ffffff !important;
+  }
 }
