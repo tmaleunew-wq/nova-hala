@@ -16,7 +16,7 @@ function SectionalDoor({ p, explodeY }: { p: GarageParams; explodeY: number }) {
         return (
           <mesh key={i} position={[0, y, 0]} castShadow receiveShadow>
             <boxGeometry args={[p.doorWidth, panelH - 0.01, 0.04]} />
-            <meshStandardMaterial color={p.roofColor} metalness={0.7} roughness={0.4} wireframe={p.wireframe} />
+            <meshStandardMaterial color={p.doorColor} metalness={0.7} roughness={0.4} wireframe={p.wireframe} />
           </mesh>
         );
       })}
@@ -53,7 +53,7 @@ function PersonalDoor({ p, explodeY }: { p: GarageParams; explodeY: number }) {
     <group position={position} rotation={rotation}>
       <mesh position={[0, 1.0, 0]} castShadow receiveShadow>
         <boxGeometry args={[0.88, 1.98, 0.04]} />
-        <meshStandardMaterial color={p.roofColor} metalness={0.5} roughness={0.5} wireframe={p.wireframe} />
+        <meshStandardMaterial color={p.doorColor} metalness={0.5} roughness={0.5} wireframe={p.wireframe} />
       </mesh>
       <mesh position={[0.35, 1.0, 0.025]}>
         <sphereGeometry args={[0.025, 16, 16]} />
@@ -122,7 +122,7 @@ function Gutters({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   const leftGutterY = leftEaveY - 0.01;
   const rightGutterY = rightEaveY - 0.01;
 
-  const color = p.roofColor || "#2b2f36";
+  const color = p.trimmingColor || "#ffffff"; // Independent gutter/downpipe color
   // gutter half-tube along each eave
   const radius = 0.06;
   const geom = useMemo(() => {
@@ -214,7 +214,7 @@ function CornerFlashings({ p, explodeY }: { p: GarageParams; explodeY: number })
   const sz = p.profileSize;
   const trimWidth = 0.18; // 180mm flashing legs to overlap and cover panel edges
   const trimThick = 0.002;
-  const color = p.roofColor || "#2a2d33"; // Use roof color for flashings/trims
+  const color = p.trimmingColor || "#ffffff"; // Independent corner/trim color
   
   const mat = useMemo(() => new THREE.MeshStandardMaterial({
     color: color,
@@ -271,7 +271,7 @@ function JointFlashings({ p, explodeY }: { p: GarageParams; explodeY: number }) 
 
   const t = 0.002; // very thin flashing
   const jw = 0.08; // 80mm width to cover the joint neatly
-  const color = p.roofColor || "#3a4048";
+  const color = p.trimmingColor || "#ffffff"; // Independent trim color
 
   const zs = getFrameZ(p);
   const intermediateZs = zs.slice(1, -1); // skip corners

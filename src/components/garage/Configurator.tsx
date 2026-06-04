@@ -157,7 +157,7 @@ function getParamsFromURL(): Partial<GarageParams> {
       parsed[key] = (val === "true") as any;
     } else {
       // Add # prefix back to hex color strings if they are raw hex
-      if ((key === "claddingColor" || key === "roofColor" || key === "steelColor") && !val.startsWith("#")) {
+      if ((key === "claddingColor" || key === "roofColor" || key === "steelColor" || key === "doorColor" || key === "trimmingColor") && !val.startsWith("#")) {
         val = "#" + val;
       }
       parsed[key] = val as any;
@@ -190,6 +190,8 @@ export default function Configurator() {
     "Opláštenie": folder({
       claddingColor: { value: initialUrlParams.claddingColor ?? DEFAULT_PARAMS.claddingColor, label: "Steny RAL" },
       roofColor: { value: initialUrlParams.roofColor ?? DEFAULT_PARAMS.roofColor, label: "Strecha RAL" },
+      doorColor: { value: initialUrlParams.doorColor ?? DEFAULT_PARAMS.doorColor, label: "Dvere RAL" },
+      trimmingColor: { value: initialUrlParams.trimmingColor ?? DEFAULT_PARAMS.trimmingColor, label: "Rohy & Odkvapy RAL" },
       panelType: { value: initialUrlParams.panelType ?? DEFAULT_PARAMS.panelType, options: { "Trapézový plech": "trapezoid", "Sendvičové panely": "sandwich", "Hladký panel": "smooth" }, label: "Typ" },
       claddingOrientation: { value: initialUrlParams.claddingOrientation ?? DEFAULT_PARAMS.claddingOrientation, options: { "Vertikálne": "vertical", "Pozdĺžne": "horizontal" }, label: "Smer panelov" },
     }),
@@ -282,7 +284,7 @@ export default function Configurator() {
     for (const key of keys) {
       let val = String(typedParams[key]);
       // Remove # from hex colors before saving to URL parameters to avoid fragment conflicts
-      if ((key === "claddingColor" || key === "roofColor" || key === "steelColor") && val.startsWith("#")) {
+      if ((key === "claddingColor" || key === "roofColor" || key === "steelColor" || key === "doorColor" || key === "trimmingColor") && val.startsWith("#")) {
         val = val.substring(1);
       }
       searchParams.set(key, val);

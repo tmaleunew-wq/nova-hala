@@ -15,6 +15,8 @@ export interface GarageParams {
   // cladding
   claddingColor: string;     // hex
   roofColor: string;         // hex
+  doorColor: string;         // hex – garage door + personal door
+  trimmingColor: string;     // hex – corner flashings, joint flashings, gutters
   panelType: "trapezoid" | "sandwich";
   claddingOrientation: "vertical" | "horizontal";
   // premium sandwich spec
@@ -57,8 +59,10 @@ export const DEFAULT_PARAMS: GarageParams = {
   profileSize: 0.1,
   profileThickness: 0.004,
   steelColor: "#6e7681",
-  claddingColor: "#ffffff",
+  claddingColor: "#f5f5f0",
   roofColor: "#2b2f36",
+  doorColor: "#3a3f47",
+  trimmingColor: "#ffffff",
   panelType: "smooth",
   claddingOrientation: "horizontal",
   insulationCore: "PIR",
