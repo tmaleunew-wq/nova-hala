@@ -148,14 +148,18 @@ function getParamsFromURL(): Partial<GarageParams> {
 
   const keys = Object.keys(DEFAULT_PARAMS) as (keyof GarageParams)[];
   for (const key of keys) {
-    const val = searchParams.get(key);
-    if (val === null || val === "undefined" || val === "NaN") continue;
+    let val = searchParams.get(key);
+    if (val === null || val === "" || val === "undefined" || val === "NaN") continue;
     if (typeof DEFAULT_PARAMS[key] === "number") {
       const n = parseFloat(val);
       if (Number.isFinite(n)) parsed[key] = n as any;
     } else if (typeof DEFAULT_PARAMS[key] === "boolean") {
       parsed[key] = (val === "true") as any;
     } else {
+      // Add # prefix back to hex color strings if they are raw hex
+      if ((key === "claddingColor" || key === "roofColor" || key === "steelColor") && !val.startsWith("#")) {
+        val = "#" + val;
+      }
       parsed[key] = val as any;
     }
   }
@@ -276,7 +280,12 @@ export default function Configurator() {
     const searchParams = new URLSearchParams();
     const keys = Object.keys(DEFAULT_PARAMS) as (keyof GarageParams)[];
     for (const key of keys) {
-      searchParams.set(key, String(typedParams[key]));
+      let val = String(typedParams[key]);
+      // Remove # from hex colors before saving to URL parameters to avoid fragment conflicts
+      if ((key === "claddingColor" || key === "roofColor" || key === "steelColor") && val.startsWith("#")) {
+        val = val.substring(1);
+      }
+      searchParams.set(key, val);
     }
     if (client) {
       searchParams.set("client", client);
