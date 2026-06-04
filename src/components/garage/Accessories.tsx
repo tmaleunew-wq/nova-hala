@@ -132,8 +132,24 @@ function Gutters({ p, explodeY }: { p: GarageParams; explodeY: number }) {
     return c;
   }, [capLen]);
 
-  const leftDownpipeH = leftGutterY - radius;
-  const rightDownpipeH = rightGutterY - radius;
+  const leftWallX = -W / 2 - gapWidth - 0.04 - ex;
+  const rightWallX = W / 2 + gapWidth + 0.04 + ex;
+
+  const dropY = 0.20; // vertical drop of the elbow
+
+  // Left elbow calculation
+  const leftDx = leftWallX - leftX;
+  const leftDy = -dropY;
+  const leftElbowLen = Math.hypot(leftDx, leftDy);
+  const leftElbowRot = Math.atan2(leftDy, leftDx);
+  const leftDownpipeH = leftGutterY - radius - dropY;
+
+  // Right elbow calculation
+  const rightDx = rightWallX - rightX;
+  const rightDy = -dropY;
+  const rightElbowLen = Math.hypot(rightDx, rightDy);
+  const rightElbowRot = Math.atan2(rightDy, rightDx);
+  const rightDownpipeH = rightGutterY - radius - dropY;
 
   return (
     <group>
@@ -145,19 +161,42 @@ function Gutters({ p, explodeY }: { p: GarageParams; explodeY: number }) {
       <mesh position={[rightX, rightGutterY, 0]} geometry={geom} castShadow>
         <meshStandardMaterial color={color} metalness={0.6} roughness={0.4} side={THREE.DoubleSide} wireframe={p.wireframe} />
       </mesh>
-      {/* downpipes on rear corners */}
+
+      {/* LEFT DOWNPIPE (adjacent to wall) */}
+      {/* Vertical pipe */}
       <mesh
-        position={[leftX, leftDownpipeH / 2, L / 2 + gapWidth]}
+        position={[leftWallX, leftDownpipeH / 2, L / 2 + gapWidth]}
         castShadow
       >
         <cylinderGeometry args={[0.04, 0.04, leftDownpipeH, 16]} />
         <meshStandardMaterial color={color} metalness={0.6} roughness={0.4} wireframe={p.wireframe} />
       </mesh>
+      {/* Elbow to gutter */}
       <mesh
-        position={[rightX, rightDownpipeH / 2, L / 2 + gapWidth]}
+        position={[(leftX + leftWallX) / 2, leftGutterY - radius - dropY / 2, L / 2 + gapWidth]}
+        rotation={[0, 0, leftElbowRot - Math.PI / 2]}
+        castShadow
+      >
+        <cylinderGeometry args={[0.04, 0.04, leftElbowLen, 16]} />
+        <meshStandardMaterial color={color} metalness={0.6} roughness={0.4} wireframe={p.wireframe} />
+      </mesh>
+
+      {/* RIGHT DOWNPIPE (adjacent to wall) */}
+      {/* Vertical pipe */}
+      <mesh
+        position={[rightWallX, rightDownpipeH / 2, L / 2 + gapWidth]}
         castShadow
       >
         <cylinderGeometry args={[0.04, 0.04, rightDownpipeH, 16]} />
+        <meshStandardMaterial color={color} metalness={0.6} roughness={0.4} wireframe={p.wireframe} />
+      </mesh>
+      {/* Elbow to gutter */}
+      <mesh
+        position={[(rightX + rightWallX) / 2, rightGutterY - radius - dropY / 2, L / 2 + gapWidth]}
+        rotation={[0, 0, rightElbowRot - Math.PI / 2]}
+        castShadow
+      >
+        <cylinderGeometry args={[0.04, 0.04, rightElbowLen, 16]} />
         <meshStandardMaterial color={color} metalness={0.6} roughness={0.4} wireframe={p.wireframe} />
       </mesh>
     </group>
