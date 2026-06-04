@@ -4,7 +4,7 @@ import * as THREE from "three";
 import type { GarageParams } from "@/lib/garage/types";
 import { ridgeHeight, highEave, getFrameZ } from "./Structure";
 import { makeTrapezoidTexture } from "@/lib/garage/textures";
-import { createPBRCladdingMaterial } from "@/lib/garage/pbrMaterialHelper";
+import { createPBRCladdingMaterial, createPBRSmoothMaterial, createPBRTileMaterial } from "@/lib/garage/pbrMaterialHelper";
 import { getCladdingConfig } from "@/lib/garage/configHelper";
 
 interface Rect {
@@ -27,6 +27,7 @@ function PurPanel({
   onToggle,
   isSandwich = true,
   claddingOrientation = "vertical",
+  panelType,
 }: {
   id: string;
   width: number;
@@ -40,6 +41,7 @@ function PurPanel({
   onToggle?: () => void;
   isSandwich?: boolean;
   claddingOrientation?: "vertical" | "horizontal";
+  panelType?: string;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -73,9 +75,17 @@ function PurPanel({
   const pbrMaterial = useMemo(() => {
     if (wireframe) return null;
     const isRoof = id.startsWith("roof");
-    const isHorizontal = !isRoof && claddingOrientation === "horizontal";
+    if (isRoof) {
+      const repeatsX = Math.max(4, Math.round(width / 0.18));
+      const repeatsY = Math.max(4, Math.round(height / 0.35));
+      return createPBRTileMaterial(activeColorStr, repeatsX, repeatsY);
+    }
+    if (panelType === "smooth") {
+      return createPBRSmoothMaterial(activeColorStr);
+    }
+    const isHorizontal = claddingOrientation === "horizontal";
     const orient = isHorizontal ? "horizontal" : "vertical";
-    const repeats = isRoof || isHorizontal
+    const repeats = isHorizontal
       ? Math.max(1, Math.round(height / 0.6))
       : Math.max(1, Math.round(width / 0.6));
 
@@ -85,7 +95,7 @@ function PurPanel({
       Boolean,
     ) as THREE.Texture[];
     for (const t of textures) {
-      if (isRoof || isHorizontal) {
+      if (isHorizontal) {
         t.rotation = Math.PI / 2;
         t.center.set(0.5, 0.5);
       } else {
@@ -94,7 +104,7 @@ function PurPanel({
       t.needsUpdate = true;
     }
     return mat;
-  }, [activeColorStr, width, height, id, claddingOrientation, wireframe]);
+  }, [activeColorStr, width, height, id, claddingOrientation, wireframe, panelType]);
 
   const outerGeom = useMemo(() => {
     const depth = isSandwich ? 0.002 : thickness;
@@ -211,6 +221,7 @@ function PurPanel({
 }
 
 function PurGableTriangle({
+  p,
   width,
   eave,
   ridge,
@@ -221,7 +232,9 @@ function PurGableTriangle({
   onToggle,
   isSandwich = true,
   claddingOrientation = "vertical",
+  panelType,
 }: {
+  p: GarageParams;
   width: number;
   eave: number;
   ridge: number;
@@ -232,6 +245,7 @@ function PurGableTriangle({
   onToggle?: () => void;
   isSandwich?: boolean;
   claddingOrientation?: "vertical" | "horizontal";
+  panelType?: string;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -240,15 +254,23 @@ function PurGableTriangle({
 
   const shape = useMemo(() => {
     const s = new THREE.Shape();
+    const angle = Math.atan2(ridge - eave, p.width / 2);
+    const gap = (p.profileSize / 2) / Math.cos(angle);
+    const yEdge = ridge + gap - (width / 2) * Math.tan(angle);
     s.moveTo(-width / 2, eave);
     s.lineTo(width / 2, eave);
-    s.lineTo(0, ridge);
+    s.lineTo(width / 2, yEdge);
+    s.lineTo(0, ridge + gap);
+    s.lineTo(-width / 2, yEdge);
     s.lineTo(-width / 2, eave);
     return s;
-  }, [width, eave, ridge]);
+  }, [width, eave, ridge, p.width, p.profileSize]);
 
   const pbrMaterial = useMemo(() => {
     if (wireframe) return null;
+    if (panelType === "smooth") {
+      return createPBRSmoothMaterial(activeColorStr);
+    }
     const isHorizontal = claddingOrientation === "horizontal";
     const orient = isHorizontal ? "horizontal" : "vertical";
     const repeats = isHorizontal
@@ -270,7 +292,7 @@ function PurGableTriangle({
       t.needsUpdate = true;
     }
     return mat;
-  }, [activeColorStr, width, ridge, claddingOrientation, wireframe]);
+  }, [activeColorStr, width, ridge, claddingOrientation, wireframe, panelType]);
 
   const outerGeom = useMemo(() => {
     const depth = isSandwich ? 0.002 : thickness;
@@ -353,6 +375,7 @@ function PurGableTriangle({
 }
 
 function PurShedTriangle({
+  p,
   width,
   eave,
   highEave,
@@ -364,7 +387,9 @@ function PurShedTriangle({
   isSandwich = true,
   slopeDirection = "left-to-right",
   claddingOrientation = "vertical",
+  panelType,
 }: {
+  p: GarageParams;
   width: number;
   eave: number;
   highEave: number;
@@ -376,6 +401,7 @@ function PurShedTriangle({
   isSandwich?: boolean;
   slopeDirection: "left-to-right" | "right-to-left";
   claddingOrientation?: "vertical" | "horizontal";
+  panelType?: string;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -384,22 +410,25 @@ function PurShedTriangle({
 
   const shape = useMemo(() => {
     const s = new THREE.Shape();
-    if (slopeDirection === "left-to-right") {
-      s.moveTo(-width / 2, eave);
-      s.lineTo(width / 2, eave);
-      s.lineTo(width / 2, highEave);
-      s.lineTo(-width / 2, eave);
-    } else {
-      s.moveTo(-width / 2, eave);
-      s.lineTo(width / 2, eave);
-      s.lineTo(-width / 2, highEave);
-      s.lineTo(-width / 2, eave);
-    }
+    const angle = Math.atan2(highEave - eave, p.width);
+    const gap = (p.profileSize / 2) / Math.cos(angle);
+    const delta = (width / 2 - p.width / 2) * Math.tan(angle);
+    const yLeft = slopeDirection === "left-to-right" ? eave + gap - delta : highEave + gap + delta;
+    const yRight = slopeDirection === "left-to-right" ? highEave + gap + delta : eave + gap - delta;
+
+    s.moveTo(-width / 2, eave);
+    s.lineTo(width / 2, eave);
+    s.lineTo(width / 2, yRight);
+    s.lineTo(-width / 2, yLeft);
+    s.lineTo(-width / 2, eave);
     return s;
-  }, [width, eave, highEave, slopeDirection]);
+  }, [width, eave, highEave, p.width, p.profileSize, slopeDirection]);
 
   const pbrMaterial = useMemo(() => {
     if (wireframe) return null;
+    if (panelType === "smooth") {
+      return createPBRSmoothMaterial(activeColorStr);
+    }
     const isHorizontal = claddingOrientation === "horizontal";
     const orient = isHorizontal ? "horizontal" : "vertical";
     const repeats = isHorizontal
@@ -421,7 +450,7 @@ function PurShedTriangle({
       t.needsUpdate = true;
     }
     return mat;
-  }, [activeColorStr, width, highEave, claddingOrientation, wireframe]);
+  }, [activeColorStr, width, highEave, claddingOrientation, wireframe, panelType]);
 
   const outerGeom = useMemo(() => {
     const depth = isSandwich ? 0.002 : thickness;
@@ -527,11 +556,11 @@ export function Cladding({
   const Hridge = ridgeHeight(p);
   const Hhi = highEave(p);
 
-  const wallThickness = p.panelType === "sandwich" ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
-  const roofThickness = p.panelType === "sandwich" ? Math.max(0.04, p.roofPanelThicknessMm / 1000) : 0.01;
+  const wallThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+  const roofThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.roofPanelThicknessMm / 1000) : 0.01;
   const panelThickness = wallThickness;
   const roofPanelThickness = roofThickness;
-  const isSand = p.panelType === "sandwich";
+  const isSand = p.panelType === "sandwich" || p.panelType === "smooth";
   const sz = p.profileSize;
 
   // openings
@@ -569,6 +598,7 @@ export function Cladding({
           thickness={panelThickness}
           isSandwich={isSand}
           claddingOrientation={p.claddingOrientation}
+          panelType={p.panelType}
         />
       </group>
 
@@ -587,6 +617,7 @@ export function Cladding({
           thickness={panelThickness}
           isSandwich={isSand}
           claddingOrientation={p.claddingOrientation}
+          panelType={p.panelType}
         />
       </group>
 
@@ -629,6 +660,7 @@ export function Cladding({
                 thickness={panelThickness}
                 isSandwich={isSand}
                 claddingOrientation={p.claddingOrientation}
+                panelType={p.panelType}
               />
             </group>
           );
@@ -669,6 +701,7 @@ export function Cladding({
                 thickness={panelThickness}
                 isSandwich={isSand}
                 claddingOrientation={p.claddingOrientation}
+                panelType={p.panelType}
               />
             </group>
           );
@@ -680,6 +713,7 @@ export function Cladding({
         <>
           <group position={[0, 0, -L / 2 - (sz / 2 + panelThickness / 2) + offFront]}>
             <PurGableTriangle
+              p={p}
               width={W + sz + panelThickness}
               eave={Heave}
               ridge={Hridge}
@@ -690,10 +724,12 @@ export function Cladding({
               thickness={panelThickness}
               isSandwich={isSand}
               claddingOrientation={p.claddingOrientation}
+              panelType={p.panelType}
             />
           </group>
           <group position={[0, 0, L / 2 + (sz / 2 + panelThickness / 2) + offBack]}>
             <PurGableTriangle
+              p={p}
               width={W + sz + panelThickness}
               eave={Heave}
               ridge={Hridge}
@@ -704,6 +740,7 @@ export function Cladding({
               thickness={panelThickness}
               isSandwich={isSand}
               claddingOrientation={p.claddingOrientation}
+              panelType={p.panelType}
             />
           </group>
         </>
@@ -714,6 +751,7 @@ export function Cladding({
         <>
           <group position={[0, 0, -L / 2 - (sz / 2 + panelThickness / 2) + offFront]} rotation={[0, Math.PI, 0]}>
             <PurShedTriangle
+              p={p}
               width={W + sz + panelThickness}
               eave={Heave}
               highEave={Hhi}
@@ -725,10 +763,12 @@ export function Cladding({
               isSandwich={isSand}
               slopeDirection="right-to-left"
               claddingOrientation={p.claddingOrientation}
+              panelType={p.panelType}
             />
           </group>
           <group position={[0, 0, L / 2 + (sz / 2 + panelThickness / 2) + offBack]}>
             <PurShedTriangle
+              p={p}
               width={W + sz + panelThickness}
               eave={Heave}
               highEave={Hhi}
@@ -740,6 +780,7 @@ export function Cladding({
               isSandwich={isSand}
               slopeDirection="left-to-right"
               claddingOrientation={p.claddingOrientation}
+              panelType={p.panelType}
             />
           </group>
         </>
@@ -750,26 +791,29 @@ export function Cladding({
         <>
           {(() => {
             const halfW = W / 2;
-            const slopeLen = Math.hypot(halfW, Hridge - Heave);
+            const gapWidth = sz / 2 + panelThickness;
+            const overhang = 0.25;
+            const extendedHalfW = halfW + gapWidth + overhang;
             const angle = Math.atan2(Hridge - Heave, halfW);
+            const slopeLen = extendedHalfW / Math.cos(angle);
             return [-1, 1].map((s) => {
               const sideName = s === -1 ? "left" : "right";
               return (
                 <group
                   key={`roof-${sideName}`}
-                  position={[(s * halfW) / 2, (Heave + Hridge) / 2 + offRoof, 0]}
+                  position={[0, Hridge + offRoof, 0]}
                   rotation={[-Math.PI / 2, s * angle, 0]}
                 >
                   {zs.map((z, i) => {
                     if (i === zs.length - 1) return null;
                     const zStart = zs[i];
                     const zEnd = zs[i + 1];
-                    const actualStart = i === 0 ? zStart - (sz / 2 + panelThickness) : zStart;
-                    const actualEnd = i === zs.length - 2 ? zEnd + (sz / 2 + panelThickness) : zEnd;
+                    const actualStart = i === 0 ? zStart - (sz / 2 + panelThickness) - overhang : zStart;
+                    const actualEnd = i === zs.length - 2 ? zEnd + (sz / 2 + panelThickness) + overhang : zEnd;
                     const w = actualEnd - actualStart;
                     const id = `roof-${sideName}-${i}`;
                     return (
-                      <group key={id} position={[0, actualStart, sz / 2 + roofPanelThickness / 2]}>
+                      <group key={id} position={[s * (slopeLen / 2 - (sz / 2 + roofPanelThickness / 2) * Math.tan(angle)), actualStart, sz / 2 + roofPanelThickness / 2]}>
                         <PurPanel
                           id={id}
                           width={slopeLen}
@@ -793,39 +837,47 @@ export function Cladding({
           })()}
         </>
       ) : (
-        <group
-          position={[0, (Heave + Hhi) / 2 + offRoof, 0]}
-          rotation={[-Math.PI / 2, -Math.atan2(Hhi - Heave, W), 0]}
-        >
-          {zs.map((z, i) => {
-            if (i === zs.length - 1) return null;
-            const zStart = zs[i];
-            const zEnd = zs[i + 1];
-            const actualStart = i === 0 ? zStart - (sz / 2 + panelThickness) : zStart;
-            const actualEnd = i === zs.length - 2 ? zEnd + (sz / 2 + panelThickness) : zEnd;
-            const w = actualEnd - actualStart;
-            const slopeLen = Math.hypot(W, Hhi - Heave);
-            const id = `roof-${i}`;
-            return (
-              <group key={id} position={[0, actualStart, sz / 2 + roofPanelThickness / 2]}>
-                <PurPanel
-                  id={id}
-                  width={slopeLen}
-                  height={w}
-                  holes={[]}
-                  texture={roofTex}
-                  color={p.roofColor}
-                  wireframe={p.wireframe}
-                  visible={!removedPanels[id]}
-                  onToggle={() => onTogglePanel?.(id)}
-                  thickness={roofPanelThickness}
-                  isSandwich={isSand}
-                  claddingOrientation={p.claddingOrientation}
-                />
-              </group>
-            );
-          })}
-        </group>
+        (() => {
+          const gapWidth = sz / 2 + panelThickness;
+          const overhang = 0.25;
+          const extendedW = W + 2 * gapWidth + 2 * overhang;
+          const angle = Math.atan2(Hhi - Heave, W);
+          const slopeLen = extendedW / Math.cos(angle);
+          return (
+            <group
+              position={[0, (Heave + Hhi) / 2 + offRoof, 0]}
+              rotation={[-Math.PI / 2, -angle, 0]}
+            >
+              {zs.map((z, i) => {
+                if (i === zs.length - 1) return null;
+                const zStart = zs[i];
+                const zEnd = zs[i + 1];
+                const actualStart = i === 0 ? zStart - (sz / 2 + panelThickness) - overhang : zStart;
+                const actualEnd = i === zs.length - 2 ? zEnd + (sz / 2 + panelThickness) + overhang : zEnd;
+                const w = actualEnd - actualStart;
+                const id = `roof-${i}`;
+                return (
+                  <group key={id} position={[0, actualStart, sz / 2 + roofPanelThickness / 2]}>
+                    <PurPanel
+                      id={id}
+                      width={slopeLen}
+                      height={w}
+                      holes={[]}
+                      texture={roofTex}
+                      color={p.roofColor}
+                      wireframe={p.wireframe}
+                      visible={!removedPanels[id]}
+                      onToggle={() => onTogglePanel?.(id)}
+                      thickness={roofPanelThickness}
+                      isSandwich={isSand}
+                      claddingOrientation={p.claddingOrientation}
+                    />
+                  </group>
+                );
+              })}
+            </group>
+          );
+        })()
       )}
     </group>
   );

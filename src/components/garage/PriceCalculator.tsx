@@ -105,7 +105,7 @@ export function PriceCalculator({ p }: PriceCalculatorProps) {
     roofArea = Math.hypot(W, Hhi - Heave) * L;
   }
   const totalCladdingArea = wallArea + gableArea + roofArea;
-  const panelPricePerSqM = p.panelType === "sandwich" ? claddingConfig.sandwichPricePerSqM : claddingConfig.trapezoidPricePerSqM; // EUR/m2
+  const panelPricePerSqM = (p.panelType === "sandwich" || p.panelType === "smooth") ? claddingConfig.sandwichPricePerSqM : claddingConfig.trapezoidPricePerSqM; // EUR/m2
   const claddingCost = totalCladdingArea * panelPricePerSqM;
 
   // 3. Components
@@ -195,22 +195,7 @@ export function PriceCalculator({ p }: PriceCalculatorProps) {
           </div>
         </div>
 
-        {/* Špecifikácia opláštenia */}
-        <div className="mt-3 border-t border-white/10 pt-2 text-[10px] text-white/70 space-y-1">
-          <div className="font-bold text-emerald-400 uppercase tracking-wider text-[9px] mb-1">Špecifikácia opláštenia</div>
-          <div className="leading-snug">Izolant: <span className="text-white">{claddingConfig.insulationMaterial}</span></div>
-          {p.panelType === "sandwich" && (
-            <>
-              <div>Hrúbka jadra (steny): <span className="text-white">{claddingConfig.wallCoreThickness} mm</span></div>
-              <div>Hrúbka jadra (strecha): <span className="text-white">{claddingConfig.roofCoreThickness} mm</span></div>
-              <div className="leading-snug">Spoje a kotvenie: <span className="text-white">{claddingConfig.jointType}</span></div>
-            </>
-          )}
-          <div>Plechy: <span className="text-white">vonk. {claddingConfig.sheetThicknessOuter} mm / vnút. {claddingConfig.sheetThicknessInner} mm</span></div>
-          <div className="leading-snug">Povrch a zinok: <span className="text-white">{claddingConfig.surfaceCoating}, {claddingConfig.galvanization}</span></div>
-          <div className="leading-snug">Kotvenie: <span className="text-white">{claddingConfig.fasteners}</span></div>
-          <div className="leading-snug">Detaily a tesnenie: <span className="text-white">{claddingConfig.flashingsAndSeals}</span></div>
-        </div>
+
 
         <button
           onClick={() => setShowForm(true)}

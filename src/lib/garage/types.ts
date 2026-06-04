@@ -57,9 +57,9 @@ export const DEFAULT_PARAMS: GarageParams = {
   profileSize: 0.1,
   profileThickness: 0.004,
   steelColor: "#6e7681",
-  claddingColor: "#3a4048",
+  claddingColor: "#ffffff",
   roofColor: "#2b2f36",
-  panelType: "sandwich",
+  panelType: "smooth",
   claddingOrientation: "horizontal",
   insulationCore: "PIR",
   wallPanelThicknessMm: 100,
@@ -85,5 +85,5 @@ export const DEFAULT_PARAMS: GarageParams = {
   wireframe: false,
   explode: 0,
   showFoundation: false,
-  showAccessories: false,
+  showAccessories: true,
 };

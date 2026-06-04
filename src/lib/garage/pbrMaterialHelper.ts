@@ -4,6 +4,8 @@ import {
   makeTrapezoidNormalTexture,
   makeTrapezoidRoughnessTexture,
   makeTrapezoidMetalnessTexture,
+  makeTileTexture,
+  makeTileNormalTexture,
 } from "./textures";
 
 /**
@@ -51,6 +53,44 @@ export function createPBRCladdingMaterial(
   });
 
   return material;
+}
+
+export function createPBRSmoothMaterial(
+  color: string,
+): THREE.MeshStandardMaterial {
+  return new THREE.MeshStandardMaterial({
+    color: new THREE.Color(color),
+    roughness: 0.35, // Premium smooth semi-gloss facade finish
+    metalness: 0.2,  // Coated sheet metal
+    side: THREE.DoubleSide,
+  });
+}
+
+export function createPBRTileMaterial(
+  color: string,
+  repeatsX = 12,
+  repeatsY = 14,
+): THREE.MeshStandardMaterial {
+  const map = makeTileTexture(color, repeatsX, repeatsY);
+  const normalMap = makeTileNormalTexture(repeatsX, repeatsY);
+
+  const textures = [map, normalMap];
+  for (const tex of textures) {
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+  }
+
+  return new THREE.MeshStandardMaterial({
+    map,
+    normalMap,
+    normalScale: new THREE.Vector2(1.5, 1.5),
+    roughness: 0.5,
+    metalness: 0.75, // metallic sheet metal look
+    side: THREE.DoubleSide,
+  });
 }
 
 /**
