@@ -16,7 +16,7 @@ function SectionalDoor({ p, explodeY }: { p: GarageParams; explodeY: number }) {
         return (
           <mesh key={i} position={[0, y, 0]} castShadow receiveShadow>
             <boxGeometry args={[p.doorWidth, panelH - 0.01, 0.04]} />
-            <meshStandardMaterial color="#cdd3da" metalness={0.7} roughness={0.4} wireframe={p.wireframe} />
+            <meshStandardMaterial color={p.roofColor} metalness={0.7} roughness={0.4} wireframe={p.wireframe} />
           </mesh>
         );
       })}
@@ -53,7 +53,7 @@ function PersonalDoor({ p, explodeY }: { p: GarageParams; explodeY: number }) {
     <group position={position} rotation={rotation}>
       <mesh position={[0, 1.0, 0]} castShadow receiveShadow>
         <boxGeometry args={[0.88, 1.98, 0.04]} />
-        <meshStandardMaterial color="#cdd3da" metalness={0.5} roughness={0.5} wireframe={p.wireframe} />
+        <meshStandardMaterial color={p.roofColor} metalness={0.5} roughness={0.5} wireframe={p.wireframe} />
       </mesh>
       <mesh position={[0.35, 1.0, 0.025]}>
         <sphereGeometry args={[0.025, 16, 16]} />
