@@ -60,8 +60,8 @@ export function createPBRSmoothMaterial(
 ): THREE.MeshStandardMaterial {
   return new THREE.MeshStandardMaterial({
     color: new THREE.Color(color),
-    roughness: 0.35, // Premium smooth semi-gloss facade finish
-    metalness: 0.2,  // Coated sheet metal
+    roughness: 0.5,  // Smooth satin facade finish for clean white appearance
+    metalness: 0.15, // Coated sheet metal
     side: THREE.DoubleSide,
   });
 }
@@ -107,15 +107,15 @@ export function setupProceduralEnvMap(
   // Create a virtual environment scene
   const envScene = new THREE.Scene();
 
-  // 1. Setup a sky/ground skybox representing outdoor lighting
+  // 1. Setup a sky/ground skybox representing neutral studio-like lighting for accurate colors
   const skyGeo = new THREE.BoxGeometry(100, 100, 100);
   const materials = [
-    new THREE.MeshBasicMaterial({ color: 0x8a9ba8, side: THREE.BackSide }), // Right
-    new THREE.MeshBasicMaterial({ color: 0x8a9ba8, side: THREE.BackSide }), // Left
-    new THREE.MeshBasicMaterial({ color: 0xaec3d0, side: THREE.BackSide }), // Top (Sky blue light)
-    new THREE.MeshBasicMaterial({ color: 0x3d4147, side: THREE.BackSide }), // Bottom (Ground dark reflection)
-    new THREE.MeshBasicMaterial({ color: 0x8a9ba8, side: THREE.BackSide }), // Front
-    new THREE.MeshBasicMaterial({ color: 0x8a9ba8, side: THREE.BackSide }), // Back
+    new THREE.MeshBasicMaterial({ color: 0xf3f4f6, side: THREE.BackSide }), // Right (Neutral light grey)
+    new THREE.MeshBasicMaterial({ color: 0xf3f4f6, side: THREE.BackSide }), // Left (Neutral light grey)
+    new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.BackSide }), // Top (Neutral white sky)
+    new THREE.MeshBasicMaterial({ color: 0xe5e7eb, side: THREE.BackSide }), // Bottom (Neutral medium-light grey ground)
+    new THREE.MeshBasicMaterial({ color: 0xf3f4f6, side: THREE.BackSide }), // Front (Neutral light grey)
+    new THREE.MeshBasicMaterial({ color: 0xf3f4f6, side: THREE.BackSide }), // Back (Neutral light grey)
   ];
   const skyBox = new THREE.Mesh(skyGeo, materials);
   envScene.add(skyBox);
@@ -129,7 +129,7 @@ export function setupProceduralEnvMap(
 
   // 3. Add secondary ambient bounce light source
   const bounceGeo = new THREE.SphereGeometry(12, 16, 16);
-  const bounceMat = new THREE.MeshBasicMaterial({ color: 0xe0e6ed });
+  const bounceMat = new THREE.MeshBasicMaterial({ color: 0xf3f4f6 });
   const bounce = new THREE.Mesh(bounceGeo, bounceMat);
   bounce.position.set(-30, 20, -30);
   envScene.add(bounce);

@@ -55,7 +55,7 @@ function Scene({
         shadow-camera-bottom={-15}
       />
       <directionalLight position={[-6, 8, -4]} intensity={0.35} />
-      <hemisphereLight args={["#cbd5e1", "#1f2937", 0.5]} />
+      <hemisphereLight args={["#ffffff", "#9ca3af", 0.55]} />
 
       <group ref={exportRef}>
         {params.showFoundation && <Foundation p={params} />}
