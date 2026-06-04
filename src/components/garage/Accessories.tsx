@@ -214,7 +214,7 @@ function CornerFlashings({ p, explodeY }: { p: GarageParams; explodeY: number })
   const sz = p.profileSize;
   const trimWidth = 0.18; // 180mm flashing legs to overlap and cover panel edges
   const trimThick = 0.002;
-  const color = p.claddingColor || "#2a2d33"; // Use wall cladding color
+  const color = p.roofColor || "#2a2d33"; // Use roof color for flashings/trims
   
   const mat = useMemo(() => new THREE.MeshStandardMaterial({
     color: color,
@@ -271,7 +271,7 @@ function JointFlashings({ p, explodeY }: { p: GarageParams; explodeY: number }) 
 
   const t = 0.002; // very thin flashing
   const jw = 0.08; // 80mm width to cover the joint neatly
-  const color = p.claddingColor || "#3a4048";
+  const color = p.roofColor || "#3a4048";
 
   const zs = getFrameZ(p);
   const intermediateZs = zs.slice(1, -1); // skip corners
