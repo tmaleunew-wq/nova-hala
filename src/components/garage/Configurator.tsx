@@ -110,7 +110,7 @@ function CameraRig({ preset, params }: { preset: ViewPreset; params: GarageParam
         break;
       case "iso":
       default:
-        pos = new THREE.Vector3(d, d * 0.7, d);
+        pos = new THREE.Vector3(d, d * 0.7, -d);
     }
     camera.position.copy(pos);
     camera.lookAt(center);
@@ -306,7 +306,7 @@ export default function Configurator() {
     <div className="relative h-screen w-screen bg-[oklch(0.16_0.01_240)]">
       <Canvas
         shadows
-        camera={{ position: [10, 8, 10], fov: 35, near: 0.1, far: 200 }}
+        camera={{ position: [10, 8, -10], fov: 35, near: 0.1, far: 200 }}
         gl={{ antialias: true, preserveDrawingBuffer: true }}
       >
         <color attach="background" args={["#f5f5f5"]} />
