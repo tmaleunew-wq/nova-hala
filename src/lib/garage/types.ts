@@ -15,9 +15,11 @@ export interface GarageParams {
   // cladding
   claddingColor: string;     // hex
   roofColor: string;         // hex
-  doorColor: string;         // hex – garage door + personal door
+  doorColor: string;         // hex – personal door
+  sectionalDoorColor: string;// hex – garage door (gate)
   trimmingColor: string;     // hex – corner flashings, joint flashings, gutters
-  panelType: "trapezoid" | "sandwich";
+  panelType: "trapezoid" | "sandwich" | "smooth";
+  roofPanelType: "trapezoid" | "smooth" | "tile";
   claddingOrientation: "vertical" | "horizontal";
   // premium sandwich spec
   insulationCore: "PIR" | "PUR" | "EPS" | "mineral";
@@ -37,6 +39,9 @@ export interface GarageParams {
   doorHeight: number;
   hasPersonalDoor: boolean;
   personalDoorSide: "left" | "right" | "back";
+  hasWindows: boolean;
+  hasSkylights: boolean;
+  windowSide: "left" | "right" | "back";
   windowCount: number;
   windowWidth: number;
   windowHeight: number;
@@ -47,6 +52,7 @@ export interface GarageParams {
   explode: number; // 0..1
   showFoundation: boolean;
   showAccessories: boolean;
+  doorOpen: boolean;
 }
 
 export const DEFAULT_PARAMS: GarageParams = {
@@ -62,8 +68,10 @@ export const DEFAULT_PARAMS: GarageParams = {
   claddingColor: "#f5f5f0",
   roofColor: "#2b2f36",
   doorColor: "#3a3f47",
+  sectionalDoorColor: "#3a3f47",
   trimmingColor: "#030303",
   panelType: "smooth",
+  roofPanelType: "trapezoid",
   claddingOrientation: "horizontal",
   insulationCore: "PIR",
   wallPanelThicknessMm: 100,
@@ -79,9 +87,12 @@ export const DEFAULT_PARAMS: GarageParams = {
   flashingMatchesPanels: true,
   doorWidth: 2.5,
   doorHeight: 2.2,
-  hasPersonalDoor: false,
+  hasPersonalDoor: true,
   personalDoorSide: "right",
-  windowCount: 0,
+  hasWindows: true,
+  hasSkylights: false,
+  windowSide: "left",
+  windowCount: 1,
   windowWidth: 0.6,
   windowHeight: 0.4,
   showCladding: true,
@@ -90,4 +101,5 @@ export const DEFAULT_PARAMS: GarageParams = {
   explode: 0,
   showFoundation: false,
   showAccessories: true,
+  doorOpen: false,
 };

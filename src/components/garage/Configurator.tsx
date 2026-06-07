@@ -4,6 +4,7 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, Grid, GizmoHelper, GizmoViewport } from "@react-three/drei";
 import { toast } from "sonner";
 import { useControls, folder, button, Leva } from "leva";
+import { SlidersHorizontal, X } from "lucide-react";
 import * as THREE from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { DEFAULT_PARAMS, type GarageParams } from "@/lib/garage/types";
@@ -157,7 +158,7 @@ function getParamsFromURL(): Partial<GarageParams> {
       parsed[key] = (val === "true") as any;
     } else {
       // Add # prefix back to hex color strings if they are raw hex
-      if ((key === "claddingColor" || key === "roofColor" || key === "steelColor" || key === "doorColor" || key === "trimmingColor") && !val.startsWith("#")) {
+      if ((key === "claddingColor" || key === "roofColor" || key === "steelColor" || key === "doorColor" || key === "sectionalDoorColor" || key === "trimmingColor") && !val.startsWith("#")) {
         val = "#" + val;
       }
       parsed[key] = val as any;
@@ -170,10 +171,35 @@ export default function Configurator() {
   const exportRef = useRef<THREE.Group | null>(null);
   const [preset, setPreset] = useState<ViewPreset>("iso");
   const [removedPanels, setRemovedPanels] = useState<Record<string, boolean>>({});
+  const [showControls, setShowControls] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      setShowControls(false);
+    }
+  }, []);
 
   const [initialUrlParams] = useState(() => getParamsFromURL());
 
   const params = useControls({
+    "Zobrazenie": folder({
+      showStructure: { value: initialUrlParams.showStructure ?? DEFAULT_PARAMS.showStructure, label: "Konštrukcia" },
+      showCladding: { value: initialUrlParams.showCladding ?? DEFAULT_PARAMS.showCladding, label: "Opláštenie" },
+      showAccessories: { value: initialUrlParams.showAccessories ?? DEFAULT_PARAMS.showAccessories, label: "Príslušenstvo" },
+      showFoundation: { value: initialUrlParams.showFoundation ?? DEFAULT_PARAMS.showFoundation, label: "Základová doska" },
+      wireframe: { value: initialUrlParams.wireframe ?? DEFAULT_PARAMS.wireframe, label: "Wireframe" },
+      explode: { value: initialUrlParams.explode ?? DEFAULT_PARAMS.explode, min: 0, max: 1, step: 0.01, label: "Exploded view" },
+    }),
     "Geometria": folder({
       width: { value: initialUrlParams.width ?? DEFAULT_PARAMS.width, min: 2.5, max: 8, step: 0.1, label: "Šírka X [m]" },
       length: { value: initialUrlParams.length ?? DEFAULT_PARAMS.length, min: 3, max: 12, step: 0.1, label: "Dĺžka Y [m]" },
@@ -189,11 +215,27 @@ export default function Configurator() {
     }),
     "Opláštenie": folder({
       claddingColor: { value: initialUrlParams.claddingColor ?? DEFAULT_PARAMS.claddingColor, label: "Steny RAL" },
+      panelType: { value: initialUrlParams.panelType ?? DEFAULT_PARAMS.panelType, options: { "Trapézový plech": "trapezoid", "Sendvičové panely": "sandwich", "Hladký panel": "smooth" }, label: "Typ stien" },
+      claddingOrientation: { value: initialUrlParams.claddingOrientation ?? DEFAULT_PARAMS.claddingOrientation, options: { "Vertikálne": "vertical", "Pozdĺžne": "horizontal" }, label: "Smer stien" },
       roofColor: { value: initialUrlParams.roofColor ?? DEFAULT_PARAMS.roofColor, label: "Strecha RAL" },
-      doorColor: { value: initialUrlParams.doorColor ?? DEFAULT_PARAMS.doorColor, label: "Dvere RAL" },
+      roofPanelType: { value: initialUrlParams.roofPanelType ?? DEFAULT_PARAMS.roofPanelType, options: { "Trapézový plech": "trapezoid", "Hladký panel": "smooth", "Škridla": "tile" }, label: "Typ strechy" },
+      roofCladdingOrientation: { value: initialUrlParams.roofCladdingOrientation ?? DEFAULT_PARAMS.roofCladdingOrientation, options: { "Vertikálne": "vertical", "Pozdĺžne": "horizontal" }, label: "Smer strechy" },
+      sectionalDoorColor: { value: initialUrlParams.sectionalDoorColor ?? DEFAULT_PARAMS.sectionalDoorColor, label: "Garážová brána RAL" },
+      doorColor: { value: initialUrlParams.doorColor ?? DEFAULT_PARAMS.doorColor, label: "Personálne dvere RAL" },
       trimmingColor: { value: initialUrlParams.trimmingColor ?? DEFAULT_PARAMS.trimmingColor, label: "Rohy & Odkvapy RAL" },
-      panelType: { value: initialUrlParams.panelType ?? DEFAULT_PARAMS.panelType, options: { "Trapézový plech": "trapezoid", "Sendvičové panely": "sandwich", "Hladký panel": "smooth" }, label: "Typ" },
-      claddingOrientation: { value: initialUrlParams.claddingOrientation ?? DEFAULT_PARAMS.claddingOrientation, options: { "Vertikálne": "vertical", "Pozdĺžne": "horizontal" }, label: "Smer panelov" },
+    }),
+    "Dvere a okná": folder({
+      doorOpen: { value: initialUrlParams.doorOpen ?? DEFAULT_PARAMS.doorOpen, label: "Otvoriť bránu 🔓" },
+      doorWidth: { value: initialUrlParams.doorWidth ?? DEFAULT_PARAMS.doorWidth, min: 2, max: 4, step: 0.1, label: "Brána Š [m]" },
+      doorHeight: { value: initialUrlParams.doorHeight ?? DEFAULT_PARAMS.doorHeight, min: 1.8, max: 3, step: 0.1, label: "Brána V [m]" },
+      hasPersonalDoor: { value: initialUrlParams.hasPersonalDoor ?? DEFAULT_PARAMS.hasPersonalDoor, label: "Personálne dvere" },
+      personalDoorSide: { value: initialUrlParams.personalDoorSide ?? DEFAULT_PARAMS.personalDoorSide, options: ["left", "right", "back"], label: "Strana dverí" },
+      hasWindows: { value: initialUrlParams.hasWindows ?? DEFAULT_PARAMS.hasWindows, label: "Okná" },
+      hasSkylights: { value: initialUrlParams.hasSkylights ?? DEFAULT_PARAMS.hasSkylights, label: "Strešné svetlíky ☀️" },
+      windowSide: { value: initialUrlParams.windowSide ?? DEFAULT_PARAMS.windowSide, options: ["left", "right", "back"], label: "Strana okien" },
+      windowCount: { value: initialUrlParams.windowCount ?? DEFAULT_PARAMS.windowCount, min: 0, max: 4, step: 1, label: "Počet okien" },
+      windowWidth: { value: initialUrlParams.windowWidth ?? DEFAULT_PARAMS.windowWidth, min: 0.3, max: 1.5, step: 0.1, label: "Okno Š [m]" },
+      windowHeight: { value: initialUrlParams.windowHeight ?? DEFAULT_PARAMS.windowHeight, min: 0.3, max: 1.2, step: 0.1, label: "Okno V [m]" },
     }),
     "Prémiový sendvič": folder({
       insulationCore: {
@@ -220,24 +262,7 @@ export default function Configurator() {
       },
       sealingSystem: { value: initialUrlParams.sealingSystem ?? DEFAULT_PARAMS.sealingSystem, label: "Tesnenia a tmely" },
       flashingMatchesPanels: { value: initialUrlParams.flashingMatchesPanels ?? DEFAULT_PARAMS.flashingMatchesPanels, label: "Systémové klampiarstvo" },
-    }),
-    "Otvory": folder({
-      doorWidth: { value: initialUrlParams.doorWidth ?? DEFAULT_PARAMS.doorWidth, min: 2, max: 4, step: 0.1, label: "Brána Š [m]" },
-      doorHeight: { value: initialUrlParams.doorHeight ?? DEFAULT_PARAMS.doorHeight, min: 1.8, max: 3, step: 0.1, label: "Brána V [m]" },
-      hasPersonalDoor: { value: initialUrlParams.hasPersonalDoor ?? DEFAULT_PARAMS.hasPersonalDoor, label: "Personálne dvere" },
-      personalDoorSide: { value: initialUrlParams.personalDoorSide ?? DEFAULT_PARAMS.personalDoorSide, options: ["left", "right", "back"], label: "Strana dverí" },
-      windowCount: { value: initialUrlParams.windowCount ?? DEFAULT_PARAMS.windowCount, min: 0, max: 4, step: 1, label: "Počet okien" },
-      windowWidth: { value: initialUrlParams.windowWidth ?? DEFAULT_PARAMS.windowWidth, min: 0.3, max: 1.5, step: 0.1, label: "Okno Š [m]" },
-      windowHeight: { value: initialUrlParams.windowHeight ?? DEFAULT_PARAMS.windowHeight, min: 0.3, max: 1.2, step: 0.1, label: "Okno V [m]" },
-    }),
-    "Zobrazenie": folder({
-      showStructure: { value: initialUrlParams.showStructure ?? DEFAULT_PARAMS.showStructure, label: "Konštrukcia" },
-      showCladding: { value: initialUrlParams.showCladding ?? DEFAULT_PARAMS.showCladding, label: "Opláštenie" },
-      showAccessories: { value: initialUrlParams.showAccessories ?? DEFAULT_PARAMS.showAccessories, label: "Príslušenstvo" },
-      showFoundation: { value: initialUrlParams.showFoundation ?? DEFAULT_PARAMS.showFoundation, label: "Základová doska" },
-      wireframe: { value: initialUrlParams.wireframe ?? DEFAULT_PARAMS.wireframe, label: "Wireframe" },
-      explode: { value: initialUrlParams.explode ?? DEFAULT_PARAMS.explode, min: 0, max: 1, step: 0.01, label: "Exploded view" },
-    }),
+    }, { collapsed: true }),
     "Export": folder({
       "Stiahnuť .glb": button(() => {
         if (exportRef.current) downloadGLB(exportRef.current);
@@ -284,7 +309,7 @@ export default function Configurator() {
     for (const key of keys) {
       let val = String(typedParams[key]);
       // Remove # from hex colors before saving to URL parameters to avoid fragment conflicts
-      if ((key === "claddingColor" || key === "roofColor" || key === "steelColor" || key === "doorColor" || key === "trimmingColor") && val.startsWith("#")) {
+      if ((key === "claddingColor" || key === "roofColor" || key === "steelColor" || key === "doorColor" || key === "sectionalDoorColor" || key === "trimmingColor") && val.startsWith("#")) {
         val = val.substring(1);
       }
       searchParams.set(key, val);
@@ -303,7 +328,7 @@ export default function Configurator() {
   };
 
   return (
-    <div className="relative h-screen w-screen bg-[oklch(0.16_0.01_240)]">
+    <div className="relative h-screen w-screen bg-[oklch(0.16_0.01_240)] select-none overflow-hidden">
       <Canvas
         shadows
         camera={{ position: [10, 8, -10], fov: 35, near: 0.1, far: 200 }}
@@ -319,74 +344,99 @@ export default function Configurator() {
         />
         <OrbitControls makeDefault enableDamping dampingFactor={0.08} target={[0, typedParams.clearHeight / 2, 0]} />
         <CameraRig preset={preset} params={typedParams} />
-        <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
-          <GizmoViewport axisColors={["#ef4444", "#22c55e", "#3b82f6"]} labelColor="white" />
-        </GizmoHelper>
+        {!isMobile && (
+          <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
+            <GizmoViewport axisColors={["#ef4444", "#22c55e", "#3b82f6"]} labelColor="white" />
+          </GizmoHelper>
+        )}
       </Canvas>
 
       {/* Top bar */}
-      <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between border-b border-white/5 bg-black/40 px-4 py-2 backdrop-blur">
-        <div className="flex items-center gap-3">
+      <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between border-b border-white/5 bg-black/40 px-3 py-2 backdrop-blur">
+        <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
-          <h1 className="font-mono text-sm tracking-widest text-white/90">
-            STEEL GARAGE — PARAMETRIC CAD
+          <h1 className="font-mono text-xs md:text-sm tracking-widest text-white/90">
+            {isMobile ? "STEEL GARAGE" : "STEEL GARAGE — PARAMETRIC CAD"}
           </h1>
-          <span className="rounded border border-white/10 px-2 py-0.5 font-mono text-[10px] text-white/50">
-            v1.0
-          </span>
+          {!isMobile && (
+            <span className="rounded border border-white/10 px-2 py-0.5 font-mono text-[10px] text-white/50">
+              v1.0
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1">
           {(["iso", "plan", "front", "side"] as const).map((v) => (
             <button
               key={v}
               onClick={() => setPreset(v)}
-              className={`rounded px-3 py-1 font-mono text-xs uppercase tracking-wider transition ${
+              className={`rounded px-2 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider transition ${
                 preset === v
                   ? "bg-emerald-400/20 text-emerald-300 ring-1 ring-emerald-400/40"
                   : "text-white/60 hover:bg-white/5 hover:text-white"
               }`}
             >
-              {v === "iso" ? "Axonometria" : v === "plan" ? "Pôdorys" : v === "front" ? "Čelo" : "Bok"}
+              {v === "iso" ? (isMobile ? "ISO" : "Axonometria") : v === "plan" ? (isMobile ? "PÔD" : "Pôdorys") : v === "front" ? (isMobile ? "Čelo" : "Čelo") : (isMobile ? "Bok" : "Bok")}
             </button>
           ))}
           <button
             onClick={handleShare}
-            className="ml-2 flex items-center gap-1.5 rounded bg-emerald-400/20 px-3 py-1 font-mono text-xs uppercase tracking-wider text-emerald-300 ring-1 ring-emerald-400/40 transition hover:bg-emerald-400/30"
+            className="ml-1 md:ml-2 flex items-center gap-1 rounded bg-emerald-400/20 px-2 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider text-emerald-300 ring-1 ring-emerald-400/40 transition hover:bg-emerald-400/30"
           >
             Zdieľať
           </button>
         </div>
-        <div className="font-mono text-[10px] text-white/40">
-          {typedParams.width.toFixed(1)} × {typedParams.length.toFixed(1)} × {typedParams.clearHeight.toFixed(1)} m
-        </div>
+        {!isMobile && (
+          <div className="font-mono text-[10px] text-white/40">
+            {typedParams.width.toFixed(1)} × {typedParams.length.toFixed(1)} × {typedParams.clearHeight.toFixed(1)} m
+          </div>
+        )}
       </div>
 
       <PriceCalculator p={typedParams} />
       <PremiumSpecPanel p={typedParams} />
 
       {/* Dimensions strip */}
-      <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded border border-white/10 bg-black/50 px-3 py-1.5 font-mono text-[10px] text-white/60 backdrop-blur">
-        Drag = orbit · Scroll = zoom · Right-drag = pan · Profily {(typedParams.profileSize * 1000).toFixed(0)}×{(typedParams.profileSize * 1000).toFixed(0)}×{(typedParams.profileThickness * 1000).toFixed(0)} mm
+      <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded border border-white/10 bg-black/50 px-2 py-1 md:px-3 md:py-1.5 font-mono text-[9px] md:text-[10px] text-white/60 backdrop-blur text-center whitespace-nowrap">
+        {isMobile ? "Ťahanie = rotácia · Profily " + (typedParams.profileSize * 1000).toFixed(0) + " mm" : "Drag = orbit · Scroll = zoom · Right-drag = pan · Profily " + (typedParams.profileSize * 1000).toFixed(0) + "×" + (typedParams.profileSize * 1000).toFixed(0) + "×" + (typedParams.profileThickness * 1000).toFixed(0) + " mm"}
       </div>
 
-      <Leva
-        titleBar={{ title: "Parametre", drag: true, filter: false }}
-        theme={{
-          colors: {
-            elevation1: "#0e1116",
-            elevation2: "#161b22",
-            elevation3: "#1f2630",
-            accent1: "#34d399",
-            accent2: "#10b981",
-            accent3: "#059669",
-            highlight1: "#9ca3af",
-            highlight2: "#e5e7eb",
-            highlight3: "#ffffff",
-          },
-          sizes: { rootWidth: "320px", controlWidth: "150px" },
-          fonts: { mono: "ui-monospace, SFMono-Regular, Menlo, monospace" },
-        }}
-      />
+      {/* Controls Toggle Button */}
+      <button
+        onClick={() => setShowControls(v => !v)}
+        className="absolute right-4 top-16 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400 text-slate-900 shadow-lg hover:bg-emerald-300 transition-all active:scale-95 cursor-pointer"
+      >
+        {showControls ? (
+          <X className="h-5 w-5" />
+        ) : (
+          <SlidersHorizontal className="h-5 w-5" />
+        )}
+      </button>
+
+      {/* Leva Controls container */}
+      <div className={`absolute right-4 top-28 z-20 max-h-[72vh] overflow-y-auto rounded-lg bg-[#0e1116]/95 shadow-2xl border border-white/10 transition-all duration-300 ${
+        showControls ? "opacity-100 translate-x-0 pointer-events-auto" : "opacity-0 translate-x-12 pointer-events-none"
+      } md:w-[320px] w-[calc(100vw-32px)] max-w-[360px]`}>
+        <Leva
+          fill
+          flat
+          titleBar={{ title: "Parametre", drag: false, filter: false }}
+          theme={{
+            colors: {
+              elevation1: "#0e1116",
+              elevation2: "#161b22",
+              elevation3: "#1f2630",
+              accent1: "#34d399",
+              accent2: "#10b981",
+              accent3: "#059669",
+              highlight1: "#9ca3af",
+              highlight2: "#e5e7eb",
+              highlight3: "#ffffff",
+            },
+            sizes: { rootWidth: "100%", controlWidth: "45%" },
+            fonts: { mono: "ui-monospace, SFMono-Regular, Menlo, monospace" },
+          }}
+        />
+      </div>
     </div>
   );
 }

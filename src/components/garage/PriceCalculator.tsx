@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { GarageParams } from "@/lib/garage/types";
 import { ridgeHeight, highEave } from "./Structure";
 import { toast } from "sonner";
@@ -18,6 +18,23 @@ export function PriceCalculator({ p }: PriceCalculatorProps) {
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [open, setOpen] = useState(true);
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth < 768) {
+        setOpen(false);
+      }
+      const handleResize = () => {
+        setIsMobile(window.innerWidth < 768);
+      };
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, []);
 
   // 1. Calculations matching Structure.tsx
   const W = p.width;
@@ -142,67 +159,77 @@ export function PriceCalculator({ p }: PriceCalculatorProps) {
   return (
     <>
       {/* Floating Price Card */}
-      <div className="absolute bottom-3 left-4 z-10 w-72 rounded-lg border border-white/10 bg-black/75 p-4 font-mono text-white/90 shadow-2xl backdrop-blur-md">
-        <h3 className="mb-2 text-xs tracking-wider text-emerald-400">
-          ODHAD CENY MATERIÁLU
-        </h3>
-        
-        <div className="space-y-1.5 text-[11px] border-b border-white/10 pb-2">
-          <div className="flex justify-between">
-            <span>Konštrukcia ({totalSteelLength.toFixed(0)}m):</span>
-            <span>{steelCost.toFixed(2)} €</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Opláštenie ({totalCladdingArea.toFixed(0)}m²):</span>
-            <span>{claddingCost.toFixed(2)} €</span>
-          </div>
-          {p.hasPersonalDoor && (
-            <div className="flex justify-between">
-              <span>Dvere (personálne):</span>
-              <span>{personalDoorCost.toFixed(2)} €</span>
-            </div>
-          )}
-          {p.windowCount > 0 && (
-            <div className="flex justify-between">
-              <span>Okná ({p.windowCount} ks):</span>
-              <span>{windowsCost.toFixed(2)} €</span>
-            </div>
-          )}
-          <div className="flex justify-between">
-            <span>Brána ({p.doorWidth}m × {p.doorHeight}m):</span>
-            <span>{garageDoorCost.toFixed(2)} €</span>
-          </div>
-          {p.showFoundation && (
-            <div className="flex justify-between">
-              <span>Základová doska:</span>
-              <span>{foundationCost.toFixed(2)} €</span>
-            </div>
-          )}
-        </div>
-
-        <div className="pt-2 text-xs">
-          <div className="flex justify-between text-white/50">
-            <span>Bez DPH:</span>
-            <span>{totalCost.toFixed(2)} €</span>
-          </div>
-          <div className="flex justify-between text-white/50">
-            <span>DPH (20%):</span>
-            <span>{vat.toFixed(2)} €</span>
-          </div>
-          <div className="mt-1 flex justify-between text-sm font-bold text-emerald-300">
-            <span>Spolu s DPH:</span>
-            <span>{totalWithVat.toFixed(2)} €</span>
-          </div>
-        </div>
-
-
-
+      <div className={`absolute bottom-3 left-3 md:left-4 z-10 rounded-lg border border-white/10 bg-black/75 font-mono text-white/90 shadow-2xl backdrop-blur-md transition-all duration-300 ${open ? "w-[calc(100%-1.5rem)] md:w-72 max-w-[340px]" : "w-auto max-w-[calc(100%-1.5rem)] md:w-72"}`}>
         <button
-          onClick={() => setShowForm(true)}
-          className="mt-3 w-full rounded bg-emerald-400 py-1.5 text-center text-xs font-bold text-black transition hover:bg-emerald-300"
+          onClick={() => setOpen(v => !v)}
+          className={`flex w-full items-center justify-between text-left hover:bg-white/5 cursor-pointer gap-3 whitespace-nowrap ${open ? "border-b border-white/5 rounded-t-lg" : "rounded-lg"} ${isMobile ? "p-2 text-[10px]" : "p-3 text-xs"}`}
         >
-          Dopytovať cenovú ponuku
+          <h3 className="tracking-wider text-emerald-400 font-bold uppercase">
+            CENA: {totalWithVat.toLocaleString("sk-SK", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} € s DPH
+          </h3>
+          <span className="text-[10px] text-white/40">
+            {open ? "skryť ▾" : "detaily ▸"}
+          </span>
         </button>
+        
+        {open && (
+          <div className={`pt-2 ${isMobile ? "p-3 text-[10px]" : "p-4 text-[11px]"}`}>
+            <div className={`space-y-1.5 border-b border-white/10 pb-2`}>
+              <div className="flex justify-between">
+                <span>Konštrukcia ({totalSteelLength.toFixed(0)}m):</span>
+                <span>{steelCost.toFixed(2)} €</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Opláštenie ({totalCladdingArea.toFixed(0)}m²):</span>
+                <span>{claddingCost.toFixed(2)} €</span>
+              </div>
+              {p.hasPersonalDoor && (
+                <div className="flex justify-between">
+                  <span>Dvere (personálne):</span>
+                  <span>{personalDoorCost.toFixed(2)} €</span>
+                </div>
+              )}
+              {p.windowCount > 0 && (
+                <div className="flex justify-between">
+                  <span>Okná ({p.windowCount} ks):</span>
+                  <span>{windowsCost.toFixed(2)} €</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span>Brána ({p.doorWidth}m × {p.doorHeight}m):</span>
+                <span>{garageDoorCost.toFixed(2)} €</span>
+              </div>
+              {p.showFoundation && (
+                <div className="flex justify-between">
+                  <span>Základová doska:</span>
+                  <span>{foundationCost.toFixed(2)} €</span>
+                </div>
+              )}
+            </div>
+
+            <div className={`pt-2 ${isMobile ? "text-[11px]" : "text-xs"}`}>
+              <div className="flex justify-between text-white/50">
+                <span>Bez DPH:</span>
+                <span>{totalCost.toFixed(2)} €</span>
+              </div>
+              <div className="flex justify-between text-white/50">
+                <span>DPH (20%):</span>
+                <span>{vat.toFixed(2)} €</span>
+              </div>
+              <div className="mt-1 flex justify-between text-sm font-bold text-emerald-300">
+                <span>Spolu s DPH:</span>
+                <span>{totalWithVat.toFixed(2)} €</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowForm(true)}
+              className={`mt-3 w-full rounded bg-emerald-400 text-center font-bold text-black transition hover:bg-emerald-300 cursor-pointer ${isMobile ? "py-1 text-[11px]" : "py-1.5 text-xs"}`}
+            >
+              Dopytovať cenovú ponuku
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Quote Request Modal */}

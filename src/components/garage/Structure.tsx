@@ -25,6 +25,48 @@ export function getFrameZ(p: GarageParams): number[] {
   return zs;
 }
 
+export function getPersonalDoorZ(p: GarageParams): number {
+  const zs = getFrameZ(p);
+  if (zs.length >= 3) {
+    return (zs[1] + zs[2]) / 2;
+  }
+  return -p.length / 4;
+}
+
+export function getWindowZs(p: { length: number; bayCount: number; windowCount: number }): number[] {
+  const zs = [];
+  const frames = p.bayCount + 1;
+  const frameZs: number[] = [];
+  for (let i = 0; i < frames; i++) {
+    frameZs.push(-p.length / 2 + (i / (frames - 1)) * p.length);
+  }
+  
+  for (let i = 0; i < p.windowCount; i++) {
+    let bayIdx = 0;
+    if (p.windowCount <= p.bayCount) {
+      bayIdx = Math.floor(((i + 0.5) / p.windowCount) * p.bayCount);
+    } else {
+      bayIdx = i % p.bayCount;
+    }
+    const zCenter = (frameZs[bayIdx] + frameZs[bayIdx + 1]) / 2;
+    zs.push(zCenter);
+  }
+  return zs;
+}
+
+export function getWindowCoords(p: { width: number; length: number; bayCount: number; windowCount: number; windowSide: "left" | "right" | "back" }): number[] {
+  if (p.windowSide === "back") {
+    const coords: number[] = [];
+    for (let i = 0; i < p.windowCount; i++) {
+      const t = (i + 1) / (p.windowCount + 1);
+      coords.push(-p.width / 2 + t * p.width);
+    }
+    return coords;
+  }
+  return getWindowZs(p);
+}
+
+
 export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   const zs = useMemo(() => getFrameZ(p), [p]);
   const hxL = -p.width / 2;
@@ -276,10 +318,21 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
             );
           }
 
-          // 2. BACK WALL (z = L/2) - Cut by personal door if on back
+          // 2. BACK WALL (z = L/2) - Cut by personal door if on back or windows if on back
           backCuts.length = 0;
           if (p.personalDoorSide === "back" && p.hasPersonalDoor && h < 2.0) {
             backCuts.push({ start: -0.45, end: 0.45 });
+          }
+          if (p.hasWindows && p.windowSide === "back" && p.windowCount > 0) {
+            const winXs = getWindowCoords(p);
+            for (const winX of winXs) {
+              const wHalf = p.windowWidth / 2;
+              const winBottom = 1.6 - p.windowHeight / 2;
+              const winTop = 1.6 + p.windowHeight / 2;
+              if (h > winBottom && h < winTop) {
+                backCuts.push({ start: winX - wHalf, end: winX + wHalf });
+              }
+            }
           }
           const backGirts = subtractIntervals(hxL, hxR, backCuts);
           for (const seg of backGirts) {
@@ -299,16 +352,18 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
           // 3. LEFT WALL (x = -W/2) - Cut by personal door or windows
           leftCuts.length = 0;
           if (p.personalDoorSide === "left" && p.hasPersonalDoor && h < 2.0) {
-            leftCuts.push({ start: -L / 4 - 0.45, end: -L / 4 + 0.45 });
+            const doorZ = getPersonalDoorZ(p);
+            leftCuts.push({ start: doorZ - 0.45, end: doorZ + 0.45 });
           }
-          for (let wIdx = 0; wIdx < p.windowCount; wIdx++) {
-            const t = (wIdx + 1) / (p.windowCount + 1);
-            const cx = -L / 2 + t * L;
-            const wHalf = p.windowWidth / 2;
-            const winBottom = 1.6 - p.windowHeight / 2;
-            const winTop = 1.6 + p.windowHeight / 2;
-            if (h > winBottom && h < winTop) {
-              leftCuts.push({ start: cx - wHalf, end: cx + wHalf });
+          if (p.hasWindows && p.windowSide === "left" && p.windowCount > 0) {
+            const winZs = getWindowCoords(p);
+            for (const winZ of winZs) {
+              const wHalf = p.windowWidth / 2;
+              const winBottom = 1.6 - p.windowHeight / 2;
+              const winTop = 1.6 + p.windowHeight / 2;
+              if (h > winBottom && h < winTop) {
+                leftCuts.push({ start: winZ - wHalf, end: winZ + wHalf });
+              }
             }
           }
           const leftGirts = subtractIntervals(-L / 2, L / 2, leftCuts);
@@ -326,10 +381,22 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
             );
           }
 
-          // 4. RIGHT WALL (x = W/2) - Cut by personal door
+          // 4. RIGHT WALL (x = W/2) - Cut by personal door or windows
           rightCuts.length = 0;
           if (p.personalDoorSide === "right" && p.hasPersonalDoor && h < 2.0) {
-            rightCuts.push({ start: -L / 4 - 0.45, end: -L / 4 + 0.45 });
+            const doorZ = getPersonalDoorZ(p);
+            rightCuts.push({ start: doorZ - 0.45, end: doorZ + 0.45 });
+          }
+          if (p.hasWindows && p.windowSide === "right" && p.windowCount > 0) {
+            const winZs = getWindowCoords(p);
+            for (const winZ of winZs) {
+              const wHalf = p.windowWidth / 2;
+              const winBottom = 1.6 - p.windowHeight / 2;
+              const winTop = 1.6 + p.windowHeight / 2;
+              if (h > winBottom && h < winTop) {
+                rightCuts.push({ start: winZ - wHalf, end: winZ + wHalf });
+              }
+            }
           }
           const rightGirts = subtractIntervals(-L / 2, L / 2, rightCuts);
           for (const seg of rightGirts) {
@@ -450,11 +517,12 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
 
         // Left Personal Door frame
         if (p.personalDoorSide === "left" && p.hasPersonalDoor) {
+          const doorZ = getPersonalDoorZ(p);
           out.push(
             <SteelTube
               key="left-door-frame-L"
-              from={[hxL, 0, -L / 4 - 0.45]}
-              to={[hxL, Heave, -L / 4 - 0.45]}
+              from={[hxL, 0, doorZ - 0.45]}
+              to={[hxL, Heave, doorZ - 0.45]}
               size={sz}
               thickness={th}
               color={col}
@@ -464,8 +532,8 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
           out.push(
             <SteelTube
               key="left-door-frame-R"
-              from={[hxL, 0, -L / 4 + 0.45]}
-              to={[hxL, Heave, -L / 4 + 0.45]}
+              from={[hxL, 0, doorZ + 0.45]}
+              to={[hxL, Heave, doorZ + 0.45]}
               size={sz}
               thickness={th}
               color={col}
@@ -475,8 +543,8 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
           out.push(
             <SteelTube
               key="left-door-frame-top"
-              from={[hxL, 2.0, -L / 4 - 0.45]}
-              to={[hxL, 2.0, -L / 4 + 0.45]}
+              from={[hxL, 2.0, doorZ - 0.45]}
+              to={[hxL, 2.0, doorZ + 0.45]}
               size={sz}
               thickness={th}
               color={col}
@@ -488,11 +556,12 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
         // Right Personal Door frame
         if (p.personalDoorSide === "right" && p.hasPersonalDoor) {
           const rH = p.roofType === "shed" ? Hhi : Heave;
+          const doorZ = getPersonalDoorZ(p);
           out.push(
             <SteelTube
               key="right-door-frame-L"
-              from={[hxR, 0, -L / 4 - 0.45]}
-              to={[hxR, rH, -L / 4 - 0.45]}
+              from={[hxR, 0, doorZ - 0.45]}
+              to={[hxR, rH, doorZ - 0.45]}
               size={sz}
               thickness={th}
               color={col}
@@ -502,8 +571,8 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
           out.push(
             <SteelTube
               key="right-door-frame-R"
-              from={[hxR, 0, -L / 4 + 0.45]}
-              to={[hxR, rH, -L / 4 + 0.45]}
+              from={[hxR, 0, doorZ + 0.45]}
+              to={[hxR, rH, doorZ + 0.45]}
               size={sz}
               thickness={th}
               color={col}
@@ -513,8 +582,8 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
           out.push(
             <SteelTube
               key="right-door-frame-top"
-              from={[hxR, 2.0, -L / 4 - 0.45]}
-              to={[hxR, 2.0, -L / 4 + 0.45]}
+              from={[hxR, 2.0, doorZ - 0.45]}
+              to={[hxR, 2.0, doorZ + 0.45]}
               size={sz}
               thickness={th}
               color={col}
@@ -564,72 +633,118 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
           const zN = zs[zs.length - 1];
           const zN1 = zs[zs.length - 2];
           const bsz = sz * 0.5;
+
+          const hasOpening = (side: "left" | "right", zStart: number, zEnd: number) => {
+            // Check personal door
+            if (p.hasPersonalDoor && p.personalDoorSide === side) {
+              const doorCenter = getPersonalDoorZ(p);
+              const doorStart = doorCenter - 0.45;
+              const doorEnd = doorCenter + 0.45;
+              if (doorStart < zEnd && doorEnd > zStart) {
+                return true;
+              }
+            }
+            // Check windows
+            if (p.hasWindows && p.windowCount > 0 && p.windowSide === side) {
+              const winZs = getWindowCoords(p);
+              for (const winZ of winZs) {
+                const winStart = winZ - p.windowWidth / 2;
+                const winEnd = winZ + p.windowWidth / 2;
+                if (winStart < zEnd && winEnd > zStart) {
+                  return true;
+                }
+              }
+            }
+            return false;
+          };
+
+          const showLeftFirst = !hasOpening("left", z0, z1);
+          const showLeftLast = !hasOpening("left", zN1, zN);
+          const showRightFirst = !hasOpening("right", z0, z1);
+          const showRightLast = !hasOpening("right", zN1, zN);
+
           return (
             <>
-              <SteelTube
-                from={[hxL, 0.1, z0]}
-                to={[hxL, Heave - 0.1, z1]}
-                size={bsz}
-                thickness={th}
-                color={col}
-                wireframe={wf}
-              />
-              <SteelTube
-                from={[hxL, Heave - 0.1, z0]}
-                to={[hxL, 0.1, z1]}
-                size={bsz}
-                thickness={th}
-                color={col}
-                wireframe={wf}
-              />
-              <SteelTube
-                from={[hxR, 0.1, z0]}
-                to={[hxR, Hhi - 0.1, z1]}
-                size={bsz}
-                thickness={th}
-                color={col}
-                wireframe={wf}
-              />
-              <SteelTube
-                from={[hxR, Hhi - 0.1, z0]}
-                to={[hxR, 0.1, z1]}
-                size={bsz}
-                thickness={th}
-                color={col}
-                wireframe={wf}
-              />
-              <SteelTube
-                from={[hxL, 0.1, zN1]}
-                to={[hxL, Heave - 0.1, zN]}
-                size={bsz}
-                thickness={th}
-                color={col}
-                wireframe={wf}
-              />
-              <SteelTube
-                from={[hxL, Heave - 0.1, zN1]}
-                to={[hxL, 0.1, zN]}
-                size={bsz}
-                thickness={th}
-                color={col}
-                wireframe={wf}
-              />
-              <SteelTube
-                from={[hxR, 0.1, zN1]}
-                to={[hxR, Hhi - 0.1, zN]}
-                size={bsz}
-                thickness={th}
-                color={col}
-                wireframe={wf}
-              />
-              <SteelTube
-                from={[hxR, Hhi - 0.1, zN1]}
-                to={[hxR, 0.1, zN]}
-                size={bsz}
-                thickness={th}
-                color={col}
-                wireframe={wf}
-              />
+              {showLeftFirst && (
+                <>
+                  <SteelTube
+                    from={[hxL, 0.1, z0]}
+                    to={[hxL, Heave - 0.1, z1]}
+                    size={bsz}
+                    thickness={th}
+                    color={col}
+                    wireframe={wf}
+                  />
+                  <SteelTube
+                    from={[hxL, Heave - 0.1, z0]}
+                    to={[hxL, 0.1, z1]}
+                    size={bsz}
+                    thickness={th}
+                    color={col}
+                    wireframe={wf}
+                  />
+                </>
+              )}
+              {showRightFirst && (
+                <>
+                  <SteelTube
+                    from={[hxR, 0.1, z0]}
+                    to={[hxR, Hhi - 0.1, z1]}
+                    size={bsz}
+                    thickness={th}
+                    color={col}
+                    wireframe={wf}
+                  />
+                  <SteelTube
+                    from={[hxR, Hhi - 0.1, z0]}
+                    to={[hxR, 0.1, z1]}
+                    size={bsz}
+                    thickness={th}
+                    color={col}
+                    wireframe={wf}
+                  />
+                </>
+              )}
+              {showLeftLast && (
+                <>
+                  <SteelTube
+                    from={[hxL, 0.1, zN1]}
+                    to={[hxL, Heave - 0.1, zN]}
+                    size={bsz}
+                    thickness={th}
+                    color={col}
+                    wireframe={wf}
+                  />
+                  <SteelTube
+                    from={[hxL, Heave - 0.1, zN1]}
+                    to={[hxL, 0.1, zN]}
+                    size={bsz}
+                    thickness={th}
+                    color={col}
+                    wireframe={wf}
+                  />
+                </>
+              )}
+              {showRightLast && (
+                <>
+                  <SteelTube
+                    from={[hxR, 0.1, zN1]}
+                    to={[hxR, Hhi - 0.1, zN]}
+                    size={bsz}
+                    thickness={th}
+                    color={col}
+                    wireframe={wf}
+                  />
+                  <SteelTube
+                    from={[hxR, Hhi - 0.1, zN1]}
+                    to={[hxR, 0.1, zN]}
+                    size={bsz}
+                    thickness={th}
+                    color={col}
+                    wireframe={wf}
+                  />
+                </>
+              )}
             </>
           );
         })()}

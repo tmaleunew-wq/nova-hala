@@ -116,7 +116,7 @@ const dot: Record<Status, string> = {
 };
 
 export function PremiumSpecPanel({ p }: { p: GarageParams }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const checks = useMemo(() => buildChecks(p), [p]);
   const load = useMemo(() => estimateLoad(p), [p]);
 

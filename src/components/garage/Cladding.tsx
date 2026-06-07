@@ -2,7 +2,7 @@ import "@react-three/fiber";
 import { useMemo, useState } from "react";
 import * as THREE from "three";
 import type { GarageParams } from "@/lib/garage/types";
-import { ridgeHeight, highEave, getFrameZ } from "./Structure";
+import { ridgeHeight, highEave, getFrameZ, getPersonalDoorZ, getWindowZs, getWindowCoords } from "./Structure";
 import { makeTrapezoidTexture } from "@/lib/garage/textures";
 import { createPBRCladdingMaterial, createPBRSmoothMaterial, createPBRTileMaterial } from "@/lib/garage/pbrMaterialHelper";
 import { getCladdingConfig } from "@/lib/garage/configHelper";
@@ -28,6 +28,7 @@ function PurPanel({
   isSandwich = true,
   claddingOrientation = "vertical",
   panelType,
+  isSkylight = false,
 }: {
   id: string;
   width: number;
@@ -42,6 +43,7 @@ function PurPanel({
   isSandwich?: boolean;
   claddingOrientation?: "vertical" | "horizontal";
   panelType?: string;
+  isSkylight?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -72,10 +74,25 @@ function PurPanel({
     return s;
   }, [width, height, holes]);
 
+  const isRoof = id.startsWith("roof");
+  const isSandwichActual = isSandwich && !isSkylight;
+
   const pbrMaterial = useMemo(() => {
     if (wireframe) return null;
-    const isRoof = id.startsWith("roof");
-    if (isRoof) {
+    if (isSkylight) {
+      return new THREE.MeshPhysicalMaterial({
+        color: "#cbe2f7",
+        transmission: 0.85,
+        roughness: 0.15,
+        metalness: 0.05,
+        ior: 1.48,
+        thickness: thickness,
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide,
+      });
+    }
+    if (panelType === "tile" && isRoof) {
       const repeatsX = Math.max(4, Math.round(width / 0.18));
       const repeatsY = Math.max(4, Math.round(height / 0.35));
       return createPBRTileMaterial(activeColorStr, repeatsX, repeatsY);
@@ -85,9 +102,10 @@ function PurPanel({
     }
     const isHorizontal = claddingOrientation === "horizontal";
     const orient = isHorizontal ? "horizontal" : "vertical";
+    const spacing = panelType === "sandwich" ? 1.0 : 0.25;
     const repeats = isHorizontal
-      ? Math.max(1, Math.round(height / 0.6))
-      : Math.max(1, Math.round(width / 0.6));
+      ? Math.max(1, Math.round(height / spacing))
+      : Math.max(1, Math.round(width / spacing));
 
     const mat = createPBRCladdingMaterial(activeColorStr, orient, repeats);
 
@@ -104,21 +122,22 @@ function PurPanel({
       t.needsUpdate = true;
     }
     return mat;
-  }, [activeColorStr, width, height, id, claddingOrientation, wireframe, panelType]);
+  }, [activeColorStr, width, height, isRoof, claddingOrientation, wireframe, panelType, isSkylight, thickness]);
 
   const outerGeom = useMemo(() => {
-    const depth = isSandwich ? 0.002 : thickness;
+    const depth = isSandwichActual ? 0.002 : thickness;
     const g = new THREE.ExtrudeGeometry(shape, {
       depth,
       bevelEnabled: false,
       curveSegments: 2,
     });
-    g.translate(0, 0, thickness / 2 - depth);
+    const zTrans = isRoof ? (-thickness / 2) : (thickness / 2 - depth);
+    g.translate(0, 0, zTrans);
     return g;
-  }, [shape, thickness, isSandwich]);
+  }, [shape, thickness, isSandwichActual, isRoof]);
 
   const coreGeom = useMemo(() => {
-    if (!isSandwich) return null;
+    if (!isSandwichActual) return null;
     const depth = thickness - 0.004;
     const g = new THREE.ExtrudeGeometry(shape, {
       depth,
@@ -127,19 +146,20 @@ function PurPanel({
     });
     g.translate(0, 0, -depth / 2);
     return g;
-  }, [shape, thickness, isSandwich]);
+  }, [shape, thickness, isSandwichActual]);
 
   const innerGeom = useMemo(() => {
-    if (!isSandwich) return null;
+    if (!isSandwichActual) return null;
     const depth = 0.002;
     const g = new THREE.ExtrudeGeometry(shape, {
       depth,
       bevelEnabled: false,
       curveSegments: 2,
     });
-    g.translate(0, 0, -thickness / 2);
+    const zTrans = isRoof ? (thickness / 2 - depth) : (-thickness / 2);
+    g.translate(0, 0, zTrans);
     return g;
-  }, [shape, thickness, isSandwich]);
+  }, [shape, thickness, isSandwichActual, isRoof]);
 
   const handlePointerOver = (e: any) => {
     e.stopPropagation();
@@ -194,7 +214,7 @@ function PurPanel({
           />
         )}
       </mesh>
-      {isSandwich && coreGeom && (
+      {isSandwichActual && coreGeom && (
         <mesh geometry={coreGeom} castShadow receiveShadow>
           <meshStandardMaterial
             color={hovered ? "#faf3cc" : "#e6dfb3"}
@@ -205,7 +225,7 @@ function PurPanel({
           />
         </mesh>
       )}
-      {isSandwich && innerGeom && (
+      {isSandwichActual && innerGeom && (
         <mesh geometry={innerGeom} castShadow receiveShadow>
           <meshStandardMaterial
             color={hovered ? "#ffffff" : "#f1f3f5"}
@@ -216,6 +236,23 @@ function PurPanel({
           />
         </mesh>
       )}
+      {isSkylight && !wireframe && (() => {
+        const numRibs = 5;
+        const ribWidth = 0.02;
+        const ribThick = 0.015;
+        const ribs = [];
+        for (let j = 0; j < numRibs; j++) {
+          const ribY = (j / (numRibs - 1)) * height;
+          const ribZ = -thickness / 2 - ribThick / 2 - 0.001;
+          ribs.push(
+            <mesh key={j} position={[0, ribY, ribZ]} castShadow>
+              <boxGeometry args={[width, ribWidth, ribThick]} />
+              <meshStandardMaterial color="#b2b9c4" metalness={0.8} roughness={0.3} />
+            </mesh>
+          );
+        }
+        return <>{ribs}</>;
+      })()}
     </group>
   );
 }
@@ -273,9 +310,10 @@ function PurGableTriangle({
     }
     const isHorizontal = claddingOrientation === "horizontal";
     const orient = isHorizontal ? "horizontal" : "vertical";
+    const spacing = panelType === "sandwich" ? 1.0 : 0.25;
     const repeats = isHorizontal
-      ? Math.max(1, Math.round(ridge / 0.6))
-      : Math.max(1, Math.round(width / 0.6));
+      ? Math.max(1, Math.round(ridge / spacing))
+      : Math.max(1, Math.round(width / spacing));
 
     const mat = createPBRCladdingMaterial(activeColorStr, orient, repeats);
 
@@ -431,9 +469,10 @@ function PurShedTriangle({
     }
     const isHorizontal = claddingOrientation === "horizontal";
     const orient = isHorizontal ? "horizontal" : "vertical";
+    const spacing = panelType === "sandwich" ? 1.0 : 0.25;
     const repeats = isHorizontal
-      ? Math.max(1, Math.round(highEave / 0.6))
-      : Math.max(1, Math.round(width / 0.6));
+      ? Math.max(1, Math.round(highEave / spacing))
+      : Math.max(1, Math.round(width / spacing));
 
     const mat = createPBRCladdingMaterial(activeColorStr, orient, repeats);
 
@@ -561,16 +600,20 @@ export function Cladding({
   const panelThickness = wallThickness;
   const roofPanelThickness = roofThickness;
   const isSand = p.panelType === "sandwich" || p.panelType === "smooth";
+  const isRoofSand = p.roofPanelType === "sandwich" || p.roofPanelType === "smooth";
   const sz = p.profileSize;
 
   // openings
   const doorHole: Rect = { cx: 0, cy: p.doorHeight / 2 + 0.02, w: p.doorWidth, h: p.doorHeight };
-  const personalHole: Rect = { cx: -L / 4, cy: 1.0, w: 0.9, h: 2.0 };
+  const personalHole: Rect = { cx: getPersonalDoorZ(p), cy: 1.0, w: 0.9, h: 2.0 };
   const winSpread: Rect[] = [];
-  for (let i = 0; i < p.windowCount; i++) {
-    const t = (i + 1) / (p.windowCount + 1);
-    winSpread.push({ cx: -L / 2 + t * L, cy: 1.6, w: p.windowWidth, h: p.windowHeight });
+  if (p.hasWindows && p.windowCount > 0) {
+    const winCoords = getWindowCoords(p);
+    for (const coord of winCoords) {
+      winSpread.push({ cx: coord, cy: 1.6, w: p.windowWidth, h: p.windowHeight });
+    }
   }
+  const windowSide = p.windowSide;
 
   const ex = explodeY;
   const offFront = ex * -1.5;
@@ -603,23 +646,36 @@ export function Cladding({
       </group>
 
       {/* BACK (z=+L/2), normal +Z */}
-      <group position={[0, 0, L / 2 + (sz / 2 + panelThickness / 2) + offBack]}>
-        <PurPanel
-          id="back"
-          width={W + sz + panelThickness}
-          height={Heave}
-          holes={p.personalDoorSide === "back" && p.hasPersonalDoor ? [{ cx: 0, cy: 1.0, w: 0.9, h: 2.0 }] : []}
-          texture={wallTex}
-          color={p.claddingColor}
-          wireframe={p.wireframe}
-          visible={!removedPanels["back"]}
-          onToggle={() => onTogglePanel?.("back")}
-          thickness={panelThickness}
-          isSandwich={isSand}
-          claddingOrientation={p.claddingOrientation}
-          panelType={p.panelType}
-        />
-      </group>
+      {(() => {
+        const backHoles: Rect[] = [];
+        if (p.personalDoorSide === "back" && p.hasPersonalDoor) {
+          backHoles.push({ cx: 0, cy: 1.0, w: 0.9, h: 2.0 });
+        }
+        if (p.hasWindows && p.windowSide === "back" && p.windowCount > 0) {
+          for (const wRect of winSpread) {
+            backHoles.push({ cx: wRect.cx, cy: wRect.cy, w: wRect.w, h: wRect.h });
+          }
+        }
+        return (
+          <group position={[0, 0, L / 2 + (sz / 2 + panelThickness / 2) + offBack]}>
+            <PurPanel
+              id="back"
+              width={W + sz + panelThickness}
+              height={Heave}
+              holes={backHoles}
+              texture={wallTex}
+              color={p.claddingColor}
+              wireframe={p.wireframe}
+              visible={!removedPanels["back"]}
+              onToggle={() => onTogglePanel?.("back")}
+              thickness={panelThickness}
+              isSandwich={isSand}
+              claddingOrientation={p.claddingOrientation}
+              panelType={p.panelType}
+            />
+          </group>
+        );
+      })()}
 
       {/* LEFT (x=-W/2), normal -X. Panel width along Z. */}
       <group position={[-W / 2 - (sz / 2 + panelThickness / 2) + offLeft, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
@@ -638,9 +694,11 @@ export function Cladding({
               bayHoles.push({ cx: personalHole.cx - zCenter, cy: personalHole.cy, w: personalHole.w, h: personalHole.h });
             }
           }
-          for (const wRect of winSpread) {
-            if (wRect.cx + wRect.w / 2 > zStart && wRect.cx - wRect.w / 2 < zEnd) {
-              bayHoles.push({ cx: wRect.cx - zCenter, cy: wRect.cy, w: wRect.w, h: wRect.h });
+          if (p.hasWindows && windowSide === "left") {
+            for (const wRect of winSpread) {
+              if (wRect.cx + wRect.w / 2 > zStart && wRect.cx - wRect.w / 2 < zEnd) {
+                bayHoles.push({ cx: wRect.cx - zCenter, cy: wRect.cy, w: wRect.w, h: wRect.h });
+              }
             }
           }
 
@@ -682,6 +740,13 @@ export function Cladding({
           if (p.personalDoorSide === "right" && p.hasPersonalDoor) {
             if (personalHole.cx + personalHole.w / 2 > zStart && personalHole.cx - personalHole.w / 2 < zEnd) {
               bayHoles.push({ cx: zCenter - personalHole.cx, cy: personalHole.cy, w: personalHole.w, h: personalHole.h });
+            }
+          }
+          if (p.hasWindows && windowSide === "right") {
+            for (const wRect of winSpread) {
+              if (wRect.cx + wRect.w / 2 > zStart && wRect.cx - wRect.w / 2 < zEnd) {
+                bayHoles.push({ cx: zCenter - wRect.cx, cy: wRect.cy, w: wRect.w, h: wRect.h });
+              }
             }
           }
 
@@ -812,6 +877,7 @@ export function Cladding({
                     const actualEnd = i === zs.length - 2 ? zEnd + (sz / 2 + panelThickness) + overhang : zEnd;
                     const w = actualEnd - actualStart;
                     const id = `roof-${sideName}-${i}`;
+                    const isSkylightPanel = p.hasSkylights && (p.bayCount <= 2 ? i === 0 : i % 2 === 1);
                     return (
                       <group key={id} position={[s * (slopeLen / 2 - (sz / 2 + roofPanelThickness / 2) * Math.tan(angle)), actualStart, sz / 2 + roofPanelThickness / 2]}>
                         <PurPanel
@@ -825,8 +891,10 @@ export function Cladding({
                           visible={!removedPanels[id]}
                           onToggle={() => onTogglePanel?.(id)}
                           thickness={roofPanelThickness}
-                          isSandwich={isSand}
-                          claddingOrientation={p.claddingOrientation}
+                          isSandwich={isRoofSand}
+                          claddingOrientation={p.roofCladdingOrientation}
+                          panelType={p.roofPanelType}
+                          isSkylight={isSkylightPanel}
                         />
                       </group>
                     );
@@ -856,6 +924,7 @@ export function Cladding({
                 const actualEnd = i === zs.length - 2 ? zEnd + (sz / 2 + panelThickness) + overhang : zEnd;
                 const w = actualEnd - actualStart;
                 const id = `roof-${i}`;
+                const isSkylightPanel = p.hasSkylights && (p.bayCount <= 2 ? i === 0 : i % 2 === 1);
                 return (
                   <group key={id} position={[0, actualStart, sz / 2 + roofPanelThickness / 2]}>
                     <PurPanel
@@ -869,8 +938,10 @@ export function Cladding({
                       visible={!removedPanels[id]}
                       onToggle={() => onTogglePanel?.(id)}
                       thickness={roofPanelThickness}
-                      isSandwich={isSand}
-                      claddingOrientation={p.claddingOrientation}
+                      isSandwich={isRoofSand}
+                      claddingOrientation={p.roofCladdingOrientation}
+                      panelType={p.roofPanelType}
+                      isSkylight={isSkylightPanel}
                     />
                   </group>
                 );

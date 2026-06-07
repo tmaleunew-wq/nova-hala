@@ -86,9 +86,9 @@ export function createPBRTileMaterial(
   return new THREE.MeshStandardMaterial({
     map,
     normalMap,
-    normalScale: new THREE.Vector2(1.5, 1.5),
-    roughness: 0.5,
-    metalness: 0.75, // metallic sheet metal look
+    normalScale: new THREE.Vector2(1.6, 1.6),
+    roughness: 0.45, // satin finish
+    metalness: 0.25, // coated steel look rather than chrome/tin foil
     side: THREE.DoubleSide,
   });
 }
