@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { useControls, folder, button, Leva } from "leva";
 import { SlidersHorizontal, X } from "lucide-react";
 import * as THREE from "three";
-import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { DEFAULT_PARAMS, type GarageParams } from "@/lib/garage/types";
 import { Structure } from "./Structure";
 import { Cladding } from "./Cladding";
@@ -124,24 +123,6 @@ function CameraRig({ preset, params }: { preset: ViewPreset; params: GarageParam
   return null;
 }
 
-function downloadGLB(group: THREE.Group, filename = "garage.glb") {
-  const exporter = new GLTFExporter();
-  exporter.parse(
-    group,
-    (result) => {
-      const blob = result instanceof ArrayBuffer ? new Blob([result], { type: "model/gltf-binary" }) : new Blob([JSON.stringify(result)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    },
-    (err) => console.error(err),
-    { binary: true },
-  );
-}
-
 function getParamsFromURL(): Partial<GarageParams> {
   if (typeof window === "undefined") return {};
   const searchParams = new URLSearchParams(window.location.search);
@@ -171,6 +152,7 @@ export default function Configurator() {
   const exportRef = useRef<THREE.Group | null>(null);
   const [preset, setPreset] = useState<ViewPreset>("iso");
   const [removedPanels, setRemovedPanels] = useState<Record<string, boolean>>({});
+  const [quoteRequestSignal, setQuoteRequestSignal] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -264,8 +246,8 @@ export default function Configurator() {
       flashingMatchesPanels: { value: initialUrlParams.flashingMatchesPanels ?? DEFAULT_PARAMS.flashingMatchesPanels, label: "Systémové klampiarstvo" },
     }, { collapsed: true }),
     "Export": folder({
-      "Stiahnuť .glb": button(() => {
-        if (exportRef.current) downloadGLB(exportRef.current);
+      "Dopytovať cenovú ponuku": button(() => {
+        setQuoteRequestSignal((v) => v + 1);
       }),
     }),
   });
@@ -392,7 +374,7 @@ export default function Configurator() {
         )}
       </div>
 
-      <PriceCalculator p={typedParams} />
+      <PriceCalculator p={typedParams} quoteRequestSignal={quoteRequestSignal} />
       <PremiumSpecPanel p={typedParams} />
 
       {/* Dimensions strip */}
@@ -413,7 +395,7 @@ export default function Configurator() {
       </button>
 
       {/* Leva Controls container */}
-      <div className={`absolute right-4 top-28 z-20 max-h-[72vh] overflow-y-auto rounded-lg bg-[#0e1116]/95 shadow-2xl border border-white/10 transition-all duration-300 ${
+      <div className={`quote-export-panel absolute right-4 top-28 z-20 max-h-[72vh] overflow-y-auto rounded-lg bg-[#0e1116]/95 shadow-2xl border border-white/10 transition-all duration-300 ${
         showControls ? "opacity-100 translate-x-0 pointer-events-auto" : "opacity-0 translate-x-12 pointer-events-none"
       } md:w-[320px] w-[calc(100vw-32px)] max-w-[360px]`}>
         <Leva
@@ -437,6 +419,15 @@ export default function Configurator() {
           }}
         />
       </div>
+      <style>{`
+        .quote-export-panel > div > div:last-child > div > div:last-child button {
+          height: 48px;
+          min-height: 48px;
+          font-size: 14px;
+          font-weight: 700;
+          padding: 0 16px;
+        }
+      `}</style>
     </div>
   );
 }

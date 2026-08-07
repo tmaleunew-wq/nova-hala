@@ -173,11 +173,6 @@ function PurPanel({
     document.body.style.cursor = "default";
   };
 
-  const handleClick = (e: any) => {
-    e.stopPropagation();
-    if (onToggle) onToggle();
-  };
-
   if (!visible) {
     return (
       <mesh
@@ -186,7 +181,6 @@ function PurPanel({
         receiveShadow={false}
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
-        onClick={handleClick}
       >
         <boxGeometry args={[width, height, thickness]} />
         <meshStandardMaterial
@@ -203,7 +197,6 @@ function PurPanel({
     <group
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
-      onClick={handleClick}
     >
       <mesh geometry={outerGeom} castShadow receiveShadow material={pbrMaterial || undefined}>
         {wireframe && (
@@ -367,17 +360,11 @@ function PurGableTriangle({
     document.body.style.cursor = "default";
   };
 
-  const handleClick = (e: any) => {
-    e.stopPropagation();
-    if (onToggle) onToggle();
-  };
-
   if (!visible) {
     return (
       <mesh
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
-        onClick={handleClick}
       >
         <meshStandardMaterial
           color={hovered ? "#34d399" : "#3b82f6"}
@@ -393,7 +380,6 @@ function PurGableTriangle({
     <group
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
-      onClick={handleClick}
     >
       <mesh geometry={outerGeom} castShadow receiveShadow material={pbrMaterial || undefined}>
         {wireframe && <meshStandardMaterial color={activeColorStr} side={THREE.DoubleSide} wireframe />}
@@ -526,18 +512,12 @@ function PurShedTriangle({
     document.body.style.cursor = "default";
   };
 
-  const handleClick = (e: any) => {
-    e.stopPropagation();
-    if (onToggle) onToggle();
-  };
-
   if (!visible) {
     return (
       <mesh
         geometry={outerGeom}
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
-        onClick={handleClick}
       >
         <meshStandardMaterial
           color={hovered ? "#34d399" : "#3b82f6"}
@@ -553,7 +533,6 @@ function PurShedTriangle({
     <group
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
-      onClick={handleClick}
     >
       <mesh geometry={outerGeom} castShadow receiveShadow material={pbrMaterial || undefined}>
         {wireframe && <meshStandardMaterial color={activeColorStr} side={THREE.DoubleSide} wireframe />}
