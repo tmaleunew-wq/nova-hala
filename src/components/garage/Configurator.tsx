@@ -167,7 +167,7 @@ export default function Configurator() {
 
   useEffect(() => {
     if (window.innerWidth < 768) {
-      setShowControls(false);
+      setShowControls(true);
     }
   }, []);
 

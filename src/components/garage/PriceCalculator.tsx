@@ -3,6 +3,7 @@ import type { GarageParams } from "@/lib/garage/types";
 import { ridgeHeight, highEave } from "./Structure";
 import { toast } from "sonner";
 import { getCladdingConfig } from "@/lib/garage/configHelper";
+import { sendInquiry } from "@/lib/garage/inquiryActions";
 
 interface PriceCalculatorProps {
   p: GarageParams;
@@ -147,20 +148,34 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
   const vat = totalCost * 0.20;
   const totalWithVat = totalCost + vat;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate API request
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      await sendInquiry({
+        data: {
+          name,
+          email,
+          phone,
+          message,
+          params: p,
+          origin: window.location.origin,
+        },
+      });
+
+      toast.success("Dopyt bol úspešne odoslaný! Budeme vás kontaktovať.");
       setShowForm(false);
       setName("");
       setEmail("");
       setPhone("");
       setMessage("");
-      toast.success("Dopyt bol úspešne odoslaný! Budeme vás kontaktovať.");
-    }, 1200);
+    } catch (error) {
+      toast.error("Dopyt sa nepodarilo odoslať. Skúste to znova.");
+      console.error("Chyba pri odosielaní dopytu:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -257,3 +272,4 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
     </>
   );
 }
+
