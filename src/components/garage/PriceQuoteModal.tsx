@@ -222,8 +222,8 @@ export function PriceQuoteModal({
         className="w-full max-w-4xl rounded-xl border border-white/10 bg-[#0e1218] font-sans text-slate-100 shadow-2xl overflow-hidden my-8 cursor-default print:border-none print:bg-white print:text-black print:shadow-none print:w-full print:max-w-none"
       >
         
-        {/* Top Control Bar (Hidden on print) */}
-        <div className="flex items-center justify-between border-b border-white/10 bg-black/40 px-6 py-3.5 print:hidden">
+        {/* Top Control Bar (Sticky & Hidden on print) */}
+        <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between border-b border-white/10 bg-[#0b0f14]/95 px-6 py-3.5 backdrop-blur-md print:hidden gap-3 shadow-xl">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-emerald-400" />
             <h2 className="text-sm font-bold tracking-wider text-white font-mono uppercase">
@@ -231,10 +231,20 @@ export function PriceQuoteModal({
             </h2>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-400 px-4 py-2 text-xs font-mono font-bold text-black hover:bg-emerald-300 transition shadow-lg shadow-emerald-400/20"
+              title="Tlačiť alebo uložiť ako PDF súbor"
+            >
+              <Printer className="h-4 w-4" />
+              Tlačiť / Uložiť ako PDF
+            </button>
+
             <button
               onClick={handleSendEmailToClient}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 text-xs font-mono font-bold hover:bg-emerald-500/30 transition"
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3.5 py-2 text-xs font-mono font-bold hover:bg-emerald-500/30 transition"
+              title="Odoslať túto ponuku zákazníkovi na e-mail"
             >
               <Send className="h-3.5 w-3.5" />
               Odoslať e-mailom
@@ -242,24 +252,17 @@ export function PriceQuoteModal({
 
             <button
               onClick={handleExcelExport}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 text-xs font-mono font-bold hover:bg-emerald-500/30 transition"
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3.5 py-2 text-xs font-mono font-bold hover:bg-emerald-500/30 transition"
+              title="Stiahnuť súbor vo formáte Excel (.xls)"
             >
               <FileSpreadsheet className="h-3.5 w-3.5" />
               Excel (.xls)
             </button>
 
             <button
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-400 px-3.5 py-1.5 text-xs font-mono font-bold text-black hover:bg-emerald-300 transition"
-            >
-              <Printer className="h-3.5 w-3.5" />
-              Tlačiť / PDF
-            </button>
-
-            <button
               onClick={onClose}
-              className="flex items-center gap-1 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 px-3 py-1.5 text-xs font-mono font-bold hover:bg-red-500/40 transition"
-              title="Zatvoriť okno (Esc)"
+              className="flex items-center gap-1.5 rounded-lg bg-red-500/20 text-red-300 border border-red-500/40 px-3.5 py-2 text-xs font-mono font-bold hover:bg-red-500/40 transition"
+              title="Zatvoriť ponuku (Esc)"
             >
               <X className="h-4 w-4" />
               Zatvoriť
@@ -497,13 +500,37 @@ export function PriceQuoteModal({
           </div>
 
           {/* Bottom Action Footer (Hidden on print) */}
-          <div className="pt-4 border-t border-white/10 flex justify-end gap-3 print:hidden">
+          <div className="pt-4 border-t border-white/10 flex flex-wrap justify-end gap-2 print:hidden">
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-400 px-4 py-2 text-xs font-mono font-bold text-black hover:bg-emerald-300 transition shadow-lg shadow-emerald-400/20"
+            >
+              <Printer className="h-4 w-4" />
+              Tlačiť / Uložiť ako PDF
+            </button>
+
+            <button
+              onClick={handleSendEmailToClient}
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3.5 py-2 text-xs font-mono font-bold hover:bg-emerald-500/30 transition"
+            >
+              <Send className="h-3.5 w-3.5" />
+              Odoslať klientovi e-mailom
+            </button>
+
+            <button
+              onClick={handleExcelExport}
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3.5 py-2 text-xs font-mono font-bold hover:bg-emerald-500/30 transition"
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5" />
+              Excel (.xls)
+            </button>
+
             <button
               onClick={onClose}
-              className="flex items-center gap-1.5 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 px-5 py-2 text-xs font-mono font-bold hover:bg-red-500/40 transition"
+              className="flex items-center gap-1.5 rounded-lg bg-red-500/20 text-red-300 border border-red-500/40 px-4 py-2 text-xs font-mono font-bold hover:bg-red-500/40 transition"
             >
               <X className="h-4 w-4" />
-              Zatvoriť cenovú ponuku
+              Zatvoriť
             </button>
           </div>
 
