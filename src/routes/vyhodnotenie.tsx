@@ -9,6 +9,7 @@ import { generateOrderExcelXml } from "@/lib/garage/excelGenerator";
 import { fetchInquiriesFromSupabase } from "@/lib/supabase";
 
 import { AdminAuthGate } from "@/components/garage/AdminAuthGate";
+import { PriceQuoteModal } from "@/components/garage/PriceQuoteModal";
 
 export const Route = createFileRoute("/vyhodnotenie")({
   component: () => (
@@ -28,6 +29,7 @@ function OrderEvaluation() {
   const [params, setParams] = useState<GarageParams>(DEFAULT_PARAMS);
   const [savedOrders, setSavedOrders] = useState<any[]>([]);
   const [clientName, setClientName] = useState<string | null>(null);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
 
   // Editable prices states
   const [steelPricePerKg, setSteelPricePerKg] = useState<number>(1.85);
@@ -322,6 +324,13 @@ function OrderEvaluation() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsQuoteModalOpen(true)}
+            className="flex items-center gap-1.5 rounded bg-emerald-400 font-bold text-black border border-emerald-300 px-3.5 py-1.5 text-xs hover:bg-emerald-300 transition shadow-lg shadow-emerald-400/20"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Cenová Ponuka (PDF/E-mail)
+          </button>
           <button
             onClick={handleReset}
             className="flex items-center gap-1 rounded bg-white/5 px-3 py-1.5 text-xs hover:bg-white/10 transition"
@@ -828,7 +837,30 @@ function OrderEvaluation() {
             </div>
           </div>
         </div>
-      </div>
+      {/* Price Quote Modal */}
+      <PriceQuoteModal
+        isOpen={isQuoteModalOpen}
+        onClose={() => setIsQuoteModalOpen(false)}
+        clientName={clientName || "Zákazník"}
+        clientEmail=""
+        clientPhone=""
+        clientNote=""
+        p={params}
+        pricing={{
+          steelPricePerKg,
+          steelWeightPerMeter,
+          sandwichPricePerSqM,
+          trapezoidPricePerSqM,
+          basePlateCost,
+          garageDoorCost,
+          personalDoorCost,
+          windowCost,
+          foundationPricePerSqM,
+          transportCost,
+          laborCost,
+          marginPercent,
+        }}
+      />
     </div>
   );
 }

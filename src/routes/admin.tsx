@@ -15,6 +15,8 @@ import { fetchInquiriesFromSupabase, supabase } from "@/lib/supabase";
 
 import { AdminAuthGate } from "@/components/garage/AdminAuthGate";
 
+import { PriceQuoteModal } from "@/components/garage/PriceQuoteModal";
+
 export const Route = createFileRoute("/admin")({
   component: () => (
     <AdminAuthGate>
@@ -50,6 +52,7 @@ function AdminDashboard() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
 
   // Active selected order params & pricing
   const [params, setParams] = useState<GarageParams>(DEFAULT_PARAMS);
@@ -460,18 +463,18 @@ function AdminDashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => setIsQuoteModalOpen(true)}
+                  className="flex items-center gap-1.5 rounded bg-emerald-400 font-bold text-black border border-emerald-300 px-3.5 py-1.5 text-xs hover:bg-emerald-300 transition shadow-lg shadow-emerald-400/20"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  Vytvoriť Cenovú Ponuku (PDF/E-mail)
+                </button>
+                <button
                   onClick={handleCopyShareLink}
                   className="flex items-center gap-1.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 text-xs hover:bg-emerald-500/30 transition"
                 >
                   <LinkIcon className="h-3.5 w-3.5" />
-                  Kopírovať odkaz pre klienta
-                </button>
-                <button
-                  onClick={() => window.print()}
-                  className="flex items-center gap-1.5 rounded bg-white/10 text-white px-3 py-1.5 text-xs hover:bg-white/20 transition"
-                >
-                  <Printer className="h-3.5 w-3.5" />
-                  Tlačiť
+                  Kopírovať odkaz
                 </button>
               </div>
             </div>
@@ -696,7 +699,30 @@ function AdminDashboard() {
 
         </div>
 
-      </div>
+      {/* Price Quote Modal */}
+      <PriceQuoteModal
+        isOpen={isQuoteModalOpen}
+        onClose={() => setIsQuoteModalOpen(false)}
+        clientName={clientName}
+        clientEmail={clientEmail}
+        clientPhone={clientPhone}
+        clientNote={clientNote}
+        p={params}
+        pricing={{
+          steelPricePerKg,
+          steelWeightPerMeter,
+          sandwichPricePerSqM,
+          trapezoidPricePerSqM,
+          basePlateCost,
+          garageDoorCost,
+          personalDoorCost,
+          windowCost,
+          foundationPricePerSqM,
+          transportCost,
+          laborCost,
+          marginPercent,
+        }}
+      />
     </div>
   );
 }
