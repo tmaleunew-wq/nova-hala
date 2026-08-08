@@ -837,6 +837,8 @@ function OrderEvaluation() {
             </div>
           </div>
         </div>
+      </div>
+
       {/* Price Quote Modal */}
       <PriceQuoteModal
         isOpen={isQuoteModalOpen}

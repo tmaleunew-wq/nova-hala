@@ -698,6 +698,7 @@ function AdminDashboard() {
           </div>
 
         </div>
+      </div>
 
       {/* Price Quote Modal */}
       <PriceQuoteModal
