@@ -96,21 +96,26 @@ function CameraRig({ preset, params }: { preset: ViewPreset; params: GarageParam
     const L = params.length;
     const H = params.clearHeight;
     const center = new THREE.Vector3(0, H / 2, 0);
-    const d = Math.max(W, L) * 1.6;
+    const isMobileViewport = typeof window !== "undefined" && window.innerWidth < 768;
+    const aspect = typeof window !== "undefined" ? window.innerWidth / Math.max(1, window.innerHeight) : 1;
+    // On mobile screens (especially portrait), zoom out more so the entire building is smaller and fits perfectly
+    const mobileMult = isMobileViewport ? (aspect < 1 ? 2.5 : 2.0) : 1.6;
+    const d = Math.max(W, L) * mobileMult;
+
     let pos: THREE.Vector3;
     switch (preset) {
       case "plan":
-        pos = new THREE.Vector3(0.001, Math.max(W, L) * 1.8, 0);
+        pos = new THREE.Vector3(0.001, Math.max(W, L) * (isMobileViewport ? 2.8 : 1.8), 0);
         break;
       case "front":
-        pos = new THREE.Vector3(0, H / 2, -Math.max(W, L) * 1.4);
+        pos = new THREE.Vector3(0, H / 2, -Math.max(W, L) * (isMobileViewport ? 2.2 : 1.4));
         break;
       case "side":
-        pos = new THREE.Vector3(Math.max(W, L) * 1.4, H / 2, 0);
+        pos = new THREE.Vector3(Math.max(W, L) * (isMobileViewport ? 2.2 : 1.4), H / 2, 0);
         break;
       case "iso":
       default:
-        pos = new THREE.Vector3(d, d * 0.7, -d);
+        pos = new THREE.Vector3(d, d * 0.75, -d);
     }
     camera.position.copy(pos);
     camera.lookAt(center);
@@ -153,22 +158,22 @@ export default function Configurator() {
   const [preset, setPreset] = useState<ViewPreset>("iso");
   const [removedPanels, setRemovedPanels] = useState<Record<string, boolean>>({});
   const [quoteRequestSignal, setQuoteRequestSignal] = useState(0);
-  const [showControls, setShowControls] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [showControls, setShowControls] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth >= 768; // Collapsed by default on mobile screens (< 768px)
+    }
+    return true;
+  });
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
     };
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (window.innerWidth < 768) {
-      setShowControls(true);
-    }
   }, []);
 
   const [initialUrlParams] = useState(() => getParamsFromURL());
@@ -377,6 +382,8 @@ export default function Configurator() {
       <PriceCalculator p={typedParams} quoteRequestSignal={quoteRequestSignal} />
       <PremiumSpecPanel p={typedParams} />
 
+      <PremiumSpecPanel p={typedParams} />
+
       {/* Dimensions strip */}
       <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded border border-white/10 bg-black/50 px-2 py-1 md:px-3 md:py-1.5 font-mono text-[9px] md:text-[10px] text-white/60 backdrop-blur text-center whitespace-nowrap">
         {isMobile ? "Ťahanie = rotácia · Profily " + (typedParams.profileSize * 1000).toFixed(0) + " mm" : "Drag = orbit · Scroll = zoom · Right-drag = pan · Profily " + (typedParams.profileSize * 1000).toFixed(0) + "×" + (typedParams.profileSize * 1000).toFixed(0) + "×" + (typedParams.profileThickness * 1000).toFixed(0) + " mm"}
@@ -385,12 +392,18 @@ export default function Configurator() {
       {/* Controls Toggle Button */}
       <button
         onClick={() => setShowControls(v => !v)}
-        className="absolute right-4 top-16 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400 text-slate-900 shadow-lg hover:bg-emerald-300 transition-all active:scale-95 cursor-pointer"
+        className="absolute right-4 top-16 z-30 flex items-center gap-1.5 rounded-full bg-emerald-400 text-slate-900 px-3 py-2 text-xs font-mono font-bold shadow-lg hover:bg-emerald-300 transition-all active:scale-95 cursor-pointer"
       >
         {showControls ? (
-          <X className="h-5 w-5" />
+          <>
+            <X className="h-4 w-4" />
+            <span>Zavrieť</span>
+          </>
         ) : (
-          <SlidersHorizontal className="h-5 w-5" />
+          <>
+            <SlidersHorizontal className="h-4 w-4" />
+            <span>Parametre</span>
+          </>
         )}
       </button>
 
