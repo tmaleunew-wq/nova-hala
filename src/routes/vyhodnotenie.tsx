@@ -8,8 +8,14 @@ import { toast } from "sonner";
 import { generateOrderExcelXml } from "@/lib/garage/excelGenerator";
 import { fetchInquiriesFromSupabase } from "@/lib/supabase";
 
+import { AdminAuthGate } from "@/components/garage/AdminAuthGate";
+
 export const Route = createFileRoute("/vyhodnotenie")({
-  component: OrderEvaluation,
+  component: () => (
+    <AdminAuthGate>
+      <OrderEvaluation />
+    </AdminAuthGate>
+  ),
   head: () => ({
     meta: [
       { title: "Vyhodnotenie Objednávky — Admin Panel" },

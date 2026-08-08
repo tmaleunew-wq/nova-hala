@@ -13,8 +13,14 @@ import { toast } from "sonner";
 import { generateOrderExcelXml } from "@/lib/garage/excelGenerator";
 import { fetchInquiriesFromSupabase, supabase } from "@/lib/supabase";
 
+import { AdminAuthGate } from "@/components/garage/AdminAuthGate";
+
 export const Route = createFileRoute("/admin")({
-  component: AdminDashboard,
+  component: () => (
+    <AdminAuthGate>
+      <AdminDashboard />
+    </AdminAuthGate>
+  ),
   head: () => ({
     meta: [
       { title: "Admin Dashboard — BAUBOX Steel Shed Forge" },
