@@ -159,12 +159,7 @@ export default function Configurator() {
   const [removedPanels, setRemovedPanels] = useState<Record<string, boolean>>({});
   const [quoteRequestSignal, setQuoteRequestSignal] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
-  const [showControls, setShowControls] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.innerWidth >= 768; // Collapsed by default on mobile screens (< 768px)
-    }
-    return true;
-  });
+  const [showControls, setShowControls] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -186,20 +181,20 @@ export default function Configurator() {
       showFoundation: { value: initialUrlParams.showFoundation ?? DEFAULT_PARAMS.showFoundation, label: "Základová doska" },
       wireframe: { value: initialUrlParams.wireframe ?? DEFAULT_PARAMS.wireframe, label: "Wireframe" },
       explode: { value: initialUrlParams.explode ?? DEFAULT_PARAMS.explode, min: 0, max: 1, step: 0.01, label: "Exploded view" },
-    }),
+    }, { collapsed: true }),
     "Geometria": folder({
       width: { value: initialUrlParams.width ?? DEFAULT_PARAMS.width, min: 2.5, max: 8, step: 0.1, label: "Šírka X [m]" },
       length: { value: initialUrlParams.length ?? DEFAULT_PARAMS.length, min: 3, max: 12, step: 0.1, label: "Dĺžka Y [m]" },
       clearHeight: { value: initialUrlParams.clearHeight ?? DEFAULT_PARAMS.clearHeight, min: 2.0, max: 4.0, step: 0.1, label: "Svetlá výška Z [m]" },
       roofType: { value: initialUrlParams.roofType ?? DEFAULT_PARAMS.roofType, options: { "Sedlová": "gable", "Pultová": "shed" }, label: "Strecha" },
       roofPitchDeg: { value: initialUrlParams.roofPitchDeg ?? DEFAULT_PARAMS.roofPitchDeg, min: 5, max: 35, step: 1, label: "Spád strechy [°]" },
-    }),
+    }, { collapsed: true }),
     "Konštrukcia": folder({
       bayCount: { value: initialUrlParams.bayCount ?? DEFAULT_PARAMS.bayCount, min: 2, max: 8, step: 1, label: "Počet polí" },
       profileSize: { value: initialUrlParams.profileSize ?? DEFAULT_PARAMS.profileSize, min: 0.06, max: 0.16, step: 0.01, label: "Jakl strana [m]" },
       profileThickness: { value: initialUrlParams.profileThickness ?? DEFAULT_PARAMS.profileThickness, min: 0.002, max: 0.008, step: 0.001, label: "Hrúbka steny [m]" },
       steelColor: { value: initialUrlParams.steelColor ?? DEFAULT_PARAMS.steelColor, label: "Farba ocele" },
-    }),
+    }, { collapsed: true }),
     "Opláštenie": folder({
       claddingColor: { value: initialUrlParams.claddingColor ?? DEFAULT_PARAMS.claddingColor, label: "Steny RAL" },
       panelType: { value: initialUrlParams.panelType ?? DEFAULT_PARAMS.panelType, options: { "Trapézový plech": "trapezoid", "Sendvičové panely": "sandwich", "Hladký panel": "smooth" }, label: "Typ stien" },
@@ -210,7 +205,7 @@ export default function Configurator() {
       sectionalDoorColor: { value: initialUrlParams.sectionalDoorColor ?? DEFAULT_PARAMS.sectionalDoorColor, label: "Garážová brána RAL" },
       doorColor: { value: initialUrlParams.doorColor ?? DEFAULT_PARAMS.doorColor, label: "Personálne dvere RAL" },
       trimmingColor: { value: initialUrlParams.trimmingColor ?? DEFAULT_PARAMS.trimmingColor, label: "Rohy & Odkvapy RAL" },
-    }),
+    }, { collapsed: true }),
     "Dvere a okná": folder({
       doorOpen: { value: initialUrlParams.doorOpen ?? DEFAULT_PARAMS.doorOpen, label: "Otvoriť bránu 🔓" },
       doorWidth: { value: initialUrlParams.doorWidth ?? DEFAULT_PARAMS.doorWidth, min: 2, max: 4, step: 0.1, label: "Brána Š [m]" },
@@ -223,7 +218,7 @@ export default function Configurator() {
       windowCount: { value: initialUrlParams.windowCount ?? DEFAULT_PARAMS.windowCount, min: 0, max: 4, step: 1, label: "Počet okien" },
       windowWidth: { value: initialUrlParams.windowWidth ?? DEFAULT_PARAMS.windowWidth, min: 0.3, max: 1.5, step: 0.1, label: "Okno Š [m]" },
       windowHeight: { value: initialUrlParams.windowHeight ?? DEFAULT_PARAMS.windowHeight, min: 0.3, max: 1.2, step: 0.1, label: "Okno V [m]" },
-    }),
+    }, { collapsed: true }),
     "Prémiový sendvič": folder({
       insulationCore: {
         value: initialUrlParams.insulationCore ?? DEFAULT_PARAMS.insulationCore,
@@ -254,7 +249,7 @@ export default function Configurator() {
       "Dopytovať cenovú ponuku": button(() => {
         setQuoteRequestSignal((v) => v + 1);
       }),
-    }),
+    }, { collapsed: true }),
   });
 
   const typedParams: GarageParams = params as GarageParams;
@@ -266,26 +261,6 @@ export default function Configurator() {
     }));
   };
 
-  const showAllPanels = () => {
-    setRemovedPanels({});
-  };
-
-  const hideAllPanels = () => {
-    const hidden: Record<string, boolean> = {};
-    hidden["front"] = true;
-    hidden["back"] = true;
-    hidden["gable-front"] = true;
-    hidden["gable-back"] = true;
-    for (let i = 0; i < typedParams.bayCount; i++) {
-      hidden[`left-${i}`] = true;
-      hidden[`right-${i}`] = true;
-      hidden[`roof-left-${i}`] = true;
-      hidden[`roof-right-${i}`] = true;
-      hidden[`roof-${i}`] = true;
-    }
-    setRemovedPanels(hidden);
-  };
-
   useEffect(() => {
     if (typeof window === "undefined") return;
     const currentParams = new URLSearchParams(window.location.search);
@@ -295,7 +270,6 @@ export default function Configurator() {
     const keys = Object.keys(DEFAULT_PARAMS) as (keyof GarageParams)[];
     for (const key of keys) {
       let val = String(typedParams[key]);
-      // Remove # from hex colors before saving to URL parameters to avoid fragment conflicts
       if ((key === "claddingColor" || key === "roofColor" || key === "steelColor" || key === "doorColor" || key === "sectionalDoorColor" || key === "trimmingColor") && val.startsWith("#")) {
         val = val.substring(1);
       }
