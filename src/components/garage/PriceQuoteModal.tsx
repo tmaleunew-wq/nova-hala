@@ -201,9 +201,26 @@ export function PriceQuoteModal({
     }
   };
 
+  // Handle Escape key to close
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto print:p-0 print:bg-white print:static print:block">
-      <div className="w-full max-w-4xl rounded-xl border border-white/10 bg-[#0e1218] font-sans text-slate-100 shadow-2xl overflow-hidden my-8 print:border-none print:bg-white print:text-black print:shadow-none print:w-full print:max-w-none">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto print:p-0 print:bg-white print:static print:block cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-4xl rounded-xl border border-white/10 bg-[#0e1218] font-sans text-slate-100 shadow-2xl overflow-hidden my-8 cursor-default print:border-none print:bg-white print:text-black print:shadow-none print:w-full print:max-w-none"
+      >
         
         {/* Top Control Bar (Hidden on print) */}
         <div className="flex items-center justify-between border-b border-white/10 bg-black/40 px-6 py-3.5 print:hidden">
@@ -217,15 +234,15 @@ export function PriceQuoteModal({
           <div className="flex items-center gap-2">
             <button
               onClick={handleSendEmailToClient}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3.5 py-1.5 text-xs font-mono font-bold hover:bg-emerald-500/30 transition"
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 text-xs font-mono font-bold hover:bg-emerald-500/30 transition"
             >
               <Send className="h-3.5 w-3.5" />
-              Odoslať klientovi e-mailom
+              Odoslať e-mailom
             </button>
 
             <button
               onClick={handleExcelExport}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3.5 py-1.5 text-xs font-mono font-bold hover:bg-emerald-500/30 transition"
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 text-xs font-mono font-bold hover:bg-emerald-500/30 transition"
             >
               <FileSpreadsheet className="h-3.5 w-3.5" />
               Excel (.xls)
@@ -233,7 +250,7 @@ export function PriceQuoteModal({
 
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-400 px-4 py-1.5 text-xs font-mono font-bold text-black hover:bg-emerald-300 transition"
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-400 px-3.5 py-1.5 text-xs font-mono font-bold text-black hover:bg-emerald-300 transition"
             >
               <Printer className="h-3.5 w-3.5" />
               Tlačiť / PDF
@@ -241,9 +258,11 @@ export function PriceQuoteModal({
 
             <button
               onClick={onClose}
-              className="rounded-lg p-1.5 text-white/40 hover:text-white transition"
+              className="flex items-center gap-1 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 px-3 py-1.5 text-xs font-mono font-bold hover:bg-red-500/40 transition"
+              title="Zatvoriť okno (Esc)"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
+              Zatvoriť
             </button>
           </div>
         </div>
@@ -475,6 +494,17 @@ export function PriceQuoteModal({
                 Podpis odberateľa (klienta)
               </div>
             </div>
+          </div>
+
+          {/* Bottom Action Footer (Hidden on print) */}
+          <div className="pt-4 border-t border-white/10 flex justify-end gap-3 print:hidden">
+            <button
+              onClick={onClose}
+              className="flex items-center gap-1.5 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 px-5 py-2 text-xs font-mono font-bold hover:bg-red-500/40 transition"
+            >
+              <X className="h-4 w-4" />
+              Zatvoriť cenovú ponuku
+            </button>
           </div>
 
         </div>
