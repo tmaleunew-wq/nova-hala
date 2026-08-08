@@ -215,11 +215,11 @@ export function PriceQuoteModal({
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto print:p-0 print:bg-white print:static print:block cursor-pointer"
+      className="price-quote-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto print:p-0 print:bg-white print:static print:block cursor-pointer"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-4xl rounded-xl border border-white/10 bg-[#0e1218] font-sans text-slate-100 shadow-2xl overflow-hidden my-8 cursor-default print:border-none print:bg-white print:text-black print:shadow-none print:w-full print:max-w-none"
+        className="price-quote-modal-box w-full max-w-4xl rounded-xl border border-white/10 bg-[#0e1218] font-sans text-slate-100 shadow-2xl overflow-hidden my-8 cursor-default print:border-none print:bg-white print:text-black print:shadow-none print:w-full print:max-w-none print:m-0"
       >
         
         {/* Top Control Bar (Sticky & Hidden on print) */}
@@ -271,24 +271,24 @@ export function PriceQuoteModal({
         </div>
 
         {/* Printable Document Body */}
-        <div className="p-8 space-y-6 print:p-0">
+        <div className="p-8 space-y-5 print:p-0 print:space-y-4">
           
           {/* Header */}
-          <div className="flex justify-between items-start border-b-2 border-emerald-500 pb-6">
+          <div className="flex justify-between items-start border-b-2 border-emerald-500 pb-4 print:pb-3">
             <div>
-              <div className="text-2xl font-extrabold tracking-tight text-white print:text-black">
-                BAUBOX <span className="text-emerald-400 print:text-emerald-600">STEEL SHED FORGE</span>
+              <div className="text-2xl font-extrabold tracking-tight text-white print:text-black print:text-xl">
+                BAUBOX <span className="text-emerald-400 print:text-emerald-700">STEEL SHED FORGE</span>
               </div>
-              <div className="text-xs text-white/50 print:text-slate-500 mt-1 font-mono">
+              <div className="text-xs text-white/50 print:text-slate-600 mt-0.5 font-mono">
                 Dodávateľ montovaných oceľových garáží a hál
               </div>
             </div>
 
             <div className="text-right font-mono text-xs">
-              <div className="text-base font-bold text-emerald-400 print:text-black">CENOVÁ PONUKA</div>
-              <div className="text-white/80 print:text-slate-700">Číslo: <strong>{quoteNumber}</strong></div>
-              <div className="text-white/60 print:text-slate-500">Dátum vystavenia: {issueDate}</div>
-              <div className="text-white/60 print:text-slate-500">Platnosť ponuky do: {validUntil}</div>
+              <div className="text-base font-bold text-emerald-400 print:text-black print:text-sm">CENOVÁ PONUKA</div>
+              <div className="text-white/80 print:text-slate-800">Číslo: <strong>{quoteNumber}</strong></div>
+              <div className="text-white/60 print:text-slate-600">Dátum vystavenia: {issueDate}</div>
+              <div className="text-white/60 print:text-slate-600">Platnosť ponuky do: {validUntil}</div>
             </div>
           </div>
 
