@@ -11,7 +11,7 @@ interface InquiryData {
 }
 
 export const sendInquiry = createServerFn({ method: "POST" })
-  .validator((data: InquiryData) => data)
+  .inputValidator((data: InquiryData) => data)
   .handler(async ({ data }) => {
     const { name, email, phone, message, params, origin } = data;
 
@@ -102,6 +102,8 @@ export const sendInquiry = createServerFn({ method: "POST" })
     }
 
     try {
+      console.log("[Resend] Sending admin email...", { from: senderEmail, to: adminEmail });
+
       // Send to Admin
       const adminResponse = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -111,13 +113,17 @@ export const sendInquiry = createServerFn({ method: "POST" })
         },
         body: JSON.stringify({
           from: senderEmail,
-          to: adminEmail,
+          to: [adminEmail],
           subject: `Nový dopyt: ${name} (${params.width}x${params.length}m)`,
           html: adminHtml,
         }),
       });
 
+      const adminBody = await adminResponse.json();
+      console.log("[Resend] Admin response:", adminResponse.status, JSON.stringify(adminBody));
+
       // Send to Client
+      console.log("[Resend] Sending client email...", { from: senderEmail, to: email });
       const clientResponse = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -126,16 +132,23 @@ export const sendInquiry = createServerFn({ method: "POST" })
         },
         body: JSON.stringify({
           from: senderEmail,
-          to: email,
+          to: [email],
           subject: "Potvrdenie prijatia dopytu — Steel Shed Forge",
           html: clientHtml,
         }),
       });
 
+      const clientBody = await clientResponse.json();
+      console.log("[Resend] Client response:", clientResponse.status, JSON.stringify(clientBody));
+
       const adminOk = adminResponse.ok;
       const clientOk = clientResponse.ok;
 
-      return { success: adminOk && clientOk, simulated: false };
+      if (!adminOk || !clientOk) {
+        console.error("[Resend] Failures:", { adminOk, clientOk, adminBody, clientBody });
+      }
+
+      return { success: adminOk && clientOk, simulated: false, adminResult: adminBody, clientResult: clientBody };
     } catch (error) {
       console.error("Chyba pri odosielaní e-mailov cez Resend:", error);
       return { success: false, error: String(error) };

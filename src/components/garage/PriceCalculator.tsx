@@ -3,7 +3,8 @@ import type { GarageParams } from "@/lib/garage/types";
 import { ridgeHeight, highEave } from "./Structure";
 import { toast } from "sonner";
 import { getCladdingConfig } from "@/lib/garage/configHelper";
-import { sendInquiry } from "@/lib/garage/inquiryActions";
+import emailjs from "@emailjs/browser";
+import { saveInquiryToSupabase } from "@/lib/supabase";
 
 interface PriceCalculatorProps {
   p: GarageParams;
@@ -152,26 +153,177 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
     e.preventDefault();
     setIsSubmitting(true);
 
-    try {
-      await sendInquiry({
-        data: {
-          name,
-          email,
-          phone,
-          message,
-          params: p,
-          origin: window.location.origin,
-        },
-      });
+    const EMAILJS_SERVICE = "service_idgg40s";
+    const EMAILJS_TEMPLATE = "template_npjseqb";
+    const EMAILJS_PUBLIC_KEY = "98BCC5N7IUs0j5eFs";
 
-      toast.success("Dopyt bol úspešne odoslaný! Budeme vás kontaktovať.");
-      setShowForm(false);
-      setName("");
-      setEmail("");
-      setPhone("");
-      setMessage("");
-    } catch (error) {
-      toast.error("Dopyt sa nepodarilo odoslať. Skúste to znova.");
+    // Build evaluation URL
+    const searchParams = new URLSearchParams();
+    const keys = Object.keys(p) as (keyof GarageParams)[];
+    for (const key of keys) {
+      let val = String(p[key]);
+      if ((key === "claddingColor" || key === "roofColor" || key === "steelColor" || key === "doorColor" || key === "sectionalDoorColor" || key === "trimmingColor") && val.startsWith("#")) {
+        val = val.substring(1);
+      }
+      searchParams.set(key, val);
+    }
+    searchParams.set("client", name);
+    const evaluationUrl = `${window.location.origin}/vyhodnotenie?${searchParams.toString()}`;
+
+    // Panel type labels
+    const panelLabel = p.panelType === "sandwich" ? "Sendvičový panel" : p.panelType === "smooth" ? "Hladký panel" : "Trapézový plech";
+    const roofPanelLabel = p.roofPanelType === "trapezoid" ? "Trapézový plech" : p.roofPanelType === "smooth" ? "Hladký panel" : "Škridľový profil";
+    const fastenerLabel = p.fastenerGrade === "A2" ? "Nerez A2" : p.fastenerGrade === "A4" ? "Nerez A4" : "Pozinkované";
+    const sideLabel = (s: string) => s === "left" ? "ľavá" : s === "right" ? "pravá" : "zadná";
+
+    // Generate simple order ID
+    const orderId = `SSF-${Date.now().toString(36).toUpperCase()}`;
+
+    // ── SECTION 1: Základné rozmery ──
+    const buildingType = `${p.roofType === "gable" ? "Sedlová" : "Pultová"} strecha`;
+    const dimensions = `Šírka: ${p.width}m | Dĺžka: ${p.length}m | Výška: ${p.clearHeight}m`;
+    const baseDetails = `Sklon strechy: ${p.roofPitchDeg}°\nPočet polí: ${p.bayCount}\nProfil: ${p.profileSize * 1000}x${p.profileSize * 1000}x${p.profileThickness * 1000}mm`;
+
+    // ── SECTION 2: Opláštenie ──
+    const purPanels = [
+      `Steny: ${panelLabel} (${p.insulationCore} ${p.wallPanelThicknessMm}mm)`,
+      `Strecha: ${roofPanelLabel} (${p.insulationCore} ${p.roofPanelThicknessMm}mm)`,
+      `Orientácia: ${p.claddingOrientation === "horizontal" ? "Horizontálna" : "Vertikálna"}`,
+    ].join("\n");
+    const wallColor = `Fasáda: ${p.claddingColor}`;
+    const roofColorVal = `Strecha: ${p.roofColor}`;
+    const panelDetails = [
+      `Vonk. plech: ${p.outerSheetMm}mm | Vnút. plech: ${p.innerSheetMm}mm`,
+      `Povrch: ${p.coatingType} ${p.coatingThicknessUm} µm`,
+      `Pozink: Z${p.zincCoatingGsm} g/m²`,
+      `Kotvenie: ${fastenerLabel} | Spoj: ${p.hiddenFastening ? "Skrytý" : "Viditeľný"}`,
+      `Tesnenie: ${p.sealingSystem ? "Komprimačné pásky + pružné tmely" : "Štandardné"}`,
+    ].join("\n");
+
+    // ── SECTION 3: Doplnky ──
+    const doorType = `Garážová brána: ${p.doorWidth}x${p.doorHeight}m (${p.sectionalDoorColor})`;
+    const windowVal = p.hasWindows && p.windowCount > 0
+      ? `${p.windowCount}x (${p.windowWidth}x${p.windowHeight}m) – ${sideLabel(p.windowSide)} strana`
+      : "Žiadne";
+    const addonsLines = [
+      `Osobné dvere: ${p.hasPersonalDoor ? `Áno – ${sideLabel(p.personalDoorSide)} strana (${p.doorColor})` : "Nie"}`,
+      `Svetlíky: ${p.hasSkylights ? "Áno" : "Nie"}`,
+      `Základová doska: ${p.showFoundation ? `Áno (${W}x${L}m)` : "Nie"}`,
+      `Lemovanie / rohy: ${p.trimmingColor} ${p.flashingMatchesPanels ? "(zhodné s panelmi)" : ""}`,
+      `Žľaby a zvody: ${p.trimmingColor}`,
+    ].join("\n");
+
+    // Format price helper
+    const fmt = (n: number) => `${n.toFixed(2)} €`;
+
+    // Admin params WITH calculated euro prices
+    const adminTemplateParams = {
+      to_email: "tmal.eu.new@gmail.com",
+      customer_email: "tmal.eu.new@gmail.com",
+      customer_name: name,
+      customer_phone: phone,
+      customer_address: "Podľa dohody",
+      order_id: orderId,
+      building_type: buildingType,
+      dimensions: dimensions,
+      base_price: `${baseDetails}\nODHAD OCELE: ${fmt(steelCost)}`,
+      pur_panels: purPanels,
+      wall_color: wallColor,
+      roof_color: roofColorVal,
+      panel_price: `${panelDetails}\nODHAD OPLÁŠTENIA: ${fmt(claddingCost)}`,
+      door_type: doorType,
+      window: windowVal,
+      addons: addonsLines,
+      addon_price: `ODHAD DOPLNKOV: ${fmt(componentsSubtotal)}`,
+      total_price: `${fmt(totalWithVat)} (odhad s DPH)`,
+      notes: message || "Bez poznámky",
+      summary_link: evaluationUrl,
+      reply_to: email,
+    };
+
+    // Client params WITHOUT prices (or with "Bude upresnená")
+    const clientTemplateParams = {
+      to_email: email,
+      customer_email: email,
+      customer_name: name,
+      customer_phone: phone,
+      customer_address: "Podľa dohody",
+      order_id: orderId,
+      building_type: buildingType,
+      dimensions: dimensions,
+      base_price: baseDetails,
+      pur_panels: purPanels,
+      wall_color: wallColor,
+      roof_color: roofColorVal,
+      panel_price: panelDetails,
+      door_type: doorType,
+      window: windowVal,
+      addons: addonsLines,
+      addon_price: "—",
+      total_price: "Bude upresnená",
+      notes: message || "Bez poznámky",
+      summary_link: evaluationUrl,
+      reply_to: "tmal.eu.new@gmail.com",
+    };
+
+    // Save order locally for Admin Dashboard & Supabase
+    const newOrder = {
+      id: orderId,
+      date: new Date().toLocaleString("sk-SK"),
+      name,
+      email,
+      phone,
+      message,
+      params: p,
+      totalWithVat,
+      evaluationUrl,
+    };
+
+    // Async save to Supabase
+    saveInquiryToSupabase({
+      order_id: orderId,
+      name,
+      email,
+      phone,
+      message,
+      params: p,
+      total_price: totalWithVat,
+      evaluation_url: evaluationUrl,
+    });
+
+    try {
+      const existing = JSON.parse(localStorage.getItem("ssf_orders") || "[]");
+      localStorage.setItem("ssf_orders", JSON.stringify([newOrder, ...existing]));
+    } catch (e) {
+      console.error("Chyba pri ukladaní objednávky:", e);
+    }
+
+    try {
+      // 1. Send to Admin (with calculated prices)
+      const adminPromise = emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, adminTemplateParams, EMAILJS_PUBLIC_KEY);
+
+      // 2. Send to Client
+      const clientPromise = emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, clientTemplateParams, EMAILJS_PUBLIC_KEY);
+
+      const results = await Promise.allSettled([adminPromise, clientPromise]);
+      const adminOk = results[0].status === "fulfilled";
+      const clientOk = results[1].status === "fulfilled";
+
+      if (adminOk || clientOk) {
+        toast.success("Dopyt bol úspešne odoslaný! Budeme vás kontaktovať.");
+        setShowForm(false);
+        setName("");
+        setEmail("");
+        setPhone("");
+        setMessage("");
+      } else {
+        const err0 = results[0].status === "rejected" ? (results[0].reason?.text || results[0].reason?.message || String(results[0].reason)) : "";
+        const err1 = results[1].status === "rejected" ? (results[1].reason?.text || results[1].reason?.message || String(results[1].reason)) : "";
+        toast.error(`Chyba pri odosielaní: ${err0 || err1}`);
+      }
+    } catch (error: any) {
+      const errMsg = error?.text || error?.message || String(error);
+      toast.error(`Chyba: ${errMsg}`);
       console.error("Chyba pri odosielaní dopytu:", error);
     } finally {
       setIsSubmitting(false);

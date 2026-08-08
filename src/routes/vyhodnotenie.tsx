@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 import { DEFAULT_PARAMS, type GarageParams } from "@/lib/garage/types";
 import { ridgeHeight, highEave } from "@/components/garage/Structure";
 import { getCladdingConfig } from "@/lib/garage/configHelper";
-import { ArrowLeft, Printer, Link as LinkIcon, DollarSign, RefreshCw, Calculator, FileText, CheckCircle, FileSpreadsheet } from "lucide-react";
+import { ArrowLeft, Printer, Link as LinkIcon, DollarSign, RefreshCw, Calculator, FileText, CheckCircle, FileSpreadsheet, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { generateOrderExcelXml } from "@/lib/garage/excelGenerator";
-
+import { fetchInquiriesFromSupabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/vyhodnotenie")({
   component: OrderEvaluation,
@@ -20,6 +20,7 @@ export const Route = createFileRoute("/vyhodnotenie")({
 
 function OrderEvaluation() {
   const [params, setParams] = useState<GarageParams>(DEFAULT_PARAMS);
+  const [savedOrders, setSavedOrders] = useState<any[]>([]);
   const [clientName, setClientName] = useState<string | null>(null);
 
   // Editable prices states
@@ -40,6 +41,30 @@ function OrderEvaluation() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    
+    // Load from Supabase and fallback to localStorage
+    fetchInquiriesFromSupabase().then((supaOrders) => {
+      if (supaOrders && supaOrders.length > 0) {
+        const formatted = supaOrders.map(o => ({
+          id: o.order_id,
+          date: o.created_at ? new Date(o.created_at).toLocaleString("sk-SK") : "",
+          name: o.name,
+          email: o.email,
+          phone: o.phone,
+          message: o.message,
+          params: o.params,
+          totalWithVat: o.total_price,
+          evaluationUrl: o.evaluation_url,
+        }));
+        setSavedOrders(formatted);
+      } else {
+        try {
+          const orders = JSON.parse(localStorage.getItem("ssf_orders") || "[]");
+          setSavedOrders(orders);
+        } catch (e) {}
+      }
+    });
+
     const searchParams = new URLSearchParams(window.location.search);
     const client = searchParams.get("client");
     setClientName(client);
@@ -277,6 +302,13 @@ function OrderEvaluation() {
             <ArrowLeft className="h-3.5 w-3.5" />
             Späť
           </Link>
+          <Link
+            to="/admin"
+            className="flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/20 px-3 py-1.5 text-xs text-emerald-300 transition hover:bg-emerald-500/30"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Admin Dashboard
+          </Link>
           <div className="h-4 w-px bg-white/10" />
           <h1 className="text-sm font-bold tracking-widest text-white">
             VYHODNOTENIE A NACENENIE OBJEDNÁVKY
@@ -320,6 +352,44 @@ function OrderEvaluation() {
         
         {/* Parametre - Left Column */}
         <div className="lg:col-span-5 space-y-6 print:hidden">
+          {savedOrders.length > 0 && (
+            <div className="rounded-lg border border-emerald-500/30 bg-[#0e1218] p-5 shadow-lg">
+              <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2">
+                <div className="flex items-center gap-2 text-emerald-400">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  <h2 className="text-xs uppercase font-bold tracking-widest">Prijaté Dopyty ({savedOrders.length})</h2>
+                </div>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem("ssf_orders");
+                    setSavedOrders([]);
+                    toast.info("História dopytov bola vymazaná.");
+                  }}
+                  className="text-[10px] text-white/40 hover:text-red-400 transition"
+                >
+                  Vymazať históriu
+                </button>
+              </div>
+
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                {savedOrders.map((ord: any, idx: number) => (
+                  <div key={ord.id || idx} className="rounded bg-black/40 p-2.5 text-xs flex items-center justify-between border border-white/5 hover:border-emerald-500/40 transition">
+                    <div>
+                      <div className="font-bold text-white">{ord.name} <span className="text-[10px] font-normal text-white/40">({ord.date})</span></div>
+                      <div className="text-[10px] text-white/60">{ord.params?.width}x{ord.params?.length}m | {ord.email}</div>
+                    </div>
+                    <a
+                      href={ord.evaluationUrl}
+                      className="rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-1 text-[10px] font-bold hover:bg-emerald-500/30 transition"
+                    >
+                      Otvoriť
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="rounded-lg border border-white/10 bg-[#0e1218] p-5">
             <div className="flex items-center gap-2 mb-4 text-emerald-400 border-b border-white/5 pb-2">
               <Calculator className="h-4 w-4" />
