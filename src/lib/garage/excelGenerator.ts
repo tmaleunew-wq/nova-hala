@@ -160,6 +160,10 @@ export interface ExcelPricing {
   transportCost: number;
   laborCost: number;
   marginPercent: number;
+  customItem1Label?: string;
+  customItem1Cost?: number;
+  customItem2Label?: string;
+  customItem2Cost?: number;
 }
 
 export function generateOrderExcelXml(
@@ -250,6 +254,24 @@ export function generateOrderExcelXml(
       qtyNum: W * L,
       unit: "m\u00b2",
       unitPrice: pricing.foundationPricePerSqM,
+    });
+  }
+  if (pricing.customItem1Cost && pricing.customItem1Cost > 0) {
+    dataRows.push({
+      name: pricing.customItem1Label?.trim() || "Volite\u013en\u00e1 polo\u017eka 1",
+      detail: "Volite\u013en\u00e1 doplnkov\u00e1 slu\u017eba / polo\u017eka",
+      qtyNum: 1,
+      unit: "ks",
+      unitPrice: pricing.customItem1Cost,
+    });
+  }
+  if (pricing.customItem2Cost && pricing.customItem2Cost > 0) {
+    dataRows.push({
+      name: pricing.customItem2Label?.trim() || "Volite\u013en\u00e1 polo\u017eka 2",
+      detail: "Volite\u013en\u00e1 doplnkov\u00e1 slu\u017eba / polo\u017eka",
+      qtyNum: 1,
+      unit: "ks",
+      unitPrice: pricing.customItem2Cost,
     });
   }
   dataRows.push({

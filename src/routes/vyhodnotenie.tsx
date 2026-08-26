@@ -47,6 +47,11 @@ function OrderEvaluation() {
   const [laborCost, setLaborCost] = useState<number>(850.00);
   const [marginPercent, setMarginPercent] = useState<number>(15);
 
+  const [customItem1Label, setCustomItem1Label] = useState<string>("");
+  const [customItem1Cost, setCustomItem1Cost] = useState<number>(0);
+  const [customItem2Label, setCustomItem2Label] = useState<string>("");
+  const [customItem2Cost, setCustomItem2Cost] = useState<number>(0);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     
@@ -210,9 +215,11 @@ function OrderEvaluation() {
   const calculatedPersonalDoorCost = params.hasPersonalDoor ? personalDoorCost : 0;
   const calculatedWindowsCost = params.hasWindows ? params.windowCount * windowCost : 0;
   const calculatedFoundationCost = params.showFoundation ? (W * L * foundationPricePerSqM) : 0;
+  const calculatedCustomItem1Cost = (customItem1Cost && customItem1Cost > 0) ? customItem1Cost : 0;
+  const calculatedCustomItem2Cost = (customItem2Cost && customItem2Cost > 0) ? customItem2Cost : 0;
 
   // Totals calculations
-  const rawSubtotal = calculatedSteelCost + calculatedCladdingCost + calculatedBasePlateCost + calculatedGarageDoorCost + calculatedPersonalDoorCost + calculatedWindowsCost + calculatedFoundationCost;
+  const rawSubtotal = calculatedSteelCost + calculatedCladdingCost + calculatedBasePlateCost + calculatedGarageDoorCost + calculatedPersonalDoorCost + calculatedWindowsCost + calculatedFoundationCost + calculatedCustomItem1Cost + calculatedCustomItem2Cost;
   
   const rawTotalWithExtras = rawSubtotal + transportCost + laborCost;
   const marginAmount = (rawTotalWithExtras * marginPercent) / 100;
@@ -243,6 +250,14 @@ function OrderEvaluation() {
     currentParams.set("p_transport", transportCost.toString());
     currentParams.set("p_labor", laborCost.toString());
     currentParams.set("p_margin", marginPercent.toString());
+    if (customItem1Cost > 0) {
+      currentParams.set("p_c1_lbl", customItem1Label);
+      currentParams.set("p_c1_val", customItem1Cost.toString());
+    }
+    if (customItem2Cost > 0) {
+      currentParams.set("p_c2_lbl", customItem2Label);
+      currentParams.set("p_c2_val", customItem2Cost.toString());
+    }
 
     const newUrl = `${window.location.origin}${window.location.pathname}?${currentParams.toString()}`;
     navigator.clipboard.writeText(newUrl);
@@ -283,6 +298,10 @@ function OrderEvaluation() {
       transportCost,
       laborCost,
       marginPercent,
+      customItem1Label,
+      customItem1Cost: calculatedCustomItem1Cost,
+      customItem2Label,
+      customItem2Cost: calculatedCustomItem2Cost,
     };
 
     const xml = generateOrderExcelXml(params, pricing, clientName);
@@ -670,6 +689,46 @@ function OrderEvaluation() {
                   className="w-full bg-black/40 border border-white/10 rounded px-2.5 py-1.5 text-white focus:border-emerald-400 focus:outline-none"
                 />
               </div>
+
+              <div>
+                <label className="block text-white/50 mb-1">Voliteľná položka 1 (€)</label>
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    placeholder="Názov 1"
+                    value={customItem1Label}
+                    onChange={(e) => setCustomItem1Label(e.target.value)}
+                    className="w-1/2 bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none text-[11px]"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Suma €"
+                    value={customItem1Cost || ""}
+                    onChange={(e) => setCustomItem1Cost(Math.max(0, parseFloat(e.target.value) || 0))}
+                    className="w-1/2 bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none font-bold text-amber-300 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-white/50 mb-1">Voliteľná položka 2 (€)</label>
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    placeholder="Názov 2"
+                    value={customItem2Label}
+                    onChange={(e) => setCustomItem2Label(e.target.value)}
+                    className="w-1/2 bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none text-[11px]"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Suma €"
+                    value={customItem2Cost || ""}
+                    onChange={(e) => setCustomItem2Cost(Math.max(0, parseFloat(e.target.value) || 0))}
+                    className="w-1/2 bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none font-bold text-amber-300 text-xs"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -779,6 +838,28 @@ function OrderEvaluation() {
                   </tr>
                 )}
 
+                {calculatedCustomItem1Cost > 0 && (
+                  <tr>
+                    <td className="py-2.5 pr-2">
+                      <div className="font-bold text-amber-300 print:text-black">{customItem1Label.trim() || "Voliteľná položka 1"}</div>
+                    </td>
+                    <td className="py-2.5 text-right font-mono">1 ks</td>
+                    <td className="py-2.5 text-right font-mono">{calculatedCustomItem1Cost.toFixed(2)} €</td>
+                    <td className="py-2.5 text-right font-mono font-bold text-amber-300 print:text-black">{calculatedCustomItem1Cost.toFixed(2)} €</td>
+                  </tr>
+                )}
+
+                {calculatedCustomItem2Cost > 0 && (
+                  <tr>
+                    <td className="py-2.5 pr-2">
+                      <div className="font-bold text-amber-300 print:text-black">{customItem2Label.trim() || "Voliteľná položka 2"}</div>
+                    </td>
+                    <td className="py-2.5 text-right font-mono">1 ks</td>
+                    <td className="py-2.5 text-right font-mono">{calculatedCustomItem2Cost.toFixed(2)} €</td>
+                    <td className="py-2.5 text-right font-mono font-bold text-amber-300 print:text-black">{calculatedCustomItem2Cost.toFixed(2)} €</td>
+                  </tr>
+                )}
+
                 {/* Transport */}
                 <tr>
                   <td className="py-2.5 pr-2">
@@ -861,6 +942,10 @@ function OrderEvaluation() {
           transportCost,
           laborCost,
           marginPercent,
+          customItem1Label,
+          customItem1Cost: calculatedCustomItem1Cost,
+          customItem2Label,
+          customItem2Cost: calculatedCustomItem2Cost,
         }}
       />
     </div>

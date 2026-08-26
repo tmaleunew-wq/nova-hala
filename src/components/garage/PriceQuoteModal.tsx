@@ -19,6 +19,10 @@ interface PricingValues {
   transportCost: number;
   laborCost: number;
   marginPercent: number;
+  customItem1Label?: string;
+  customItem1Cost?: number;
+  customItem2Label?: string;
+  customItem2Cost?: number;
 }
 
 interface PriceQuoteModalProps {
@@ -125,7 +129,10 @@ export function PriceQuoteModal({
   const windowsCost = p.hasWindows ? p.windowCount * pricing.windowCost : 0;
   const foundationCost = p.showFoundation ? (W * L * pricing.foundationPricePerSqM) : 0;
 
-  const rawSubtotal = steelCost + claddingCost + basePlateCost + garageDoorCost + personalDoorCost + windowsCost + foundationCost;
+  const customItem1Cost = (pricing.customItem1Cost && pricing.customItem1Cost > 0) ? pricing.customItem1Cost : 0;
+  const customItem2Cost = (pricing.customItem2Cost && pricing.customItem2Cost > 0) ? pricing.customItem2Cost : 0;
+
+  const rawSubtotal = steelCost + claddingCost + basePlateCost + garageDoorCost + personalDoorCost + windowsCost + foundationCost + customItem1Cost + customItem2Cost;
   const rawTotalWithExtras = rawSubtotal + pricing.transportCost + pricing.laborCost;
   const marginAmount = (rawTotalWithExtras * pricing.marginPercent) / 100;
   const subtotalBeforeVat = rawTotalWithExtras + marginAmount;
@@ -424,6 +431,24 @@ export function PriceQuoteModal({
                     <td className="p-2.5 text-right">{(W * L).toFixed(1)} m²</td>
                     <td className="p-2.5 text-right">{pricing.foundationPricePerSqM.toFixed(2)} €</td>
                     <td className="p-2.5 text-right font-bold text-white print:text-black">{fmt(foundationCost)}</td>
+                  </tr>
+                )}
+
+                {customItem1Cost > 0 && (
+                  <tr>
+                    <td className="p-2.5">{pricing.customItem1Label?.trim() || "Voliteľná položka 1"}</td>
+                    <td className="p-2.5 text-right">1 ks</td>
+                    <td className="p-2.5 text-right">{customItem1Cost.toFixed(2)} €</td>
+                    <td className="p-2.5 text-right font-bold text-white print:text-black">{fmt(customItem1Cost)}</td>
+                  </tr>
+                )}
+
+                {customItem2Cost > 0 && (
+                  <tr>
+                    <td className="p-2.5">{pricing.customItem2Label?.trim() || "Voliteľná položka 2"}</td>
+                    <td className="p-2.5 text-right">1 ks</td>
+                    <td className="p-2.5 text-right">{customItem2Cost.toFixed(2)} €</td>
+                    <td className="p-2.5 text-right font-bold text-white print:text-black">{fmt(customItem2Cost)}</td>
                   </tr>
                 )}
 

@@ -75,6 +75,11 @@ function AdminDashboard() {
   const [laborCost, setLaborCost] = useState<number>(850.00);
   const [marginPercent, setMarginPercent] = useState<number>(15);
 
+  const [customItem1Label, setCustomItem1Label] = useState<string>("");
+  const [customItem1Cost, setCustomItem1Cost] = useState<number>(0);
+  const [customItem2Label, setCustomItem2Label] = useState<string>("");
+  const [customItem2Cost, setCustomItem2Cost] = useState<number>(0);
+
   // Fetch orders on mount
   const loadOrders = async () => {
     setIsLoading(true);
@@ -251,8 +256,10 @@ function AdminDashboard() {
   const calculatedPersonalDoorCost = params.hasPersonalDoor ? personalDoorCost : 0;
   const calculatedWindowsCost = params.hasWindows ? params.windowCount * windowCost : 0;
   const calculatedFoundationCost = params.showFoundation ? (W * L * foundationPricePerSqM) : 0;
+  const calculatedCustomItem1Cost = (customItem1Cost && customItem1Cost > 0) ? customItem1Cost : 0;
+  const calculatedCustomItem2Cost = (customItem2Cost && customItem2Cost > 0) ? customItem2Cost : 0;
 
-  const rawSubtotal = calculatedSteelCost + calculatedCladdingCost + calculatedBasePlateCost + calculatedGarageDoorCost + calculatedPersonalDoorCost + calculatedWindowsCost + calculatedFoundationCost;
+  const rawSubtotal = calculatedSteelCost + calculatedCladdingCost + calculatedBasePlateCost + calculatedGarageDoorCost + calculatedPersonalDoorCost + calculatedWindowsCost + calculatedFoundationCost + calculatedCustomItem1Cost + calculatedCustomItem2Cost;
   const rawTotalWithExtras = rawSubtotal + transportCost + laborCost;
   const marginAmount = (rawTotalWithExtras * marginPercent) / 100;
   const finalSubtotalBeforeVat = rawTotalWithExtras + marginAmount;
@@ -274,6 +281,10 @@ function AdminDashboard() {
       transportCost,
       laborCost,
       marginPercent,
+      customItem1Label,
+      customItem1Cost: calculatedCustomItem1Cost,
+      customItem2Label,
+      customItem2Cost: calculatedCustomItem2Cost,
     };
 
     const xml = generateOrderExcelXml(params, pricing, clientName);
@@ -590,6 +601,46 @@ function AdminDashboard() {
                   className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none font-bold text-emerald-300"
                 />
               </div>
+
+              <div>
+                <label className="block text-white/50 mb-1">Voliteľná položka 1 (€)</label>
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    placeholder="Názov 1"
+                    value={customItem1Label}
+                    onChange={(e) => setCustomItem1Label(e.target.value)}
+                    className="w-1/2 bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none text-[11px]"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Suma €"
+                    value={customItem1Cost || ""}
+                    onChange={(e) => setCustomItem1Cost(parseFloat(e.target.value) || 0)}
+                    className="w-1/2 bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none font-bold text-amber-300 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-white/50 mb-1">Voliteľná položka 2 (€)</label>
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    placeholder="Názov 2"
+                    value={customItem2Label}
+                    onChange={(e) => setCustomItem2Label(e.target.value)}
+                    className="w-1/2 bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none text-[11px]"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Suma €"
+                    value={customItem2Cost || ""}
+                    onChange={(e) => setCustomItem2Cost(parseFloat(e.target.value) || 0)}
+                    className="w-1/2 bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none font-bold text-amber-300 text-xs"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -664,6 +715,28 @@ function AdminDashboard() {
                   </tr>
                 )}
 
+                {calculatedCustomItem1Cost > 0 && (
+                  <tr>
+                    <td className="py-2 pr-2">
+                      <div className="font-bold text-amber-300">{customItem1Label.trim() || "Voliteľná položka 1"}</div>
+                    </td>
+                    <td className="py-2 text-right font-mono">1 ks</td>
+                    <td className="py-2 text-right font-mono">{calculatedCustomItem1Cost.toFixed(2)} €</td>
+                    <td className="py-2 text-right font-mono font-bold text-amber-300">{calculatedCustomItem1Cost.toFixed(2)} €</td>
+                  </tr>
+                )}
+
+                {calculatedCustomItem2Cost > 0 && (
+                  <tr>
+                    <td className="py-2 pr-2">
+                      <div className="font-bold text-amber-300">{customItem2Label.trim() || "Voliteľná položka 2"}</div>
+                    </td>
+                    <td className="py-2 text-right font-mono">1 ks</td>
+                    <td className="py-2 text-right font-mono">{calculatedCustomItem2Cost.toFixed(2)} €</td>
+                    <td className="py-2 text-right font-mono font-bold text-amber-300">{calculatedCustomItem2Cost.toFixed(2)} €</td>
+                  </tr>
+                )}
+
                 <tr>
                   <td className="py-2 pr-2">
                     <div className="font-bold text-slate-200">Montáž, prácnosť a doprava</div>
@@ -722,6 +795,10 @@ function AdminDashboard() {
           transportCost,
           laborCost,
           marginPercent,
+          customItem1Label,
+          customItem1Cost: calculatedCustomItem1Cost,
+          customItem2Label,
+          customItem2Cost: calculatedCustomItem2Cost,
         }}
       />
     </div>

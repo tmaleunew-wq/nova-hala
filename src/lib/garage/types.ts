@@ -19,8 +19,9 @@ export interface GarageParams {
   sectionalDoorColor: string;// hex – garage door (gate)
   trimmingColor: string;     // hex – corner flashings, joint flashings, gutters
   panelType: "trapezoid" | "sandwich" | "smooth";
-  roofPanelType: "trapezoid" | "smooth" | "tile";
+  roofPanelType: "trapezoid" | "sandwich" | "smooth" | "tile";
   claddingOrientation: "vertical" | "horizontal";
+  roofCladdingOrientation?: "vertical" | "horizontal";
   // premium sandwich spec
   insulationCore: "PIR" | "PUR" | "EPS" | "mineral";
   wallPanelThicknessMm: number;   // core thickness [mm]
