@@ -1,6 +1,7 @@
 export type RoofType = "gable" | "shed";
 
 export interface GarageParams {
+  hallType?: string;    // napr. "KD10", "KJ6" - pre prepojenie s PDF modelmi
   // geometry [m]
   width: number;        // X
   length: number;       // Y

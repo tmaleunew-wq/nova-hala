@@ -1,5 +1,20 @@
 import defaultConfig from "@/config/default.json";
 import premiumConfig from "@/config/premium.json";
+import hallsConfig from "@/config/halls.json";
+
+export interface HallConfig {
+  name: string;
+  type: string;
+  width: number;
+  minLength: number;
+  moduleLength: number;
+  heights: number[];
+  roofPitchDeg: number;
+}
+
+export const getHallsConfig = (): Record<string, HallConfig> => {
+  return hallsConfig as Record<string, HallConfig>;
+};
 
 export interface CladdingConfig {
   panelType: string;

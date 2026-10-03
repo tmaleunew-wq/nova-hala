@@ -93,8 +93,8 @@ function PurPanel({
       });
     }
     if (panelType === "tile" && isRoof) {
-      const repeatsX = Math.max(4, Math.round(width / 0.18));
-      const repeatsY = Math.max(4, Math.round(height / 0.35));
+      const repeatsX = Math.max(2, Math.round(width / 0.35));
+      const repeatsY = Math.max(2, Math.round(height / 0.20));
       return createPBRTileMaterial(activeColorStr, repeatsX, repeatsY);
     }
     if (panelType === "smooth") {

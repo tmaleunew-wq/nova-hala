@@ -153,6 +153,8 @@ function getParamsFromURL(): Partial<GarageParams> {
   return parsed;
 }
 
+import { getHallsConfig } from "@/lib/garage/configHelper";
+
 export default function Configurator() {
   const exportRef = useRef<THREE.Group | null>(null);
   const [preset, setPreset] = useState<ViewPreset>("iso");
@@ -172,8 +174,12 @@ export default function Configurator() {
   }, []);
 
   const [initialUrlParams] = useState(() => getParamsFromURL());
+  const hallsConfig = getHallsConfig();
+  const hallOptions = ["Vlastný", ...Object.keys(hallsConfig)];
+  const [selectedHall, setSelectedHall] = useState(initialUrlParams.hallType ?? "Vlastný");
+  const isCustom = selectedHall === "Vlastný";
 
-  const params = useControls({
+  const [params, setParams] = useControls(() => ({
     "Zobrazenie": folder({
       showStructure: { value: initialUrlParams.showStructure ?? DEFAULT_PARAMS.showStructure, label: "Konštrukcia" },
       showCladding: { value: initialUrlParams.showCladding ?? DEFAULT_PARAMS.showCladding, label: "Opláštenie" },
@@ -183,16 +189,41 @@ export default function Configurator() {
       explode: { value: initialUrlParams.explode ?? DEFAULT_PARAMS.explode, min: 0, max: 1, step: 0.01, label: "Exploded view" },
     }, { collapsed: true }),
     "Geometria": folder({
-      width: { value: initialUrlParams.width ?? DEFAULT_PARAMS.width, min: 2.5, max: 8, step: 0.1, label: "Šírka X [m]" },
-      length: { value: initialUrlParams.length ?? DEFAULT_PARAMS.length, min: 3, max: 12, step: 0.1, label: "Dĺžka Y [m]" },
-      clearHeight: { value: initialUrlParams.clearHeight ?? DEFAULT_PARAMS.clearHeight, min: 2.0, max: 4.0, step: 0.1, label: "Svetlá výška Z [m]" },
-      roofType: { value: initialUrlParams.roofType ?? DEFAULT_PARAMS.roofType, options: { "Sedlová": "gable", "Pultová": "shed" }, label: "Strecha" },
-      roofPitchDeg: { value: initialUrlParams.roofPitchDeg ?? DEFAULT_PARAMS.roofPitchDeg, min: 5, max: 35, step: 1, label: "Spád strechy [°]" },
+      hallType: {
+        value: initialUrlParams.hallType ?? "Vlastný",
+        options: hallOptions,
+        label: "Typ z PDF",
+        onChange: (v) => {
+          setSelectedHall(v);
+          if (v !== "Vlastný" && hallsConfig[v]) {
+            const h = hallsConfig[v];
+            const currentLen = params?.length || (initialUrlParams.length ?? DEFAULT_PARAMS.length);
+            const minLen = h.minLength;
+            let newLen = Math.max(currentLen, minLen);
+            newLen = Math.ceil(newLen / h.moduleLength) * h.moduleLength;
+            
+            setParams({
+              width: h.width,
+              roofType: h.type as any,
+              roofPitchDeg: h.roofPitchDeg,
+              clearHeight: h.heights[0],
+              length: newLen,
+              bayCount: Math.round(newLen / h.moduleLength),
+              ...(h.framework?.includes("160") ? { profileSize: 0.16, profileThickness: 0.005 } : {})
+            });
+          }
+        }
+      },
+      width: { value: initialUrlParams.width ?? DEFAULT_PARAMS.width, min: 2.5, max: 20, step: 0.1, label: "Šírka X [m]", disabled: !isCustom },
+      length: { value: initialUrlParams.length ?? DEFAULT_PARAMS.length, min: 3, max: 50, step: 0.1, label: "Dĺžka Y [m]" }, // dĺžku nezablokujeme, môže rásť
+      clearHeight: { value: initialUrlParams.clearHeight ?? DEFAULT_PARAMS.clearHeight, min: 2.0, max: 7.0, step: 0.1, label: "Svetlá výška Z [m]", disabled: !isCustom },
+      roofType: { value: initialUrlParams.roofType ?? DEFAULT_PARAMS.roofType, options: { "Sedlová": "gable", "Pultová": "shed" }, label: "Strecha", disabled: !isCustom },
+      roofPitchDeg: { value: initialUrlParams.roofPitchDeg ?? DEFAULT_PARAMS.roofPitchDeg, min: 5, max: 35, step: 1, label: "Spád strechy [°]", disabled: !isCustom },
     }, { collapsed: true }),
     "Konštrukcia": folder({
-      bayCount: { value: initialUrlParams.bayCount ?? DEFAULT_PARAMS.bayCount, min: 2, max: 8, step: 1, label: "Počet polí" },
-      profileSize: { value: initialUrlParams.profileSize ?? DEFAULT_PARAMS.profileSize, min: 0.06, max: 0.16, step: 0.01, label: "Jakl strana [m]" },
-      profileThickness: { value: initialUrlParams.profileThickness ?? DEFAULT_PARAMS.profileThickness, min: 0.002, max: 0.008, step: 0.001, label: "Hrúbka steny [m]" },
+      bayCount: { value: initialUrlParams.bayCount ?? DEFAULT_PARAMS.bayCount, min: 2, max: 15, step: 1, label: "Počet polí", disabled: !isCustom },
+      profileSize: { value: initialUrlParams.profileSize ?? DEFAULT_PARAMS.profileSize, min: 0.06, max: 0.20, step: 0.01, label: "Jakl strana [m]", disabled: !isCustom },
+      profileThickness: { value: initialUrlParams.profileThickness ?? DEFAULT_PARAMS.profileThickness, min: 0.002, max: 0.010, step: 0.001, label: "Hrúbka steny [m]", disabled: !isCustom },
       steelColor: { value: initialUrlParams.steelColor ?? DEFAULT_PARAMS.steelColor, label: "Farba ocele" },
     }, { collapsed: true }),
     "Opláštenie": folder({
@@ -250,7 +281,7 @@ export default function Configurator() {
         setQuoteRequestSignal((v) => v + 1);
       }),
     }, { collapsed: true }),
-  });
+  }));
 
   const typedParams: GarageParams = params as GarageParams;
 

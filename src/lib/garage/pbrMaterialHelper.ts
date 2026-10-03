@@ -6,6 +6,8 @@ import {
   makeTrapezoidMetalnessTexture,
   makeTileTexture,
   makeTileNormalTexture,
+  makeTileRoughnessTexture,
+  makeTileMetalnessTexture,
 } from "./textures";
 
 /**
@@ -73,8 +75,10 @@ export function createPBRTileMaterial(
 ): THREE.MeshStandardMaterial {
   const map = makeTileTexture(color, repeatsX, repeatsY);
   const normalMap = makeTileNormalTexture(repeatsX, repeatsY);
+  const roughnessMap = makeTileRoughnessTexture(repeatsX, repeatsY, 0.48);
+  const metalnessMap = makeTileMetalnessTexture(repeatsX, repeatsY, 0.28);
 
-  const textures = [map, normalMap];
+  const textures = [map, normalMap, roughnessMap, metalnessMap];
   for (const tex of textures) {
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
@@ -86,9 +90,11 @@ export function createPBRTileMaterial(
   return new THREE.MeshStandardMaterial({
     map,
     normalMap,
-    normalScale: new THREE.Vector2(1.6, 1.6),
-    roughness: 0.45, // satin finish
-    metalness: 0.25, // coated steel look rather than chrome/tin foil
+    normalScale: new THREE.Vector2(1.8, 1.8),
+    roughnessMap,
+    metalnessMap,
+    roughness: 1.0,
+    metalness: 1.0,
     side: THREE.DoubleSide,
   });
 }

@@ -1,0 +1,85 @@
+{
+  "KD8": {
+    "name": "KD8",
+    "type": "gable",
+    "width": 8.0,
+    "minLength": 8.0,
+    "moduleLength": 4.0,
+    "heights": [4.026, 5.026],
+    "roofPitchDeg": 10,
+    "framework": "IPE 160",
+    "gablePillars": "RK 120x120x4"
+  },
+  "KD10": {
+    "name": "KD10",
+    "type": "gable",
+    "width": 10.0,
+    "minLength": 12.0,
+    "moduleLength": 4.0,
+    "heights": [4.0, 5.0],
+    "roofPitchDeg": 10
+  },
+  "KD12": {
+    "name": "KD12",
+    "type": "gable",
+    "width": 12.0,
+    "minLength": 12.0,
+    "moduleLength": 4.0,
+    "heights": [4.0, 5.0],
+    "roofPitchDeg": 10
+  },
+  "KD14": {
+    "name": "KD14",
+    "type": "gable",
+    "width": 14.0,
+    "minLength": 15.0,
+    "moduleLength": 5.0,
+    "heights": [4.0, 5.0],
+    "roofPitchDeg": 10
+  },
+  "KD16": {
+    "name": "KD16",
+    "type": "gable",
+    "width": 16.0,
+    "minLength": 15.0,
+    "moduleLength": 5.0,
+    "heights": [5.0, 6.0, 7.0],
+    "roofPitchDeg": 10
+  },
+  "KD18": {
+    "name": "KD18",
+    "type": "gable",
+    "width": 18.0,
+    "minLength": 15.0,
+    "moduleLength": 5.0,
+    "heights": [5.0, 6.0, 7.0],
+    "roofPitchDeg": 10
+  },
+  "KD20": {
+    "name": "KD20",
+    "type": "gable",
+    "width": 20.0,
+    "minLength": 15.0,
+    "moduleLength": 5.0,
+    "heights": [5.0, 6.0, 7.0],
+    "roofPitchDeg": 10
+  },
+  "KJ6": {
+    "name": "KJ6",
+    "type": "shed",
+    "width": 6.0,
+    "minLength": 8.0,
+    "moduleLength": 3.0,
+    "heights": [4.0, 5.0],
+    "roofPitchDeg": 8
+  },
+  "KJ7": {
+    "name": "KJ7",
+    "type": "shed",
+    "width": 6.95,
+    "minLength": 8.0,
+    "moduleLength": 3.475,
+    "heights": [4.0, 5.0],
+    "roofPitchDeg": 7
+  }
+}
