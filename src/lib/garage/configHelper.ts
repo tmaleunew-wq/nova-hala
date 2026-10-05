@@ -2,6 +2,20 @@ import defaultConfig from "@/config/default.json";
 import premiumConfig from "@/config/premium.json";
 import hallsConfig from "@/config/halls.json";
 
+export interface HallVersion {
+  label: string;
+  poleHeight: number;
+  H: number;
+  H1: number;
+  H2: number;
+  D: number;
+  E: number;
+  H3?: number;
+  H4?: number;
+  Dp?: number;
+  Ep?: number;
+}
+
 export interface HallConfig {
   name: string;
   type: string;
@@ -10,6 +24,19 @@ export interface HallConfig {
   moduleLength: number;
   heights: number[];
   roofPitchDeg: number;
+  framework?: string;
+  gablePillars?: string;
+  bracing?: string;
+  tieRods?: string;
+  steelGrade?: string;
+  gableSteelGrade?: string;
+  snowZone?: string;
+  windZone?: string;
+  claddingVersion?: string;
+  defaultBays?: number;
+  defaultLength?: number;
+  description?: string;
+  versions?: HallVersion[];
 }
 
 export const getHallsConfig = (): Record<string, HallConfig> => {

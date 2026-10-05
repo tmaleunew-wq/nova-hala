@@ -14,6 +14,9 @@ import { Foundation } from "./Foundation";
 import { setupProceduralEnvMap } from "@/lib/garage/pbrMaterialHelper";
 import { PriceCalculator } from "./PriceCalculator";
 import { PremiumSpecPanel } from "./PremiumSpecPanel";
+import { CatalogDimensions } from "./CatalogDimensions";
+import { ProductPicker } from "./ProductPicker";
+import { getHallsConfig } from "@/lib/garage/configHelper";
 
 type ViewPreset = "iso" | "plan" | "front" | "side";
 
@@ -71,6 +74,10 @@ function Scene({
         {params.showAccessories && <Accessories p={params} explodeY={params.explode} />}
       </group>
 
+      {params.showCatalogDimensions !== false && params.hallType && params.hallType !== "Vlastný" && (
+        <CatalogDimensions p={params} />
+      )}
+
       <Grid
         args={[40, 40]}
         cellSize={0.5}
@@ -115,7 +122,13 @@ function CameraRig({ preset, params }: { preset: ViewPreset; params: GarageParam
         break;
       case "iso":
       default:
-        pos = new THREE.Vector3(d, d * 0.75, -d);
+        if (params.hallType && params.hallType !== "Vlastný") {
+          const eyeY = Math.max(3.8, H * 1.1);
+          pos = new THREE.Vector3(-W * 1.95, eyeY, -L * 1.15);
+        } else {
+          pos = new THREE.Vector3(d, d * 0.75, -d);
+        }
+        break;
     }
     camera.position.copy(pos);
     camera.lookAt(center);
@@ -132,6 +145,8 @@ function getParamsFromURL(): Partial<GarageParams> {
   if (typeof window === "undefined") return {};
   const searchParams = new URLSearchParams(window.location.search);
   const parsed: Partial<GarageParams> = {};
+  const hallType = searchParams.get("hallType");
+  if (hallType) parsed.hallType = hallType;
 
   const keys = Object.keys(DEFAULT_PARAMS) as (keyof GarageParams)[];
   for (const key of keys) {
@@ -150,10 +165,25 @@ function getParamsFromURL(): Partial<GarageParams> {
       parsed[key] = val as any;
     }
   }
+  if (parsed.hallType && parsed.hallType !== "Vlastný") {
+    const halls = getHallsConfig();
+    const h = halls[parsed.hallType];
+    if (h) {
+      parsed.width = h.width;
+      const bCount = h.defaultBays ?? 5;
+      parsed.bayCount = bCount;
+      parsed.length = h.defaultLength ?? (bCount * h.moduleLength);
+      parsed.clearHeight = h.versions?.[0]?.H ?? h.heights[0];
+      parsed.roofType = h.type as any;
+      parsed.roofPitchDeg = h.roofPitchDeg;
+    }
+    parsed.showStructure = true;
+    parsed.showCladding = false;
+    parsed.showAccessories = false;
+    parsed.showCatalogDimensions = true;
+  }
   return parsed;
 }
-
-import { getHallsConfig } from "@/lib/garage/configHelper";
 
 export default function Configurator() {
   const exportRef = useRef<THREE.Group | null>(null);
@@ -178,13 +208,27 @@ export default function Configurator() {
   const hallOptions = ["Vlastný", ...Object.keys(hallsConfig)];
   const [selectedHall, setSelectedHall] = useState(initialUrlParams.hallType ?? "Vlastný");
   const isCustom = selectedHall === "Vlastný";
+  const [showCatalogModal, setShowCatalogModal] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+  const applyHallTypeRef = useRef<(v: string) => void>(() => {});
+  useEffect(() => {
+    if (typeof window !== "undefined" && (!initialUrlParams.hallType || window.location.search === "")) {
+      setShowPicker(true);
+    }
+  }, [initialUrlParams.hallType]);
+
+  const initHall = initialUrlParams.hallType && initialUrlParams.hallType !== "Vlastný" ? hallsConfig[initialUrlParams.hallType] : null;
+  const isCatalog = !!initHall;
+  const initBays = initHall ? (initHall.defaultBays ?? 5) : DEFAULT_PARAMS.bayCount;
+  const initLength = initHall ? (initHall.defaultLength ?? (initBays * initHall.moduleLength)) : DEFAULT_PARAMS.length;
 
   const [params, setParams] = useControls(() => ({
     "Zobrazenie": folder({
-      showStructure: { value: initialUrlParams.showStructure ?? DEFAULT_PARAMS.showStructure, label: "Konštrukcia" },
-      showCladding: { value: initialUrlParams.showCladding ?? DEFAULT_PARAMS.showCladding, label: "Opláštenie" },
-      showAccessories: { value: initialUrlParams.showAccessories ?? DEFAULT_PARAMS.showAccessories, label: "Príslušenstvo" },
+      showStructure: { value: isCatalog ? true : (initialUrlParams.showStructure ?? true), label: "Konštrukcia" },
+      showCladding: { value: isCatalog ? false : (initialUrlParams.showCladding ?? DEFAULT_PARAMS.showCladding), label: "Opláštenie" },
+      showAccessories: { value: isCatalog ? false : (initialUrlParams.showAccessories ?? DEFAULT_PARAMS.showAccessories), label: "Príslušenstvo" },
       showFoundation: { value: initialUrlParams.showFoundation ?? DEFAULT_PARAMS.showFoundation, label: "Základová doska" },
+      showCatalogDimensions: { value: isCatalog ? (initialUrlParams.showCatalogDimensions ?? true) : false, label: "Kóty A-B-C" },
       wireframe: { value: initialUrlParams.wireframe ?? DEFAULT_PARAMS.wireframe, label: "Wireframe" },
       explode: { value: initialUrlParams.explode ?? DEFAULT_PARAMS.explode, min: 0, max: 1, step: 0.01, label: "Exploded view" },
     }, { collapsed: true }),
@@ -194,36 +238,60 @@ export default function Configurator() {
         options: hallOptions,
         label: "Typ z PDF",
         onChange: (v) => {
-          setSelectedHall(v);
-          if (v !== "Vlastný" && hallsConfig[v]) {
-            const h = hallsConfig[v];
-            const currentLen = params?.length || (initialUrlParams.length ?? DEFAULT_PARAMS.length);
-            const minLen = h.minLength;
-            let newLen = Math.max(currentLen, minLen);
-            newLen = Math.ceil(newLen / h.moduleLength) * h.moduleLength;
-            
-            setParams({
-              width: h.width,
-              roofType: h.type as any,
-              roofPitchDeg: h.roofPitchDeg,
-              clearHeight: h.heights[0],
-              length: newLen,
-              bayCount: Math.round(newLen / h.moduleLength),
-              ...(h.framework?.includes("160") ? { profileSize: 0.16, profileThickness: 0.005 } : {})
-            });
+          applyHallTypeRef.current(v);
+        },
+      },
+      hallHeight: {
+        value: "4m",
+        options: ["4m", "5m", "6m", "7m"],
+        label: "Výška stĺpa",
+        disabled: isCustom,
+        onChange: (val) => {
+          if (selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
+            const h = hallsConfig[selectedHall];
+            const poleNum = parseInt(val, 10);
+            let foundVer = h.versions?.find((ver) => ver.poleHeight === poleNum);
+            if (!foundVer && h.versions && h.versions.length > 0) {
+              foundVer = h.versions[0];
+            }
+            if (foundVer) {
+              const isShed = h.type === "shed";
+              const gateW = isShed ? Math.min(3.0, h.width * 0.5) : (foundVer.E ?? (h.width * 0.6));
+              const gateH = isShed
+                ? (foundVer.H4 ? Math.min(foundVer.H4 - 0.15, 3.5) : 2.5)
+                : (foundVer.H2 ? Math.min(foundVer.H2 - 0.15, 5.0) : Math.min(3.8, foundVer.H - 0.2));
+              setParams({
+                clearHeight: foundVer.H,
+                doorWidth: gateW,
+                doorHeight: gateH,
+              });
+            }
+          }
+        },
+      },
+      width: { value: isCatalog ? initHall.width : (initialUrlParams.width ?? DEFAULT_PARAMS.width), min: 2.5, max: 20, step: 0.1, label: "Šírka X [m]" },
+      length: {
+        value: isCatalog ? initLength : (initialUrlParams.length ?? initLength),
+        min: 3,
+        max: 50,
+        step: 0.1,
+        label: "Dĺžka Y [m]",
+        onChange: (val) => {
+          if (selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
+            const h = hallsConfig[selectedHall];
+            const bays = Math.max(2, Math.round(val / h.moduleLength));
+            setParams({ bayCount: bays });
           }
         }
       },
-      width: { value: initialUrlParams.width ?? DEFAULT_PARAMS.width, min: 2.5, max: 20, step: 0.1, label: "Šírka X [m]", disabled: !isCustom },
-      length: { value: initialUrlParams.length ?? DEFAULT_PARAMS.length, min: 3, max: 50, step: 0.1, label: "Dĺžka Y [m]" }, // dĺžku nezablokujeme, môže rásť
-      clearHeight: { value: initialUrlParams.clearHeight ?? DEFAULT_PARAMS.clearHeight, min: 2.0, max: 7.0, step: 0.1, label: "Svetlá výška Z [m]", disabled: !isCustom },
-      roofType: { value: initialUrlParams.roofType ?? DEFAULT_PARAMS.roofType, options: { "Sedlová": "gable", "Pultová": "shed" }, label: "Strecha", disabled: !isCustom },
-      roofPitchDeg: { value: initialUrlParams.roofPitchDeg ?? DEFAULT_PARAMS.roofPitchDeg, min: 5, max: 35, step: 1, label: "Spád strechy [°]", disabled: !isCustom },
+      clearHeight: { value: isCatalog ? (initHall.versions?.[0]?.H ?? initHall.heights[0]) : (initialUrlParams.clearHeight ?? DEFAULT_PARAMS.clearHeight), min: 2.0, max: 7.0, step: 0.001, label: "Svetlá výška Z [m]" },
+      roofType: { value: isCatalog ? (initHall.type as any) : (initialUrlParams.roofType ?? DEFAULT_PARAMS.roofType), options: { "Sedlová": "gable", "Pultová": "shed" }, label: "Strecha" },
+      roofPitchDeg: { value: isCatalog ? initHall.roofPitchDeg : (initialUrlParams.roofPitchDeg ?? DEFAULT_PARAMS.roofPitchDeg), min: 5, max: 35, step: 1, label: "Spád strechy [°]" },
     }, { collapsed: true }),
     "Konštrukcia": folder({
-      bayCount: { value: initialUrlParams.bayCount ?? DEFAULT_PARAMS.bayCount, min: 2, max: 15, step: 1, label: "Počet polí", disabled: !isCustom },
-      profileSize: { value: initialUrlParams.profileSize ?? DEFAULT_PARAMS.profileSize, min: 0.06, max: 0.20, step: 0.01, label: "Jakl strana [m]", disabled: !isCustom },
-      profileThickness: { value: initialUrlParams.profileThickness ?? DEFAULT_PARAMS.profileThickness, min: 0.002, max: 0.010, step: 0.001, label: "Hrúbka steny [m]", disabled: !isCustom },
+      bayCount: { value: isCatalog ? initBays : (initialUrlParams.bayCount ?? initBays), min: 2, max: 15, step: 1, label: "Počet polí" },
+      profileSize: { value: initialUrlParams.profileSize ?? DEFAULT_PARAMS.profileSize, min: 0.06, max: 0.20, step: 0.01, label: "Jakl strana [m]" },
+      profileThickness: { value: initialUrlParams.profileThickness ?? DEFAULT_PARAMS.profileThickness, min: 0.002, max: 0.010, step: 0.001, label: "Hrúbka steny [m]" },
       steelColor: { value: initialUrlParams.steelColor ?? DEFAULT_PARAMS.steelColor, label: "Farba ocele" },
     }, { collapsed: true }),
     "Opláštenie": folder({
@@ -238,13 +306,13 @@ export default function Configurator() {
       trimmingColor: { value: initialUrlParams.trimmingColor ?? DEFAULT_PARAMS.trimmingColor, label: "Rohy & Odkvapy RAL" },
     }, { collapsed: true }),
     "Dvere a okná": folder({
-      doorOpen: { value: initialUrlParams.doorOpen ?? DEFAULT_PARAMS.doorOpen, label: "Otvoriť bránu 🔓" },
-      doorWidth: { value: initialUrlParams.doorWidth ?? DEFAULT_PARAMS.doorWidth, min: 2, max: 4, step: 0.1, label: "Brána Š [m]" },
-      doorHeight: { value: initialUrlParams.doorHeight ?? DEFAULT_PARAMS.doorHeight, min: 1.8, max: 3, step: 0.1, label: "Brána V [m]" },
-      hasPersonalDoor: { value: initialUrlParams.hasPersonalDoor ?? DEFAULT_PARAMS.hasPersonalDoor, label: "Personálne dvere" },
+      doorOpen: { value: isCatalog ? false : (initialUrlParams.doorOpen ?? DEFAULT_PARAMS.doorOpen), label: "Otvoriť bránu 🔓" },
+      doorWidth: { value: isCatalog ? (initHall.type === "shed" ? Math.min(3.0, initHall.width * 0.5) : (initHall.versions?.[0]?.E ?? 4.8)) : (initialUrlParams.doorWidth ?? DEFAULT_PARAMS.doorWidth), min: 1.0, max: 6.0, step: 0.1, label: "Brána Š [m]" },
+      doorHeight: { value: isCatalog ? (initHall.type === "shed" ? (initHall.versions?.[0]?.H4 ? Math.min(initHall.versions[0].H4 - 0.15, 3.2) : 2.5) : (initHall.versions?.[0]?.H2 ? Math.min(initHall.versions[0].H2 - 0.15, 4.8) : Math.min(3.8, (initHall.versions?.[0]?.H ?? initHall.heights[0]) - 0.2))) : (initialUrlParams.doorHeight ?? DEFAULT_PARAMS.doorHeight), min: 1.8, max: 6.5, step: 0.1, label: "Brána V [m]" },
+      hasPersonalDoor: { value: isCatalog ? false : (initialUrlParams.hasPersonalDoor ?? DEFAULT_PARAMS.hasPersonalDoor), label: "Personálne dvere" },
       personalDoorSide: { value: initialUrlParams.personalDoorSide ?? DEFAULT_PARAMS.personalDoorSide, options: ["left", "right", "back"], label: "Strana dverí" },
-      hasWindows: { value: initialUrlParams.hasWindows ?? DEFAULT_PARAMS.hasWindows, label: "Okná" },
-      hasSkylights: { value: initialUrlParams.hasSkylights ?? DEFAULT_PARAMS.hasSkylights, label: "Strešné svetlíky ☀️" },
+      hasWindows: { value: isCatalog ? false : (initialUrlParams.hasWindows ?? DEFAULT_PARAMS.hasWindows), label: "Okná" },
+      hasSkylights: { value: isCatalog ? false : (initialUrlParams.hasSkylights ?? DEFAULT_PARAMS.hasSkylights), label: "Strešné svetlíky ☀️" },
       windowSide: { value: initialUrlParams.windowSide ?? DEFAULT_PARAMS.windowSide, options: ["left", "right", "back"], label: "Strana okien" },
       windowCount: { value: initialUrlParams.windowCount ?? DEFAULT_PARAMS.windowCount, min: 0, max: 4, step: 1, label: "Počet okien" },
       windowWidth: { value: initialUrlParams.windowWidth ?? DEFAULT_PARAMS.windowWidth, min: 0.3, max: 1.5, step: 0.1, label: "Okno Š [m]" },
@@ -283,7 +351,115 @@ export default function Configurator() {
     }, { collapsed: true }),
   }));
 
-  const typedParams: GarageParams = params as GarageParams;
+  const applyHallType = (v: string) => {
+    setSelectedHall(v);
+    if (v !== "Vlastný" && hallsConfig[v]) {
+      const h = hallsConfig[v];
+      let profSize = 0.10;
+      let profThick = 0.004;
+      if (h.gablePillars?.includes("140")) {
+        profSize = 0.14;
+        profThick = 0.005;
+      } else if (h.gablePillars?.includes("120x120x5")) {
+        profSize = 0.12;
+        profThick = 0.005;
+      } else if (h.gablePillars?.includes("120")) {
+        profSize = 0.12;
+        profThick = 0.004;
+      } else if (h.gablePillars?.includes("100")) {
+        profSize = 0.10;
+        profThick = 0.004;
+      }
+
+      const defaultBays = h.defaultBays ?? (v === "KD8" ? 5 : Math.max(3, Math.round(h.minLength / h.moduleLength)));
+      const defaultLen = h.defaultLength ?? (defaultBays * h.moduleLength);
+      const defaultVer = h.versions?.[0];
+      const defaultH = defaultVer ? defaultVer.H : h.heights[0];
+      const defaultPole = defaultVer ? `${defaultVer.poleHeight}m` : "4m";
+      const isShed = h.type === "shed";
+      const gateW = isShed ? Math.min(3.0, h.width * 0.5) : (defaultVer?.E ?? 4.8);
+      const gateH = isShed
+        ? (defaultVer?.H4 ? Math.min(defaultVer.H4 - 0.15, 3.2) : 2.5)
+        : (defaultVer?.H2 ? Math.min(defaultVer.H2 - 0.15, 4.8) : Math.min(3.8, defaultH - 0.2));
+
+      (setParams as any)({
+        hallType: v,
+        showStructure: true,
+        showCladding: false,
+        showAccessories: false,
+        showCatalogDimensions: true,
+        width: h.width,
+        roofType: h.type as any,
+        roofPitchDeg: h.roofPitchDeg,
+        clearHeight: defaultH,
+        hallHeight: defaultPole,
+        length: defaultLen,
+        bayCount: defaultBays,
+        profileSize: profSize,
+        profileThickness: profThick,
+        hasPersonalDoor: false,
+        hasWindows: false,
+        doorWidth: gateW,
+        doorHeight: gateH,
+        doorOpen: false,
+        steelColor: "#9aa1ab",
+        ...(h.claddingVersion === "ZU" ? { claddingOrientation: "vertical" } : {})
+      });
+    } else if (v === "Vlastný") {
+      (setParams as any)({
+        hallType: "Vlastný",
+        showStructure: true,
+        showCladding: true,
+        showAccessories: true,
+        showCatalogDimensions: false,
+        width: DEFAULT_PARAMS.width,
+        length: DEFAULT_PARAMS.length,
+        clearHeight: DEFAULT_PARAMS.clearHeight,
+        roofType: DEFAULT_PARAMS.roofType,
+        roofPitchDeg: DEFAULT_PARAMS.roofPitchDeg,
+        bayCount: DEFAULT_PARAMS.bayCount,
+        profileSize: DEFAULT_PARAMS.profileSize,
+        profileThickness: DEFAULT_PARAMS.profileThickness,
+        steelColor: DEFAULT_PARAMS.steelColor,
+        doorWidth: DEFAULT_PARAMS.doorWidth,
+        doorHeight: DEFAULT_PARAMS.doorHeight,
+        hasPersonalDoor: DEFAULT_PARAMS.hasPersonalDoor,
+        hasWindows: DEFAULT_PARAMS.hasWindows,
+      });
+    }
+  };
+  applyHallTypeRef.current = applyHallType;
+
+  const cleanParams: Partial<GarageParams> = {};
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && !Number.isNaN(v)) {
+      (cleanParams as any)[k] = v;
+    }
+  }
+
+  let typedParams: GarageParams = { ...DEFAULT_PARAMS, ...cleanParams };
+
+  if (selectedHall && selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
+    const h = hallsConfig[selectedHall];
+    const activeVer =
+      h.versions?.find((v) => Math.abs(v.H - (cleanParams.clearHeight ?? 0)) < 0.05) ||
+      h.versions?.[0];
+    const bCount = cleanParams.bayCount && cleanParams.bayCount >= 2 ? cleanParams.bayCount : (h.defaultBays ?? 5);
+    const hallLen = (cleanParams.length && cleanParams.length >= h.minLength) ? cleanParams.length : (h.defaultLength ?? (bCount * h.moduleLength));
+    typedParams = {
+      ...typedParams,
+      hallType: selectedHall,
+      width: h.width,
+      roofType: h.type as any,
+      roofPitchDeg: h.roofPitchDeg,
+      clearHeight: cleanParams.clearHeight ?? activeVer?.H ?? h.heights[0],
+      length: hallLen,
+      bayCount: bCount,
+      showStructure: cleanParams.showStructure ?? true,
+      showCladding: cleanParams.showCladding ?? false,
+      showAccessories: cleanParams.showAccessories ?? false,
+    };
+  }
 
   const togglePanel = (id: string) => {
     setRemovedPanels((prev) => ({
@@ -298,9 +474,15 @@ export default function Configurator() {
     const client = currentParams.get("client");
 
     const searchParams = new URLSearchParams();
+    if (selectedHall && selectedHall !== "Vlastný") {
+      searchParams.set("hallType", selectedHall);
+    }
     const keys = Object.keys(DEFAULT_PARAMS) as (keyof GarageParams)[];
     for (const key of keys) {
-      let val = String(typedParams[key]);
+      const rawVal = typedParams[key];
+      if (rawVal === undefined || rawVal === null || Number.isNaN(rawVal as any)) continue;
+      let val = String(rawVal);
+      if (val === "undefined" || val === "NaN") continue;
       if ((key === "claddingColor" || key === "roofColor" || key === "steelColor" || key === "doorColor" || key === "sectionalDoorColor" || key === "trimmingColor") && val.startsWith("#")) {
         val = val.substring(1);
       }
@@ -311,7 +493,7 @@ export default function Configurator() {
     }
     const newRelativePathQuery = window.location.pathname + "?" + searchParams.toString();
     window.history.replaceState(null, "", newRelativePathQuery);
-  }, [typedParams]);
+  }, [typedParams, selectedHall]);
 
   const handleShare = () => {
     if (typeof window === "undefined") return;
@@ -343,6 +525,18 @@ export default function Configurator() {
         )}
       </Canvas>
 
+      {showPicker && (
+        <ProductPicker
+          halls={hallsConfig}
+          selectedHall={selectedHall}
+          onSelect={(v) => {
+            applyHallType(v);
+            setShowPicker(false);
+          }}
+          onClose={() => setShowPicker(false)}
+        />
+      )}
+
       {/* Top bar */}
       <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between border-b border-white/5 bg-black/40 px-3 py-2 backdrop-blur">
         <div className="flex items-center gap-2">
@@ -356,6 +550,32 @@ export default function Configurator() {
             </span>
           )}
         </div>
+        {/* Quick Product Switcher */}
+        <div className="flex items-center gap-1.5 rounded border border-white/10 bg-black/40 px-2 py-0.5">
+          <span className="text-[10px] font-mono text-white/50 uppercase hidden md:inline">Produkt:</span>
+          <select
+            value={selectedHall}
+            onChange={(e) => {
+              applyHallType(e.target.value);
+            }}
+            className="rounded bg-[#161b22] px-2 py-0.5 font-mono text-[11px] font-bold text-emerald-400 border border-emerald-500/30 outline-none cursor-pointer hover:border-emerald-400 transition"
+          >
+            <option value="Vlastný">Vlastná garáž (Štandard)</option>
+            <optgroup label="Oceľové haly GTG">
+              {Object.keys(hallsConfig).map((name) => (
+                <option key={name} value={name}>{name} (Katalóg)</option>
+              ))}
+            </optgroup>
+          </select>
+          <button
+            onClick={() => setShowPicker(true)}
+            className="flex items-center gap-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 font-mono text-[10px] font-bold transition cursor-pointer"
+            title="Otvoriť vizuálny výber produktov z katalógu"
+          >
+            <span>⊞ Katalóg</span>
+          </button>
+        </div>
+
         <div className="flex items-center gap-1">
           {(["iso", "plan", "front", "side"] as const).map((v) => (
             <button
@@ -379,7 +599,7 @@ export default function Configurator() {
         </div>
         {!isMobile && (
           <div className="font-mono text-[10px] text-white/40">
-            {typedParams.width.toFixed(1)} × {typedParams.length.toFixed(1)} × {typedParams.clearHeight.toFixed(1)} m
+            {(typedParams.width ?? DEFAULT_PARAMS.width).toFixed(1)} × {(typedParams.length ?? DEFAULT_PARAMS.length).toFixed(1)} × {(typedParams.clearHeight ?? DEFAULT_PARAMS.clearHeight).toFixed(1)} m
           </div>
         )}
       </div>
@@ -387,11 +607,54 @@ export default function Configurator() {
       <PriceCalculator p={typedParams} quoteRequestSignal={quoteRequestSignal} />
       <PremiumSpecPanel p={typedParams} />
 
-      <PremiumSpecPanel p={typedParams} />
+      {/* Hall PDF specs badge if selected */}
+      {selectedHall !== "Vlastný" && hallsConfig[selectedHall] && (() => {
+        const curHall = hallsConfig[selectedHall];
+        const activeVer = curHall.versions?.find((v) => Math.abs(v.H - (typedParams.clearHeight ?? 0)) < 0.05) || curHall.versions?.[0];
+        return (
+          <div className="pointer-events-auto absolute left-3 top-28 z-10 max-w-[340px] rounded border border-emerald-500/30 bg-[#0e1116]/85 p-2.5 font-mono text-[10px] text-white/90 backdrop-blur shadow-xl">
+            <div className="flex items-center justify-between border-b border-white/10 pb-1 mb-1.5">
+              <span className="font-bold text-emerald-400">KATALÓG GTG: {selectedHall}</span>
+              <span className="text-white/50">{curHall.framework || "EN 1090"}</span>
+            </div>
+            {activeVer && (
+              <div className="text-[9px] text-emerald-300 font-semibold mb-1 truncate">
+                {activeVer.label}
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-white/70">
+              <div>Šírka A: <span className="text-white">{curHall.width} m</span></div>
+              <div>Modul C: <span className="text-white">{curHall.moduleLength} m</span></div>
+              <div>Výška H: <span className="text-white">{activeVer ? `${activeVer.H.toFixed(3)} m` : `${curHall.heights[0]} m`}</span></div>
+              <div>Hrebeň H1: <span className="text-white">{activeVer ? `${activeVer.H1.toFixed(3)} m` : "-"}</span></div>
+              <div>Prejazd H2: <span className="text-white">{activeVer ? `${activeVer.H2.toFixed(3)} m` : "-"}</span></div>
+              {curHall.type === "shed" && activeVer?.H3 && (
+                <div>Vzadu H3/H4: <span className="text-white">{activeVer.H3}m / {activeVer.H4}m</span></div>
+              )}
+              <div>Rozteč D / E: <span className="text-white">{activeVer ? `${activeVer.D}m / ${activeVer.E}m` : "-"}</span></div>
+              <div>Stĺpy: <span className="text-white">{curHall.gablePillars || "RK"}</span></div>
+              <div>Sklon: <span className="text-white">{curHall.roofPitchDeg}°</span></div>
+              <div>Oceľ: <span className="text-white">{curHall.steelGrade || "S355"}</span></div>
+              {curHall.snowZone && (
+                <div>Zóna: <span className="text-white">Sneh {curHall.snowZone} / Vietor {curHall.windZone}</span></div>
+              )}
+              {curHall.claddingVersion && (
+                <div>Opláštenie: <span className="text-white">{curHall.claddingVersion}</span></div>
+              )}
+            </div>
+            <button
+              onClick={() => setShowCatalogModal(true)}
+              className="mt-2 w-full flex items-center justify-center gap-1.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 py-1 text-[10px] font-bold cursor-pointer transition-colors"
+            >
+              <span>📷 Zobraziť predlohu z katalógu</span>
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Dimensions strip */}
       <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded border border-white/10 bg-black/50 px-2 py-1 md:px-3 md:py-1.5 font-mono text-[9px] md:text-[10px] text-white/60 backdrop-blur text-center whitespace-nowrap">
-        {isMobile ? "Ťahanie = rotácia · Profily " + (typedParams.profileSize * 1000).toFixed(0) + " mm" : "Drag = orbit · Scroll = zoom · Right-drag = pan · Profily " + (typedParams.profileSize * 1000).toFixed(0) + "×" + (typedParams.profileSize * 1000).toFixed(0) + "×" + (typedParams.profileThickness * 1000).toFixed(0) + " mm"}
+        {isMobile ? "Ťahanie = rotácia · Profily " + ((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0) + " mm" : "Drag = orbit · Scroll = zoom · Right-drag = pan · Profily " + ((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0) + "×" + ((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0) + "×" + ((typedParams.profileThickness ?? DEFAULT_PARAMS.profileThickness) * 1000).toFixed(0) + " mm"}
       </div>
 
       {/* Controls Toggle Button */}
@@ -446,6 +709,129 @@ export default function Configurator() {
           padding: 0 16px;
         }
       `}</style>
+
+      {/* Catalog 1:1 Reference Modal */}
+      {showCatalogModal && selectedHall !== "Vlastný" && hallsConfig[selectedHall] && (() => {
+        const curHall = hallsConfig[selectedHall];
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3 md:p-6 backdrop-blur-sm">
+            <div className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-xl border border-white/20 bg-[#0e1116] p-4 md:p-6 shadow-2xl font-mono text-white">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-emerald-400">
+                    Katalógová predloha GTG 2025: {selectedHall}
+                  </h3>
+                  <p className="text-xs text-white/50">
+                    Typ: {curHall.type === "gable" ? "Sedlová hala" : "Pultová hala"} · Norma EN 1090 EXC2 · Zinkovanie PN-EN ISO 1461
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowCatalogModal(false)}
+                  className="rounded-full bg-white/10 p-1.5 hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Gallery of catalog images */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="rounded-lg border border-white/10 bg-black/40 p-2 overflow-hidden flex flex-col">
+                  <div className="text-[11px] font-bold text-emerald-300 mb-1 flex items-center justify-between">
+                    <span>1. Vizualizácia z katalógu</span>
+                    <span className="text-[9px] text-white/40">3D RENDER</span>
+                  </div>
+                  <img
+                    src={`/catalog/${selectedHall}_render.png`}
+                    alt={`Vizualizácia ${selectedHall}`}
+                    className="w-full h-auto rounded border border-white/5 object-cover"
+                  />
+                </div>
+                <div className="rounded-lg border border-white/10 bg-black/40 p-2 overflow-hidden flex flex-col">
+                  <div className="text-[11px] font-bold text-emerald-300 mb-1 flex items-center justify-between">
+                    <span>2. Výkres rámu a kót</span>
+                    <span className="text-[9px] text-white/40">CAD SCHEMA</span>
+                  </div>
+                  <img
+                    src={`/catalog/${selectedHall}_cad_diagram.png`}
+                    alt={`Výkres ${selectedHall}`}
+                    className="w-full h-auto rounded border border-white/5 object-contain bg-white/5"
+                  />
+                </div>
+              </div>
+
+              {/* Specification table */}
+              <div className="rounded-lg border border-white/10 bg-white/5 p-4 mb-4 text-xs">
+                <div className="font-bold text-emerald-300 mb-2">Presné parametre 1:1 z katalógu GTG:</div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-white/80">
+                  <div>Šírka A: <span className="font-bold text-white">{curHall.width} m ({(curHall.width * 1000).toFixed(0)} mm)</span></div>
+                  <div>Modul C: <span className="font-bold text-white">{curHall.moduleLength} m</span></div>
+                  <div>Min. dĺžka B: <span className="font-bold text-white">&gt; {curHall.minLength} m</span></div>
+                  <div>Hlavný rám: <span className="font-bold text-white">{curHall.framework}</span></div>
+                  <div>Štítové stĺpy: <span className="font-bold text-white">{curHall.gablePillars}</span></div>
+                  <div>Sklon: <span className="font-bold text-white">{curHall.roofPitchDeg}°</span></div>
+                  <div>Zavetrovanie: <span className="font-bold text-white">{curHall.bracing || "ø10.7"}</span></div>
+                  <div>Ťahadlá: <span className="font-bold text-white">{curHall.tieRods || "ø16"}</span></div>
+                  <div>Zóny: <span className="font-bold text-white">Sneh {curHall.snowZone} / Vietor {curHall.windZone}</span></div>
+                </div>
+
+                {curHall.versions && curHall.versions.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-white/10">
+                    <div className="font-semibold text-white/60 mb-2">Dostupné výškové verzie:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {curHall.versions.map((ver) => {
+                        const isCur = Math.abs(ver.H - (typedParams.clearHeight ?? 0)) < 0.05;
+                        return (
+                          <button
+                            key={ver.label}
+                            onClick={() => {
+                              const isShed = curHall.type === "shed";
+                              const gateW = isShed ? Math.min(3.0, curHall.width * 0.5) : (ver.E ?? 4.8);
+                              const gateH = isShed
+                                ? (ver.H4 ? Math.min(ver.H4 - 0.15, 3.2) : 2.5)
+                                : (ver.H2 ? Math.min(ver.H2 - 0.15, 4.8) : Math.min(3.8, ver.H - 0.2));
+                              const bays = curHall.defaultBays ?? (curHall.name === "KD8" ? 5 : 4);
+                              const len = curHall.defaultLength ?? (bays * curHall.moduleLength);
+                              (setParams as any)({
+                                showStructure: true,
+                                showCladding: false,
+                                showAccessories: false,
+                                clearHeight: ver.H,
+                                hallHeight: `${ver.poleHeight}m`,
+                                doorWidth: gateW,
+                                doorHeight: gateH,
+                                bayCount: bays,
+                                length: len,
+                              });
+                            }}
+                            className={`rounded px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                              isCur
+                                ? "bg-emerald-400 text-slate-900 shadow-md ring-2 ring-emerald-300"
+                                : "bg-white/10 text-white hover:bg-white/20 border border-white/10"
+                            }`}
+                          >
+                            ✓ Nastaviť 1:1: {ver.label} (H={ver.H}m, H1={ver.H1}m, H2={ver.H2}m)
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Close Button */}
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowCatalogModal(false)}
+                  className="rounded bg-emerald-500 px-4 py-2 text-xs font-bold text-slate-900 hover:bg-emerald-400 transition-colors cursor-pointer"
+                >
+                  Hotovo, pokračovať v konfigurácii
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

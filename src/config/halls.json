@@ -5,10 +5,43 @@
     "width": 8.0,
     "minLength": 8.0,
     "moduleLength": 4.0,
-    "heights": [4.026, 5.026],
+    "heights": [
+      4.026,
+      5.026
+    ],
     "roofPitchDeg": 10,
     "framework": "IPE 160",
-    "gablePillars": "RK 120x120x4"
+    "gablePillars": "RK 120x120x4",
+    "bracing": "ø10.7",
+    "tieRods": "ø16",
+    "steelGrade": "S355",
+    "gableSteelGrade": "S235",
+    "snowZone": "III",
+    "windZone": "I",
+    "claddingVersion": "ZU",
+    "defaultBays": 5,
+    "defaultLength": 20.0,
+    "versions": [
+      {
+        "label": "KD8/X/4/R4 (Výška 4m)",
+        "poleHeight": 4,
+        "H": 4.026,
+        "H1": 4.724,
+        "H2": 3.85,
+        "D": 1.6,
+        "E": 4.8
+      },
+      {
+        "label": "KD8/X/5/R4 (Výška 5m)",
+        "poleHeight": 5,
+        "H": 5.026,
+        "H1": 5.724,
+        "H2": 4.85,
+        "D": 1.6,
+        "E": 4.8
+      }
+    ],
+    "description": "Oceľová konštrukcia šírky 8 m s výškou stĺpov 4 m a 5 m. Modulový rozostup rámov po 4 m umožňuje dosiahnuť ľubovoľnú dĺžku haly."
   },
   "KD10": {
     "name": "KD10",
@@ -16,8 +49,43 @@
     "width": 10.0,
     "minLength": 12.0,
     "moduleLength": 4.0,
-    "heights": [4.0, 5.0],
-    "roofPitchDeg": 10
+    "heights": [
+      4.026,
+      5.026
+    ],
+    "roofPitchDeg": 10,
+    "framework": "IPE 160",
+    "gablePillars": "RK 120x120x4",
+    "bracing": "ø10.7",
+    "tieRods": "ø16",
+    "steelGrade": "S355",
+    "gableSteelGrade": "S235",
+    "snowZone": "III",
+    "windZone": "I",
+    "claddingVersion": "ZU",
+    "defaultBays": 5,
+    "defaultLength": 20.0,
+    "versions": [
+      {
+        "label": "KD10/X/4/R4 (Výška 4m)",
+        "poleHeight": 4,
+        "H": 4.026,
+        "H1": 4.9,
+        "H2": 3.85,
+        "D": 2.6,
+        "E": 4.8
+      },
+      {
+        "label": "KD10/X/5/R4 (Výška 5m)",
+        "poleHeight": 5,
+        "H": 5.026,
+        "H1": 5.9,
+        "H2": 4.85,
+        "D": 2.6,
+        "E": 4.8
+      }
+    ],
+    "description": "Oceľová konštrukcia šírky 10 m s výškou stĺpov 4 m a 5 m. Modulový rozostup rámov po 4 m umožňuje dosiahnuť ľubovoľnú dĺžku haly."
   },
   "KD12": {
     "name": "KD12",
@@ -25,8 +93,43 @@
     "width": 12.0,
     "minLength": 12.0,
     "moduleLength": 4.0,
-    "heights": [4.0, 5.0],
-    "roofPitchDeg": 10
+    "heights": [
+      4.026,
+      5.026
+    ],
+    "roofPitchDeg": 10,
+    "framework": "IPE 160",
+    "gablePillars": "RK 120x120x4",
+    "bracing": "ø10.7",
+    "tieRods": "ø16",
+    "steelGrade": "S355",
+    "gableSteelGrade": "S235",
+    "snowZone": "II",
+    "windZone": "I",
+    "claddingVersion": "ZU",
+    "defaultBays": 5,
+    "defaultLength": 20.0,
+    "versions": [
+      {
+        "label": "KD12/X/4/R4 (Výška 4m)",
+        "poleHeight": 4,
+        "H": 4.026,
+        "H1": 5.076,
+        "H2": 3.931,
+        "D": 3.706,
+        "E": 4.588
+      },
+      {
+        "label": "KD12/X/5/R4 (Výška 5m)",
+        "poleHeight": 5,
+        "H": 5.026,
+        "H1": 6.076,
+        "H2": 4.931,
+        "D": 3.706,
+        "E": 4.588
+      }
+    ],
+    "description": "Oceľová konštrukcia šírky 12 m s výškou stĺpov 4 m a 5 m. Modulový rozostup rámov po 4 m umožňuje dosiahnuť ľubovoľnú dĺžku haly."
   },
   "KD14": {
     "name": "KD14",
@@ -34,8 +137,43 @@
     "width": 14.0,
     "minLength": 15.0,
     "moduleLength": 5.0,
-    "heights": [4.0, 5.0],
-    "roofPitchDeg": 10
+    "heights": [
+      4.026,
+      5.026
+    ],
+    "roofPitchDeg": 10,
+    "framework": "IPE 180",
+    "gablePillars": "RK 100x100x4",
+    "bracing": "ø10.7",
+    "tieRods": "RK 60x60x3",
+    "steelGrade": "S355",
+    "gableSteelGrade": "S235",
+    "snowZone": "II",
+    "windZone": "I",
+    "claddingVersion": "ZU / BU",
+    "defaultBays": 4,
+    "defaultLength": 20.0,
+    "versions": [
+      {
+        "label": "KD14/X/4/R5 (Výška 4m)",
+        "poleHeight": 4,
+        "H": 4.026,
+        "H1": 5.25,
+        "H2": 3.708,
+        "D": 4.706,
+        "E": 4.588
+      },
+      {
+        "label": "KD14/X/5/R5 (Výška 5m)",
+        "poleHeight": 5,
+        "H": 5.026,
+        "H1": 6.25,
+        "H2": 4.78,
+        "D": 4.706,
+        "E": 4.588
+      }
+    ],
+    "description": "Oceľová konštrukcia šírky 14 m s výškou stĺpov 4 m a 5 m. Modulový rozostup rámov po 5 m umožňuje dosiahnuť ľubovoľnú dĺžku haly."
   },
   "KD16": {
     "name": "KD16",
@@ -43,8 +181,59 @@
     "width": 16.0,
     "minLength": 15.0,
     "moduleLength": 5.0,
-    "heights": [5.0, 6.0, 7.0],
-    "roofPitchDeg": 10
+    "heights": [
+      5.03,
+      6.03,
+      7.03
+    ],
+    "roofPitchDeg": 10,
+    "framework": "IPE 220",
+    "gablePillars": "RK 120x120x5",
+    "bracing": "ø10.7",
+    "tieRods": "RK 80x80x3",
+    "steelGrade": "S355",
+    "gableSteelGrade": "S235",
+    "snowZone": "II",
+    "windZone": "I",
+    "claddingVersion": "ZU / BU",
+    "defaultBays": 4,
+    "defaultLength": 20.0,
+    "versions": [
+      {
+        "label": "KD16/X/5/R5 (Výška 5m)",
+        "poleHeight": 5,
+        "H": 5.03,
+        "H1": 6.416,
+        "H2": 4.69,
+        "D": 4.0,
+        "Dp": 3.83,
+        "E": 4.0,
+        "Ep": 3.88
+      },
+      {
+        "label": "KD16/X/6/R5 (Výška 6m)",
+        "poleHeight": 6,
+        "H": 6.03,
+        "H1": 7.416,
+        "H2": 5.69,
+        "D": 4.0,
+        "Dp": 3.83,
+        "E": 4.0,
+        "Ep": 3.88
+      },
+      {
+        "label": "KD16/X/7/R5 (Výška 7m)",
+        "poleHeight": 7,
+        "H": 7.03,
+        "H1": 8.416,
+        "H2": 6.69,
+        "D": 4.0,
+        "Dp": 3.83,
+        "E": 4.0,
+        "Ep": 3.88
+      }
+    ],
+    "description": "Oceľová konštrukcia šírky 16 m s výškou stĺpov 5, 6 a 7 m. Modulový rozostup rámov po 5 m umožňuje dosiahnuť ľubovoľnú dĺžku haly."
   },
   "KD18": {
     "name": "KD18",
@@ -52,8 +241,59 @@
     "width": 18.0,
     "minLength": 15.0,
     "moduleLength": 5.0,
-    "heights": [5.0, 6.0, 7.0],
-    "roofPitchDeg": 10
+    "heights": [
+      5.03,
+      6.03,
+      7.03
+    ],
+    "roofPitchDeg": 10,
+    "framework": "IPE 240",
+    "gablePillars": "RK 140x140x5",
+    "bracing": "ø10.7",
+    "tieRods": "RK 80x80x3",
+    "steelGrade": "S355",
+    "gableSteelGrade": "S235",
+    "snowZone": "II",
+    "windZone": "I",
+    "claddingVersion": "ZU / BU",
+    "defaultBays": 4,
+    "defaultLength": 20.0,
+    "versions": [
+      {
+        "label": "KD18/X/5/R5 (Výška 5m)",
+        "poleHeight": 5,
+        "H": 5.03,
+        "H1": 6.58,
+        "H2": 4.645,
+        "D": 4.5,
+        "Dp": 4.31,
+        "E": 4.5,
+        "Ep": 4.36
+      },
+      {
+        "label": "KD18/X/6/R5 (Výška 6m)",
+        "poleHeight": 6,
+        "H": 6.03,
+        "H1": 7.58,
+        "H2": 5.645,
+        "D": 4.5,
+        "Dp": 4.31,
+        "E": 4.5,
+        "Ep": 4.36
+      },
+      {
+        "label": "KD18/X/7/R5 (Výška 7m)",
+        "poleHeight": 7,
+        "H": 7.03,
+        "H1": 8.58,
+        "H2": 6.645,
+        "D": 4.5,
+        "Dp": 4.31,
+        "E": 4.5,
+        "Ep": 4.36
+      }
+    ],
+    "description": "Oceľová konštrukcia šírky 18 m s výškou stĺpov 5, 6 a 7 m. Modulový rozostup rámov po 5 m umožňuje dosiahnuť ľubovoľnú dĺžku haly."
   },
   "KD20": {
     "name": "KD20",
@@ -61,25 +301,152 @@
     "width": 20.0,
     "minLength": 15.0,
     "moduleLength": 5.0,
-    "heights": [5.0, 6.0, 7.0],
-    "roofPitchDeg": 10
+    "heights": [
+      5.035,
+      6.035,
+      7.035
+    ],
+    "roofPitchDeg": 10,
+    "framework": "IPE 270",
+    "gablePillars": "RK 140x140x5",
+    "bracing": "ø10.7",
+    "tieRods": "RK 80x80x3",
+    "steelGrade": "S355",
+    "gableSteelGrade": "S235",
+    "snowZone": "II",
+    "windZone": "I",
+    "claddingVersion": "ZU / BU",
+    "defaultBays": 4,
+    "defaultLength": 20.0,
+    "versions": [
+      {
+        "label": "KD20/X/5/R5 (Výška 5m)",
+        "poleHeight": 5,
+        "H": 5.035,
+        "H1": 6.779,
+        "H2": 4.73,
+        "D": 5.0,
+        "Dp": 4.795,
+        "E": 5.0,
+        "Ep": 4.86
+      },
+      {
+        "label": "KD20/X/6/R5 (Výška 6m)",
+        "poleHeight": 6,
+        "H": 6.035,
+        "H1": 7.779,
+        "H2": 5.73,
+        "D": 5.0,
+        "Dp": 4.795,
+        "E": 5.0,
+        "Ep": 4.86
+      },
+      {
+        "label": "KD20/X/7/R5 (Výška 7m)",
+        "poleHeight": 7,
+        "H": 7.035,
+        "H1": 8.779,
+        "H2": 6.73,
+        "D": 5.0,
+        "Dp": 4.795,
+        "E": 5.0,
+        "Ep": 4.86
+      }
+    ],
+    "description": "Oceľová konštrukcia šírky 20 m s výškou stĺpov 5, 6 a 7 m. Modulový rozostup rámov po 5 m umožňuje dosiahnuť ľubovoľnú dĺžku haly."
   },
   "KJ6": {
     "name": "KJ6",
     "type": "shed",
     "width": 6.0,
     "minLength": 8.0,
-    "moduleLength": 3.0,
-    "heights": [4.0, 5.0],
-    "roofPitchDeg": 8
+    "moduleLength": 4.0,
+    "heights": [
+      4.0,
+      5.0
+    ],
+    "roofPitchDeg": 8,
+    "framework": "Truss RK 50x50x2 / RK 30x30x2",
+    "gablePillars": "RK 100x100x4",
+    "bracing": "ø10.7",
+    "steelGrade": "S355",
+    "gableSteelGrade": "S355",
+    "snowZone": "II",
+    "windZone": "I",
+    "claddingVersion": "ZU / BU",
+    "defaultBays": 5,
+    "defaultLength": 20.0,
+    "versions": [
+      {
+        "label": "KJ/6/X/4(3)/R4 (Výška 4m)",
+        "poleHeight": 4,
+        "H": 4.0,
+        "H1": 4.176,
+        "H2": 3.338,
+        "H3": 3.593,
+        "H4": 2.754,
+        "D": 3.0,
+        "E": 0.977
+      },
+      {
+        "label": "KJ/6/X/5(4)/R4 (Výška 5m)",
+        "poleHeight": 5,
+        "H": 5.0,
+        "H1": 5.015,
+        "H2": 4.176,
+        "H3": 4.431,
+        "H4": 3.593,
+        "D": 3.0,
+        "E": 0.977
+      }
+    ],
+    "description": "Pultová konštrukcia šírky 6 m s výškou stĺpov 4 m a 5 m. Priehradový väzník s modulom 4 m, stavba bez nutnosti stavebného povolenia."
   },
   "KJ7": {
     "name": "KJ7",
     "type": "shed",
     "width": 6.95,
     "minLength": 8.0,
-    "moduleLength": 3.475,
-    "heights": [4.0, 5.0],
-    "roofPitchDeg": 7
+    "moduleLength": 4.0,
+    "heights": [
+      4.0,
+      5.0
+    ],
+    "roofPitchDeg": 7,
+    "framework": "Truss RK 50x50x2 / RK 30x30x2",
+    "gablePillars": "RK 100x100x4",
+    "bracing": "ø10.7",
+    "steelGrade": "S355",
+    "gableSteelGrade": "S355",
+    "snowZone": "II",
+    "windZone": "I",
+    "claddingVersion": "ZU / BU",
+    "defaultBays": 5,
+    "defaultLength": 20.0,
+    "versions": [
+      {
+        "label": "KJ/7/X/4(3)/R4 (Výška 4m)",
+        "poleHeight": 4,
+        "H": 4.0,
+        "H1": 4.176,
+        "H2": 3.338,
+        "H3": 3.593,
+        "H4": 2.754,
+        "D": 3.475,
+        "E": 1.134
+      },
+      {
+        "label": "KJ/7/X/5(4)/R4 (Výška 5m)",
+        "poleHeight": 5,
+        "H": 5.0,
+        "H1": 5.015,
+        "H2": 4.167,
+        "H3": 4.431,
+        "H4": 3.593,
+        "D": 3.475,
+        "E": 1.134
+      }
+    ],
+    "description": "Pultová konštrukcia šírky 6,95 m s výškou stĺpov 4 m a 5 m. Priehradový väzník s modulom 4 m, moderná stavba na ohlásenie stavby."
   }
 }

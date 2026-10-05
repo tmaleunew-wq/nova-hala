@@ -23,7 +23,6 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [isMobile, setIsMobile] = useState(false);
-  const hasMountedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -37,11 +36,7 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
   }, []);
 
   useEffect(() => {
-    if (!hasMountedRef.current) {
-      hasMountedRef.current = true;
-      return;
-    }
-    if (quoteRequestSignal === undefined) return;
+    if (!quoteRequestSignal || quoteRequestSignal <= 0) return;
     setShowForm(true);
   }, [quoteRequestSignal]);
 

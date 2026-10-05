@@ -2,6 +2,7 @@ import "@react-three/fiber";
 import { useMemo } from "react";
 import { SteelTube, SteelPlate } from "./SteelTube";
 import type { GarageParams } from "@/lib/garage/types";
+import { getHallsConfig } from "@/lib/garage/configHelper";
 
 function ridgeHeight(p: GarageParams): number {
   if (p.roofType === "gable") {
@@ -176,17 +177,33 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
                 color={col}
                 wireframe={wf}
               />
-              {/* horizontal tie (spodný pás) on inner frames only */}
-              {i > 0 && i < zs.length - 1 && (
-                <SteelTube
-                  from={[hxL, Heave, z]}
-                  to={[hxR, Heave, z]}
-                  size={sz * 0.7}
-                  thickness={th}
-                  color={col}
-                  wireframe={wf}
-                />
-              )}
+              {/* Corner haunches (nábehy v rohoch rámu) */}
+              {(() => {
+                const halfW = p.width / 2;
+                const angle = Math.atan2(Hridge - Heave, halfW);
+                const haunchLen = Math.min(0.8, halfW * 0.22);
+                const haunchDown = Math.min(0.65, Heave * 0.14);
+                return (
+                  <>
+                    <SteelTube
+                      from={[hxL, Heave - haunchDown, z]}
+                      to={[hxL + haunchLen, Heave + haunchLen * Math.tan(angle), z]}
+                      size={sz * 0.8}
+                      thickness={th}
+                      color={col}
+                      wireframe={wf}
+                    />
+                    <SteelTube
+                      from={[hxR, Heave - haunchDown, z]}
+                      to={[hxR - haunchLen, Heave + haunchLen * Math.tan(angle), z]}
+                      size={sz * 0.8}
+                      thickness={th}
+                      color={col}
+                      wireframe={wf}
+                    />
+                  </>
+                );
+              })()}
             </group>
           );
         }
@@ -257,8 +274,23 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
       {(() => {
         const out: React.ReactNode[] = [];
         const gsz = sz * 0.6;
-        const heights = [0.6, 1.4, 2.2];
+        const girtCount = Math.max(3, Math.round(Heave / 1.15));
+        const heights: number[] = [];
+        for (let gi = 1; gi <= girtCount; gi++) {
+          const gh = (gi / (girtCount + 0.35)) * Heave;
+          if (gh < Heave - 0.2) heights.push(gh);
+        }
         const L = p.length;
+
+        const hallsCfg = getHallsConfig();
+        const currentHall = p.hallType && p.hallType !== "Vlastný" ? hallsCfg[p.hallType] : null;
+        const activeVer = currentHall?.versions?.find((v) => Math.abs(v.H - p.clearHeight) < 0.05) || currentHall?.versions?.[0];
+        const halfW = p.width / 2;
+        const pillarD = activeVer?.D ?? (p.width - p.doorWidth) / 2;
+        const isShedHall = currentHall?.type === "shed";
+        const hasThreeGablePosts = currentHall && (currentHall.name === "KD16" || currentHall.name === "KD18" || currentHall.name === "KD20");
+        const x_L_post = isShedHall ? -p.doorWidth / 2 : -halfW + pillarD;
+        const x_R_post = isShedHall ? p.doorWidth / 2 : halfW - pillarD;
 
         interface Interval {
           start: number;
@@ -298,10 +330,10 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
         for (const h of heights) {
           if (h >= Heave) continue;
 
-          // 1. FRONT WALL (z = -L/2) - Cut by main garage door (gate)
+          // 1. FRONT WALL (z = -L/2) - Cut by main gate opening between gable pillars
           frontCuts.length = 0;
           if (h < p.doorHeight) {
-            frontCuts.push({ start: -p.doorWidth / 2, end: p.doorWidth / 2 });
+            frontCuts.push({ start: x_L_post, end: x_R_post });
           }
           const frontGirts = subtractIntervals(hxL, hxR, frontCuts);
           for (const seg of frontGirts) {
@@ -414,29 +446,26 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
           }
         }
 
-        // 5. VERTICAL FRAMING POSTS AND HORIZONTAL LINTELS FOR OPENINGS
-        const halfW = p.width / 2;
+        // 5. GABLE PILLARS (štítové stĺpy) AND OPENING FRAMING
         const slopeAngle = Math.atan2(Hridge - Heave, halfW);
-        const xDoor = p.doorWidth / 2;
 
         let y_left_post = Heave;
         let y_right_post = Heave;
         if (p.roofType === "gable") {
-          const hSlope = Heave + (halfW - xDoor) * Math.tan(slopeAngle);
-          y_left_post = hSlope;
-          y_right_post = hSlope;
+          y_left_post = Heave + (halfW - Math.abs(x_L_post)) * Math.tan(slopeAngle);
+          y_right_post = Heave + (halfW - Math.abs(x_R_post)) * Math.tan(slopeAngle);
         } else {
           const angleShed = Math.atan2(Hhi - Heave, p.width);
-          y_left_post = Heave + (-xDoor - hxL) * Math.tan(angleShed);
-          y_right_post = Heave + (xDoor - hxL) * Math.tan(angleShed);
+          y_left_post = Heave + (-x_L_post - hxL) * Math.tan(angleShed);
+          y_right_post = Heave + (x_R_post - hxL) * Math.tan(angleShed);
         }
 
-        // Front Garage Door frame
+        // Front Gable Pillars (štítové stĺpy predné)
         out.push(
           <SteelTube
-            key="door-frame-L"
-            from={[-p.doorWidth / 2, 0, -L / 2]}
-            to={[-p.doorWidth / 2, y_left_post, -L / 2]}
+            key="gable-post-front-L"
+            from={[x_L_post, 0, -L / 2]}
+            to={[x_L_post, y_left_post, -L / 2]}
             size={sz}
             thickness={th}
             color={col}
@@ -444,10 +473,19 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
           />,
         );
         out.push(
+          <SteelPlate
+            key="gable-plate-front-L"
+            position={[x_L_post, 0.006, -L / 2]}
+            size={[sz * 2.2, 0.012, sz * 2.2]}
+            color={col}
+            wireframe={wf}
+          />,
+        );
+        out.push(
           <SteelTube
-            key="door-frame-R"
-            from={[p.doorWidth / 2, 0, -L / 2]}
-            to={[p.doorWidth / 2, y_right_post, -L / 2]}
+            key="gable-post-front-R"
+            from={[x_R_post, 0, -L / 2]}
+            to={[x_R_post, y_right_post, -L / 2]}
             size={sz}
             thickness={th}
             color={col}
@@ -455,16 +493,121 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
           />,
         );
         out.push(
+          <SteelPlate
+            key="gable-plate-front-R"
+            position={[x_R_post, 0.006, -L / 2]}
+            size={[sz * 2.2, 0.012, sz * 2.2]}
+            color={col}
+            wireframe={wf}
+          />,
+        );
+        if (p.doorHeight > 0) {
+          const doorTop = Math.min(p.doorHeight, y_left_post - 0.2);
+          out.push(
+            <SteelTube
+              key="door-frame-top"
+              from={[x_L_post, doorTop, -L / 2]}
+              to={[x_R_post, doorTop, -L / 2]}
+              size={sz}
+              thickness={th}
+              color={col}
+              wireframe={wf}
+            />,
+          );
+          if (p.roofType === "gable" && Hridge > doorTop) {
+            out.push(
+              <SteelTube
+                key="door-frame-ridge-strut"
+                from={[0, doorTop, -L / 2]}
+                to={[0, Hridge, -L / 2]}
+                size={sz}
+                thickness={th}
+                color={col}
+                wireframe={wf}
+              />,
+            );
+          }
+        }
+
+        // Back Gable Pillars (štítové stĺpy zadné - presne podľa PDF)
+        out.push(
           <SteelTube
-            key="door-frame-top"
-            from={[-p.doorWidth / 2, p.doorHeight, -L / 2]}
-            to={[p.doorWidth / 2, p.doorHeight, -L / 2]}
+            key="gable-post-back-L"
+            from={[x_L_post, 0, L / 2]}
+            to={[x_L_post, y_left_post, L / 2]}
             size={sz}
             thickness={th}
             color={col}
             wireframe={wf}
           />,
         );
+        out.push(
+          <SteelPlate
+            key="gable-plate-back-L"
+            position={[x_L_post, 0.006, L / 2]}
+            size={[sz * 2.2, 0.012, sz * 2.2]}
+            color={col}
+            wireframe={wf}
+          />,
+        );
+        out.push(
+          <SteelTube
+            key="gable-post-back-R"
+            from={[x_R_post, 0, L / 2]}
+            to={[x_R_post, y_right_post, L / 2]}
+            size={sz}
+            thickness={th}
+            color={col}
+            wireframe={wf}
+          />,
+        );
+        out.push(
+          <SteelPlate
+            key="gable-plate-back-R"
+            position={[x_R_post, 0.006, L / 2]}
+            size={[sz * 2.2, 0.012, sz * 2.2]}
+            color={col}
+            wireframe={wf}
+          />,
+        );
+
+        if (hasThreeGablePosts) {
+          const y_center = p.roofType === "gable" ? Hridge : Heave + (-hxL) * Math.tan(Math.atan2(Hhi - Heave, p.width));
+          out.push(
+            <SteelTube
+              key="gable-post-front-C"
+              from={[0, 0, -L / 2]}
+              to={[0, y_center, -L / 2]}
+              size={sz}
+              thickness={th}
+              color={col}
+              wireframe={wf}
+            />,
+            <SteelPlate
+              key="gable-plate-front-C"
+              position={[0, 0.006, -L / 2]}
+              size={[sz * 2.2, 0.012, sz * 2.2]}
+              color={col}
+              wireframe={wf}
+            />,
+            <SteelTube
+              key="gable-post-back-C"
+              from={[0, 0, L / 2]}
+              to={[0, y_center, L / 2]}
+              size={sz}
+              thickness={th}
+              color={col}
+              wireframe={wf}
+            />,
+            <SteelPlate
+              key="gable-plate-back-C"
+              position={[0, 0.006, L / 2]}
+              size={[sz * 2.2, 0.012, sz * 2.2]}
+              color={col}
+              wireframe={wf}
+            />,
+          );
+        }
 
         // Back Personal Door frame
         if (p.personalDoorSide === "back" && p.hasPersonalDoor) {
@@ -743,6 +886,119 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
                     color={col}
                     wireframe={wf}
                   />
+                </>
+              )}
+
+              {/* Roof cross bracing in end bays */}
+              {p.roofType === "gable" ? (
+                <>
+                  <SteelTube
+                    from={[hxL, Heave, z0]}
+                    to={[0, Hridge, z1]}
+                    size={bsz * 0.6}
+                    thickness={th}
+                    color={col}
+                    wireframe={wf}
+                  />
+                  <SteelTube
+                    from={[hxL, Heave, z1]}
+                    to={[0, Hridge, z0]}
+                    size={bsz * 0.6}
+                    thickness={th}
+                    color={col}
+                    wireframe={wf}
+                  />
+                  <SteelTube
+                    from={[hxR, Heave, z0]}
+                    to={[0, Hridge, z1]}
+                    size={bsz * 0.6}
+                    thickness={th}
+                    color={col}
+                    wireframe={wf}
+                  />
+                  <SteelTube
+                    from={[hxR, Heave, z1]}
+                    to={[0, Hridge, z0]}
+                    size={bsz * 0.6}
+                    thickness={th}
+                    color={col}
+                    wireframe={wf}
+                  />
+                  {zs.length > 2 && (
+                    <>
+                      <SteelTube
+                        from={[hxL, Heave, zN1]}
+                        to={[0, Hridge, zN]}
+                        size={bsz * 0.6}
+                        thickness={th}
+                        color={col}
+                        wireframe={wf}
+                      />
+                      <SteelTube
+                        from={[hxL, Heave, zN]}
+                        to={[0, Hridge, zN1]}
+                        size={bsz * 0.6}
+                        thickness={th}
+                        color={col}
+                        wireframe={wf}
+                      />
+                      <SteelTube
+                        from={[hxR, Heave, zN1]}
+                        to={[0, Hridge, zN]}
+                        size={bsz * 0.6}
+                        thickness={th}
+                        color={col}
+                        wireframe={wf}
+                      />
+                      <SteelTube
+                        from={[hxR, Heave, zN]}
+                        to={[0, Hridge, zN1]}
+                        size={bsz * 0.6}
+                        thickness={th}
+                        color={col}
+                        wireframe={wf}
+                      />
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <SteelTube
+                    from={[hxL, HloShed, z0]}
+                    to={[hxR, Hhi, z1]}
+                    size={bsz * 0.6}
+                    thickness={th}
+                    color={col}
+                    wireframe={wf}
+                  />
+                  <SteelTube
+                    from={[hxL, HloShed, z1]}
+                    to={[hxR, Hhi, z0]}
+                    size={bsz * 0.6}
+                    thickness={th}
+                    color={col}
+                    wireframe={wf}
+                  />
+                  {zs.length > 2 && (
+                    <>
+                      <SteelTube
+                        from={[hxL, HloShed, zN1]}
+                        to={[hxR, Hhi, zN]}
+                        size={bsz * 0.6}
+                        thickness={th}
+                        color={col}
+                        wireframe={wf}
+                      />
+                      <SteelTube
+                        from={[hxL, HloShed, zN]}
+                        to={[hxR, Hhi, zN1]}
+                        size={bsz * 0.6}
+                        thickness={th}
+                        color={col}
+                        wireframe={wf}
+                      />
+                    </>
+                  )}
                 </>
               )}
             </>

@@ -745,47 +745,51 @@ export function Accessories({ p, explodeY }: { p: GarageParams; explodeY: number
       <SectionalDoor p={p} explodeY={explodeY} />
       <PersonalDoor p={p} explodeY={explodeY} />
       <Windows p={p} explodeY={explodeY} />
-      <CornerFlashings p={p} explodeY={explodeY} />
-      <Bargeboards p={p} explodeY={explodeY} />
-      <EaveFlashings p={p} explodeY={explodeY} />
-      <Gutters p={p} explodeY={explodeY} />
-      {/* Ridge cap */}
-      {p.roofType === "gable" && (() => {
-        const wallThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
-        const roofThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.roofPanelThicknessMm / 1000) : 0.01;
-        const gapWidth = p.profileSize / 2 + wallThickness;
-        const overhang = 0.25;
-        const angle = Math.atan2(ridgeHeight(p) - p.clearHeight, p.width / 2);
-        const yPos = ridgeHeight(p) + (p.profileSize / 2 + roofThickness) / Math.cos(angle) + 0.01 + explodeY * 1.4;
-        const capLen = p.length + 2 * gapWidth + 2 * overhang;
-        const t = 0.002;
-        const coverH = yPos - ridgeHeight(p);
-        return (
-          <group>
-            {/* Main horizontal ridge cap */}
-            <mesh position={[0, yPos, 0]} castShadow>
-              <boxGeometry args={[0.16, 0.04, capLen]} />
-              <meshStandardMaterial color={p.roofColor} metalness={0.6} roughness={0.5} wireframe={p.wireframe} />
-            </mesh>
-
-            {/* Front & Back vertical end closures */}
-            {[-1, 1].map((zSign) => {
-              const zc = zSign * (p.length / 2 + gapWidth + overhang) + zSign * explodeY * 1.5;
-              const zPos = zc + zSign * (t / 2 + 0.002);
-              return (
-                <mesh
-                  key={`ridge-closure-${zSign}`}
-                  position={[0, ridgeHeight(p) + coverH / 2 + explodeY * 1.4, zPos]}
-                  castShadow
-                >
-                  <boxGeometry args={[0.16, coverH, t]} />
+      {p.showCladding && (
+        <>
+          <CornerFlashings p={p} explodeY={explodeY} />
+          <Bargeboards p={p} explodeY={explodeY} />
+          <EaveFlashings p={p} explodeY={explodeY} />
+          <Gutters p={p} explodeY={explodeY} />
+          {/* Ridge cap */}
+          {p.roofType === "gable" && (() => {
+            const wallThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+            const roofThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.roofPanelThicknessMm / 1000) : 0.01;
+            const gapWidth = p.profileSize / 2 + wallThickness;
+            const overhang = 0.25;
+            const angle = Math.atan2(ridgeHeight(p) - p.clearHeight, p.width / 2);
+            const yPos = ridgeHeight(p) + (p.profileSize / 2 + roofThickness) / Math.cos(angle) + 0.01 + explodeY * 1.4;
+            const capLen = p.length + 2 * gapWidth + 2 * overhang;
+            const t = 0.002;
+            const coverH = yPos - ridgeHeight(p);
+            return (
+              <group>
+                {/* Main horizontal ridge cap */}
+                <mesh position={[0, yPos, 0]} castShadow>
+                  <boxGeometry args={[0.16, 0.04, capLen]} />
                   <meshStandardMaterial color={p.roofColor} metalness={0.6} roughness={0.5} wireframe={p.wireframe} />
                 </mesh>
-              );
-            })}
-          </group>
-        );
-      })()}
+
+                {/* Front & Back vertical end closures */}
+                {[-1, 1].map((zSign) => {
+                  const zc = zSign * (p.length / 2 + gapWidth + overhang) + zSign * explodeY * 1.5;
+                  const zPos = zc + zSign * (t / 2 + 0.002);
+                  return (
+                    <mesh
+                      key={`ridge-closure-${zSign}`}
+                      position={[0, ridgeHeight(p) + coverH / 2 + explodeY * 1.4, zPos]}
+                      castShadow
+                    >
+                      <boxGeometry args={[0.16, coverH, t]} />
+                      <meshStandardMaterial color={p.roofColor} metalness={0.6} roughness={0.5} wireframe={p.wireframe} />
+                    </mesh>
+                  );
+                })}
+              </group>
+            );
+          })()}
+        </>
+      )}
     </group>
   );
 }
