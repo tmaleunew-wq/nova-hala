@@ -207,7 +207,7 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
               {/* Tie rod (vodorovné tiahlo na vnútorných rámoch pre haly KD14, KD16, KD18, KD20 podľa PDF) */}
               {(() => {
                 const currentHall = p.hallType && p.hallType !== "Vlastný" ? getHallsConfig()[p.hallType] : null;
-                const hasTieRod = currentHall?.tieRods || p.width >= 14;
+                const hasTieRod = !currentHall && p.width >= 24;
                 if (!hasTieRod || i === 0 || i === zs.length - 1) return null;
                 const halfW = p.width / 2;
                 const angle = Math.atan2(Hridge - Heave, halfW);
@@ -314,16 +314,21 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
       {(() => {
         const out: React.ReactNode[] = [];
         const gsz = sz * 0.6;
-        const girtCount = Math.max(3, Math.round(Heave / 1.15));
-        const heights: number[] = [];
-        for (let gi = 1; gi <= girtCount; gi++) {
-          const gh = (gi / (girtCount + 0.35)) * Heave;
-          if (gh < Heave - 0.2) heights.push(gh);
-        }
         const L = p.length;
 
         const hallsCfg = getHallsConfig();
         const currentHall = p.hallType && p.hallType !== "Vlastný" ? hallsCfg[p.hallType] : null;
+        const isTubularBraced = currentHall && (currentHall.name === "KD14" || currentHall.claddingVersion?.includes("BU"));
+        const girtCount = isTubularBraced ? 1 : Math.max(3, Math.round(Heave / 1.15));
+        const heights: number[] = [];
+        if (isTubularBraced) {
+          heights.push(Heave * 0.5);
+        } else {
+          for (let gi = 1; gi <= girtCount; gi++) {
+            const gh = (gi / (girtCount + 0.35)) * Heave;
+            if (gh < Heave - 0.2) heights.push(gh);
+          }
+        }
         const activeVer = currentHall?.versions?.find((v) => Math.abs(v.H - p.clearHeight) < 0.05) || currentHall?.versions?.[0];
         const halfW = p.width / 2;
         const pillarD = activeVer?.D ?? (p.width - p.doorWidth) / 2;
@@ -371,23 +376,25 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
           if (h >= Heave) continue;
 
           // 1. FRONT WALL (z = -L/2) - Cut by main gate opening between gable pillars
-          frontCuts.length = 0;
-          if (h < p.doorHeight) {
-            frontCuts.push({ start: x_L_post, end: x_R_post });
-          }
-          const frontGirts = subtractIntervals(hxL, hxR, frontCuts);
-          for (const seg of frontGirts) {
-            out.push(
-              <SteelTube
-                key={`gF-${h}-${seg.start.toFixed(2)}`}
-                from={[seg.start, h, -p.length / 2]}
-                to={[seg.end, h, -p.length / 2]}
-                size={gsz}
-                thickness={th}
-                color={col}
-                wireframe={wf}
-              />,
-            );
+          if (!isTubularBraced) {
+            frontCuts.length = 0;
+            if (h < p.doorHeight) {
+              frontCuts.push({ start: x_L_post, end: x_R_post });
+            }
+            const frontGirts = subtractIntervals(hxL, hxR, frontCuts);
+            for (const seg of frontGirts) {
+              out.push(
+                <SteelTube
+                  key={`gF-${h}-${seg.start.toFixed(2)}`}
+                  from={[seg.start, h, -p.length / 2]}
+                  to={[seg.end, h, -p.length / 2]}
+                  size={gsz}
+                  thickness={th}
+                  color={col}
+                  wireframe={wf}
+                />,
+              );
+            }
           }
 
           // 2. BACK WALL (z = L/2) - Cut by personal door if on back or windows if on back
@@ -541,7 +548,7 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
             wireframe={wf}
           />,
         );
-        if (p.doorHeight > 0) {
+        if (p.doorHeight > 0 && !isTubularBraced) {
           const doorTop = Math.min(p.doorHeight, y_left_post - 0.2);
           out.push(
             <SteelTube
@@ -554,7 +561,7 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
               wireframe={wf}
             />,
           );
-          if (p.roofType === "gable" && Hridge > doorTop) {
+          if (!currentHall && p.roofType === "gable" && Hridge > doorTop) {
             out.push(
               <SteelTube
                 key="door-frame-ridge-strut"
@@ -652,8 +659,11 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
               wireframe={wf}
             />,
           );
+        }
 
-          // Štítové krížové zavetrovania v krajných poliach (presne podľa výkresu a renderu KD16, KD18, KD20)
+        // Štítové krížové zavetrovania v krajných poliach (presne podľa výkresu a renderu KD14, KD16, KD18, KD20)
+        const hasGableBracing = currentHall && (currentHall.name === "KD14" || currentHall.name === "KD16" || currentHall.name === "KD18" || currentHall.name === "KD20");
+        if (hasGableBracing) {
           const bsz = sz * 0.45;
           out.push(
             // Predné čelo: ľavé krajné pole
@@ -669,6 +679,13 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
             <SteelTube key="gX-BR1" from={[x_R_post, 0.1, L / 2]} to={[hxR, Heave - 0.2, L / 2]} size={bsz} thickness={th} color={col} wireframe={wf} />,
             <SteelTube key="gX-BR2" from={[x_R_post, y_right_post - 0.2, L / 2]} to={[hxR, 0.1, L / 2]} size={bsz} thickness={th} color={col} wireframe={wf} />,
           );
+          if (currentHall?.name === "KD14") {
+            out.push(
+              // Zadné čelo: stredné pole
+              <SteelTube key="gX-BC1" from={[x_L_post, 0.1, L / 2]} to={[x_R_post, y_right_post - 0.2, L / 2]} size={bsz} thickness={th} color={col} wireframe={wf} />,
+              <SteelTube key="gX-BC2" from={[x_L_post, y_left_post - 0.2, L / 2]} to={[x_R_post, 0.1, L / 2]} size={bsz} thickness={th} color={col} wireframe={wf} />,
+            );
+          }
         }
 
         // Back Personal Door frame

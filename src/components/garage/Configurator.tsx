@@ -231,7 +231,7 @@ export default function Configurator() {
   const isCustom = selectedHall === "Vlastný";
   const [showCatalogModal, setShowCatalogModal] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
-  const [showEnvironment, setShowEnvironment] = useState(true);
+  const [showEnvironment, setShowEnvironment] = useState(false);
   const [showArModal, setShowArModal] = useState(false);
   const applyHallTypeRef = useRef<(v: string) => void>(() => {});
   useEffect(() => {
@@ -245,6 +245,7 @@ export default function Configurator() {
   const [selectedPoleHeight, setSelectedPoleHeight] = useState<string>(() => initHall?.versions?.[0] ? `${initHall.versions[0].poleHeight}m` : "4m");
   const initBays = initHall ? (initHall.defaultBays ?? 5) : DEFAULT_PARAMS.bayCount;
   const initLength = initHall ? (initHall.defaultLength ?? (initBays * initHall.moduleLength)) : DEFAULT_PARAMS.length;
+  const [selectedLength, setSelectedLength] = useState<number>(() => initHall ? (initHall.defaultLength ?? (initBays * initHall.moduleLength)) : (initialUrlParams.length ?? DEFAULT_PARAMS.length));
   const activeHall = selectedHall !== "Vlastný" ? hallsConfig[selectedHall] : initHall;
   const hallVersions = (activeHall?.versions ?? []) as Array<{ poleHeight: number }>;
   const hallHeightOptions = hallVersions.length > 0
@@ -472,6 +473,7 @@ export default function Configurator() {
       const defaultH = defaultVer ? defaultVer.H : h.heights[0];
       const defaultPole = defaultVer ? `${defaultVer.poleHeight}m` : "4m";
       setSelectedPoleHeight(defaultPole);
+      setSelectedLength(defaultLen);
       const isShed = h.type === "shed";
       const gateW = isShed ? Math.min(3.0, h.width * 0.5) : (defaultVer?.E ?? 4.8);
       const gateH = isShed
@@ -542,8 +544,8 @@ export default function Configurator() {
       (poleNum ? h.versions?.find((v) => v.poleHeight === poleNum) : undefined) ||
       h.versions?.[0];
     const minBays = Math.max(2, Math.round(h.minLength / h.moduleLength));
-    const numLen = cleanParams.length ? parseFloat(String(cleanParams.length).replace("m", "")) : (h.defaultLength ?? (h.defaultBays ? h.defaultBays * h.moduleLength : 20));
-    const rawBays = !Number.isNaN(numLen) && numLen > 0 ? Math.round(numLen / h.moduleLength) : (cleanParams.bayCount ? Math.round(cleanParams.bayCount) : (h.defaultBays ?? minBays));
+    const currentLen = selectedLength > 0 ? selectedLength : (h.defaultLength ?? (h.defaultBays ? h.defaultBays * h.moduleLength : 20));
+    const rawBays = Math.round(currentLen / h.moduleLength);
     const exactBays = Math.max(minBays, rawBays);
     const exactLen = exactBays * h.moduleLength;
     typedParams = {
@@ -755,6 +757,72 @@ export default function Configurator() {
               </div>
               {showHallSpecs && (
                 <>
+                  {/* Voľba výšky stĺpa podľa katalógu (napr. 4m / 5m) */}
+                  {curHall.versions && curHall.versions.length > 0 && (
+                    <div className="flex items-center justify-between mb-1.5 bg-white/5 px-2 py-1 rounded border border-white/10">
+                      <span className="text-white/60">Výška stĺpa:</span>
+                      <div className="flex gap-1">
+                        {curHall.versions.map((ver) => {
+                          const isSel = selectedPoleHeight === `${ver.poleHeight}m`;
+                          return (
+                            <button
+                              key={ver.poleHeight}
+                              onClick={() => {
+                                setSelectedPoleHeight(`${ver.poleHeight}m`);
+                                (setParams as any)({
+                                  clearHeight: ver.H,
+                                  poleHeightSelect: `${ver.poleHeight}m`,
+                                });
+                              }}
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                                isSel
+                                  ? "bg-emerald-500 text-black shadow"
+                                  : "bg-white/10 text-white/80 hover:bg-white/20"
+                              }`}
+                            >
+                              {ver.poleHeight}m
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dĺžka B - Základ 20m, modulové pridanie / odobratie */}
+                  <div className="flex items-center justify-between bg-white/5 px-2 py-1 rounded border border-white/10 mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-white/60">Dĺžka B:</span>
+                      <span className="text-emerald-400 font-bold text-[11px]">{selectedLength} m</span>
+                      <span className="text-white/40 text-[9px]">({Math.round(selectedLength / curHall.moduleLength)} × {curHall.moduleLength}m)</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => {
+                          const minL = curHall.minLength ?? curHall.moduleLength * 2;
+                          const newL = Math.max(minL, selectedLength - curHall.moduleLength);
+                          setSelectedLength(newL);
+                          (setParams as any)({ length: `${newL}m`, bayCount: Math.round(newL / curHall.moduleLength) });
+                        }}
+                        disabled={selectedLength <= (curHall.minLength ?? curHall.moduleLength * 2)}
+                        className="px-2 py-0.5 rounded bg-white/10 hover:bg-emerald-500/30 text-white font-bold cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                        title={`Odobrať modul -${curHall.moduleLength}m`}
+                      >
+                        − {curHall.moduleLength}m
+                      </button>
+                      <button
+                        onClick={() => {
+                          const newL = selectedLength + curHall.moduleLength;
+                          setSelectedLength(newL);
+                          (setParams as any)({ length: `${newL}m`, bayCount: Math.round(newL / curHall.moduleLength) });
+                        }}
+                        className="px-2 py-0.5 rounded bg-white/10 hover:bg-emerald-500/30 text-white font-bold cursor-pointer"
+                        title={`Pridať modul +${curHall.moduleLength}m`}
+                      >
+                        + {curHall.moduleLength}m
+                      </button>
+                    </div>
+                  </div>
+
                   {activeVer && (
                     <div className="text-[9px] text-emerald-300 font-semibold mb-1 truncate">
                       {activeVer.label}
