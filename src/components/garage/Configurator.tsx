@@ -16,6 +16,8 @@ import { PriceCalculator } from "./PriceCalculator";
 import { PremiumSpecPanel } from "./PremiumSpecPanel";
 import { CatalogDimensions } from "./CatalogDimensions";
 import { ProductPicker } from "./ProductPicker";
+import { Environment } from "./Environment";
+import { ArModal } from "./ArModal";
 import { getHallsConfig } from "@/lib/garage/configHelper";
 
 type ViewPreset = "iso" | "plan" | "front" | "side";
@@ -26,12 +28,14 @@ function Scene({
   removedPanels,
   onTogglePanel,
   hideDimensions,
+  showEnvironment,
 }: {
   params: GarageParams;
   exportRef: React.MutableRefObject<THREE.Group | null>;
   removedPanels: Record<string, boolean>;
   onTogglePanel: (id: string) => void;
   hideDimensions?: boolean;
+  showEnvironment?: boolean;
 }) {
   const { gl, scene } = useThree();
 
@@ -80,7 +84,9 @@ function Scene({
         <CatalogDimensions p={params} />
       )}
 
-      <Grid
+      {showEnvironment && <Environment p={params} />}
+
+      {!showEnvironment && <Grid
         args={[100, 100]}
         cellSize={0.5}
         cellThickness={0.5}
@@ -92,7 +98,7 @@ function Scene({
         fadeStrength={1.2}
         infiniteGrid
         position={[0, -0.149, 0]}
-      />
+      />}
     </>
   );
 }
@@ -225,6 +231,8 @@ export default function Configurator() {
   const isCustom = selectedHall === "Vlastný";
   const [showCatalogModal, setShowCatalogModal] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [showEnvironment, setShowEnvironment] = useState(true);
+  const [showArModal, setShowArModal] = useState(false);
   const applyHallTypeRef = useRef<(v: string) => void>(() => {});
   useEffect(() => {
     if (typeof window !== "undefined" && (!initialUrlParams.hallType || window.location.search === "")) {
@@ -236,6 +244,23 @@ export default function Configurator() {
   const isCatalog = !!initHall;
   const initBays = initHall ? (initHall.defaultBays ?? 5) : DEFAULT_PARAMS.bayCount;
   const initLength = initHall ? (initHall.defaultLength ?? (initBays * initHall.moduleLength)) : DEFAULT_PARAMS.length;
+  const activeHall = selectedHall !== "Vlastný" ? hallsConfig[selectedHall] : initHall;
+  const hallVersions = (activeHall?.versions ?? []) as Array<{ poleHeight: number }>;
+  const hallHeightOptions = hallVersions.length > 0
+    ? hallVersions.map((ver) => `${ver.poleHeight}m`)
+    : ["4m", "5m", "6m", "7m"];
+
+  const hallLengthOptions: string[] = [];
+  if (activeHall) {
+    const minB = Math.max(2, Math.round(activeHall.minLength / activeHall.moduleLength));
+    for (let b = minB; b <= 12; b++) {
+      hallLengthOptions.push(`${b * activeHall.moduleLength}m`);
+    }
+  } else {
+    for (let b = 2; b <= 12; b++) {
+      hallLengthOptions.push(`${b * 3}m`);
+    }
+  }
 
   const [params, setParams] = useControls(() => ({
     "Zobrazenie": folder({
@@ -257,8 +282,8 @@ export default function Configurator() {
         },
       },
       hallHeight: {
-        value: "4m",
-        options: ["4m", "5m", "6m", "7m"],
+        value: hallHeightOptions[0] ?? "4m",
+        options: hallHeightOptions,
         label: "Výška stĺpa",
         disabled: isCustom,
         onChange: (val) => {
@@ -273,10 +298,11 @@ export default function Configurator() {
               const isShed = h.type === "shed";
               const gateW = isShed ? Math.min(3.0, h.width * 0.5) : (foundVer.E ?? (h.width * 0.6));
               const gateH = isShed
-                ? (foundVer.H4 ? Math.min(foundVer.H4 - 0.15, 3.5) : 2.5)
-                : (foundVer.H2 ? Math.min(foundVer.H2 - 0.15, 5.0) : Math.min(3.8, foundVer.H - 0.2));
-              setParams({
+                ? (foundVer.H4 ? foundVer.H4 - 0.15 : 2.5)
+                : (foundVer.H2 ?? Math.min(3.8, foundVer.H - 0.2));
+              (setParams as any)({
                 clearHeight: foundVer.H,
+                hallHeight: `${foundVer.poleHeight}m`,
                 doorWidth: gateW,
                 doorHeight: gateH,
               });
@@ -284,29 +310,81 @@ export default function Configurator() {
           }
         },
       },
-      width: { value: isCatalog ? initHall.width : (initialUrlParams.width ?? DEFAULT_PARAMS.width), min: 2.5, max: 20, step: 0.1, label: "Šírka X [m]" },
-      length: {
-        value: isCatalog ? initLength : (initialUrlParams.length ?? initLength),
-        min: 3,
-        max: 50,
+      width: {
+        value: isCatalog ? initHall.width : (initialUrlParams.width ?? DEFAULT_PARAMS.width),
+        min: 2.5,
+        max: 20,
         step: 0.1,
-        label: "Dĺžka Y [m]",
+        label: "Šírka X [m]",
+        disabled: !isCustom,
+      },
+      length: {
+        value: `${isCatalog ? (activeHall?.defaultLength ?? initLength) : (initialUrlParams.length ?? initLength)}m`,
+        options: hallLengthOptions,
+        label: "Dĺžka Y",
+        disabled: false,
         onChange: (val) => {
-          if (selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
+          const num = typeof val === "number" ? val : parseFloat(String(val).replace("m", ""));
+          if (!Number.isNaN(num) && selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
             const h = hallsConfig[selectedHall];
-            const bays = Math.max(2, Math.round(val / h.moduleLength));
-            setParams({ bayCount: bays });
+            const bays = Math.round(num / h.moduleLength);
+            (setParams as any)({ bayCount: bays });
           }
         }
       },
-      clearHeight: { value: isCatalog ? (initHall.versions?.[0]?.H ?? initHall.heights[0]) : (initialUrlParams.clearHeight ?? DEFAULT_PARAMS.clearHeight), min: 2.0, max: 7.0, step: 0.001, label: "Svetlá výška Z [m]" },
-      roofType: { value: isCatalog ? (initHall.type as any) : (initialUrlParams.roofType ?? DEFAULT_PARAMS.roofType), options: { "Sedlová": "gable", "Pultová": "shed" }, label: "Strecha" },
-      roofPitchDeg: { value: isCatalog ? initHall.roofPitchDeg : (initialUrlParams.roofPitchDeg ?? DEFAULT_PARAMS.roofPitchDeg), min: 5, max: 35, step: 1, label: "Spád strechy [°]" },
-    }, { collapsed: true }),
+      clearHeight: {
+        value: isCatalog ? (initHall.versions?.[0]?.H ?? initHall.heights[0]) : (initialUrlParams.clearHeight ?? DEFAULT_PARAMS.clearHeight),
+        min: 2.0,
+        max: 7.0,
+        step: 0.001,
+        label: "Svetlá výška Z [m]",
+        disabled: !isCustom,
+      },
+      roofType: {
+        value: isCatalog ? (initHall.type as any) : (initialUrlParams.roofType ?? DEFAULT_PARAMS.roofType),
+        options: { "Sedlová": "gable", "Pultová": "shed" },
+        label: "Strecha",
+        disabled: !isCustom,
+      },
+      roofPitchDeg: {
+        value: isCatalog ? initHall.roofPitchDeg : (initialUrlParams.roofPitchDeg ?? DEFAULT_PARAMS.roofPitchDeg),
+        min: 5,
+        max: 35,
+        step: 1,
+        label: "Spád strechy [°]",
+        disabled: !isCustom,
+      },
+    }, { collapsed: false }),
     "Konštrukcia": folder({
-      bayCount: { value: isCatalog ? initBays : (initialUrlParams.bayCount ?? initBays), min: 2, max: 15, step: 1, label: "Počet polí" },
-      profileSize: { value: initialUrlParams.profileSize ?? DEFAULT_PARAMS.profileSize, min: 0.06, max: 0.20, step: 0.01, label: "Jakl strana [m]" },
-      profileThickness: { value: initialUrlParams.profileThickness ?? DEFAULT_PARAMS.profileThickness, min: 0.002, max: 0.010, step: 0.001, label: "Hrúbka steny [m]" },
+      bayCount: {
+        value: isCatalog ? initBays : (initialUrlParams.bayCount ?? initBays),
+        min: isCatalog ? Math.round(initHall.minLength / initHall.moduleLength) : 2,
+        max: 15,
+        step: 1,
+        label: "Počet polí",
+        onChange: (val) => {
+          if (selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
+            const h = hallsConfig[selectedHall];
+            (setParams as any)({ length: val * h.moduleLength });
+          }
+        }
+      },
+      profileSize: {
+        value: initialUrlParams.profileSize ?? DEFAULT_PARAMS.profileSize,
+        min: 0.06,
+        max: 0.20,
+        step: 0.01,
+        label: "Jakl strana [m]",
+        disabled: !isCustom,
+      },
+      profileThickness: {
+        value: initialUrlParams.profileThickness ?? DEFAULT_PARAMS.profileThickness,
+        min: 0.002,
+        max: 0.010,
+        step: 0.001,
+        label: "Hrúbka steny [m]",
+        disabled: !isCustom,
+      },
       steelColor: { value: initialUrlParams.steelColor ?? DEFAULT_PARAMS.steelColor, label: "Farba ocele" },
     }, { collapsed: true }),
     "Opláštenie": folder({
@@ -325,10 +403,10 @@ export default function Configurator() {
       doorWidth: { value: isCatalog ? (initHall.type === "shed" ? Math.min(3.0, initHall.width * 0.5) : (initHall.versions?.[0]?.E ?? 4.8)) : (initialUrlParams.doorWidth ?? DEFAULT_PARAMS.doorWidth), min: 1.0, max: 6.0, step: 0.1, label: "Brána Š [m]" },
       doorHeight: { value: isCatalog ? (initHall.type === "shed" ? (initHall.versions?.[0]?.H4 ? Math.min(initHall.versions[0].H4 - 0.15, 3.2) : 2.5) : (initHall.versions?.[0]?.H2 ? Math.min(initHall.versions[0].H2 - 0.15, 4.8) : Math.min(3.8, (initHall.versions?.[0]?.H ?? initHall.heights[0]) - 0.2))) : (initialUrlParams.doorHeight ?? DEFAULT_PARAMS.doorHeight), min: 1.8, max: 6.5, step: 0.1, label: "Brána V [m]" },
       hasPersonalDoor: { value: isCatalog ? false : (initialUrlParams.hasPersonalDoor ?? DEFAULT_PARAMS.hasPersonalDoor), label: "Personálne dvere" },
-      personalDoorSide: { value: initialUrlParams.personalDoorSide ?? DEFAULT_PARAMS.personalDoorSide, options: ["left", "right", "back"], label: "Strana dverí" },
+      personalDoorSide: { value: initialUrlParams.personalDoorSide ?? DEFAULT_PARAMS.personalDoorSide, options: { "Vľavo": "left", "Vpravo": "right", "Vzadu": "back" }, label: "Strana dverí" },
       hasWindows: { value: isCatalog ? false : (initialUrlParams.hasWindows ?? DEFAULT_PARAMS.hasWindows), label: "Okná" },
       hasSkylights: { value: isCatalog ? false : (initialUrlParams.hasSkylights ?? DEFAULT_PARAMS.hasSkylights), label: "Strešné svetlíky ☀️" },
-      windowSide: { value: initialUrlParams.windowSide ?? DEFAULT_PARAMS.windowSide, options: ["left", "right", "back"], label: "Strana okien" },
+      windowSide: { value: initialUrlParams.windowSide ?? DEFAULT_PARAMS.windowSide, options: { "Vľavo": "left", "Vpravo": "right", "Vzadu": "back" }, label: "Strana okien" },
       windowCount: { value: initialUrlParams.windowCount ?? DEFAULT_PARAMS.windowCount, min: 0, max: 4, step: 1, label: "Počet okien" },
       windowWidth: { value: initialUrlParams.windowWidth ?? DEFAULT_PARAMS.windowWidth, min: 0.3, max: 1.5, step: 0.1, label: "Okno Š [m]" },
       windowHeight: { value: initialUrlParams.windowHeight ?? DEFAULT_PARAMS.windowHeight, min: 0.3, max: 1.2, step: 0.1, label: "Okno V [m]" },
@@ -364,7 +442,7 @@ export default function Configurator() {
         setQuoteRequestSignal((v) => v + 1);
       }),
     }, { collapsed: true }),
-  }));
+  }), [selectedHall]);
 
   const applyHallType = (v: string) => {
     setSelectedHall(v);
@@ -386,7 +464,7 @@ export default function Configurator() {
         profThick = 0.004;
       }
 
-      const defaultBays = h.defaultBays ?? (v === "KD8" ? 5 : Math.max(3, Math.round(h.minLength / h.moduleLength)));
+      const defaultBays = h.defaultBays ?? Math.max(2, Math.round(h.minLength / h.moduleLength));
       const defaultLen = h.defaultLength ?? (defaultBays * h.moduleLength);
       const defaultVer = h.versions?.[0];
       const defaultH = defaultVer ? defaultVer.H : h.heights[0];
@@ -394,8 +472,8 @@ export default function Configurator() {
       const isShed = h.type === "shed";
       const gateW = isShed ? Math.min(3.0, h.width * 0.5) : (defaultVer?.E ?? 4.8);
       const gateH = isShed
-        ? (defaultVer?.H4 ? Math.min(defaultVer.H4 - 0.15, 3.2) : 2.5)
-        : (defaultVer?.H2 ? Math.min(defaultVer.H2 - 0.15, 4.8) : Math.min(3.8, defaultH - 0.2));
+        ? (defaultVer?.H4 ? defaultVer.H4 - 0.15 : 2.5)
+        : (defaultVer?.H2 ?? Math.min(3.8, defaultH - 0.2));
 
       (setParams as any)({
         hallType: v,
@@ -408,7 +486,7 @@ export default function Configurator() {
         roofPitchDeg: h.roofPitchDeg,
         clearHeight: defaultH,
         hallHeight: defaultPole,
-        length: defaultLen,
+        length: `${defaultLen}m`,
         bayCount: defaultBays,
         profileSize: profSize,
         profileThickness: profThick,
@@ -459,8 +537,11 @@ export default function Configurator() {
     const activeVer =
       h.versions?.find((v) => Math.abs(v.H - (cleanParams.clearHeight ?? 0)) < 0.05) ||
       h.versions?.[0];
-    const bCount = cleanParams.bayCount && cleanParams.bayCount >= 2 ? cleanParams.bayCount : (h.defaultBays ?? 5);
-    const hallLen = (cleanParams.length && cleanParams.length >= h.minLength) ? cleanParams.length : (h.defaultLength ?? (bCount * h.moduleLength));
+    const minBays = Math.max(2, Math.round(h.minLength / h.moduleLength));
+    const numLen = cleanParams.length ? parseFloat(String(cleanParams.length).replace("m", "")) : (h.defaultLength ?? (h.defaultBays ? h.defaultBays * h.moduleLength : 20));
+    const rawBays = !Number.isNaN(numLen) && numLen > 0 ? Math.round(numLen / h.moduleLength) : (cleanParams.bayCount ? Math.round(cleanParams.bayCount) : (h.defaultBays ?? minBays));
+    const exactBays = Math.max(minBays, rawBays);
+    const exactLen = exactBays * h.moduleLength;
     typedParams = {
       ...typedParams,
       hallType: selectedHall,
@@ -468,8 +549,8 @@ export default function Configurator() {
       roofType: h.type as any,
       roofPitchDeg: h.roofPitchDeg,
       clearHeight: cleanParams.clearHeight ?? activeVer?.H ?? h.heights[0],
-      length: hallLen,
-      bayCount: bCount,
+      length: exactLen,
+      bayCount: exactBays,
       showStructure: cleanParams.showStructure ?? true,
       showCladding: cleanParams.showCladding ?? false,
       showAccessories: cleanParams.showAccessories ?? false,
@@ -531,6 +612,7 @@ export default function Configurator() {
           removedPanels={removedPanels}
           onTogglePanel={togglePanel}
           hideDimensions={showCatalogModal || showPicker}
+          showEnvironment={showEnvironment}
         />
         <OrbitControls makeDefault enableDamping dampingFactor={0.08} target={[0, typedParams.clearHeight / 2, 0]} />
         <CameraRig preset={preset} params={typedParams} />
@@ -612,6 +694,20 @@ export default function Configurator() {
             ))}
           </div>
           <button
+            onClick={() => setShowEnvironment((v) => !v)}
+            title={showEnvironment ? "Vypnúť okolie haly" : "Zapnúť okolie haly"}
+            className={`ml-1 md:ml-2 rounded px-2 py-1 font-mono text-[10px] md:text-xs transition shrink-0 ring-1 ${showEnvironment ? "bg-emerald-400/20 text-emerald-300 ring-emerald-400/40" : "text-white/60 ring-white/10 hover:bg-white/5"}`}
+          >
+            🌳{!isMobile && " Okolie"}
+          </button>
+          <button
+            onClick={() => setShowArModal(true)}
+            title="Zobraziť v rozšírenej realite (AR) alebo stiahnuť 3D model"
+            className="ml-1 md:ml-2 flex items-center gap-1 rounded bg-emerald-400/20 px-2 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider text-emerald-300 ring-1 ring-emerald-400/40 transition hover:bg-emerald-400/30 shrink-0 cursor-pointer"
+          >
+            📱 AR
+          </button>
+          <button
             onClick={handleShare}
             className="ml-1 md:ml-2 flex items-center gap-1 rounded bg-emerald-400/20 px-2 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider text-emerald-300 ring-1 ring-emerald-400/40 transition hover:bg-emerald-400/30 shrink-0"
           >
@@ -692,7 +788,7 @@ export default function Configurator() {
 
       {/* Dimensions strip */}
       <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 max-w-[92vw] truncate rounded border border-white/10 bg-black/50 px-2 py-1 md:px-3 md:py-1.5 font-mono text-[9px] md:text-[10px] text-white/60 backdrop-blur text-center">
-        {isMobile ? "Ťahanie = rotácia · Profily " + ((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0) + " mm" : "Drag = orbit · Scroll = zoom · Right-drag = pan · Profily " + ((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0) + "×" + ((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0) + "×" + ((typedParams.profileThickness ?? DEFAULT_PARAMS.profileThickness) * 1000).toFixed(0) + " mm"}
+        {isMobile ? "Ťahanie = rotácia · Profily " + ((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0) + " mm" : "Ťahanie = rotácia · Koliesko = priblíženie · Pravé tlačidlo = posun · Profily " + ((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0) + "×" + ((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0) + "×" + ((typedParams.profileThickness ?? DEFAULT_PARAMS.profileThickness) * 1000).toFixed(0) + " mm"}
       </div>
 
       {/* Controls Toggle Button */}
@@ -922,6 +1018,13 @@ export default function Configurator() {
           </div>
         );
       })()}
+      {/* AR Modal */}
+      <ArModal
+        isOpen={showArModal}
+        onClose={() => setShowArModal(false)}
+        exportRef={exportRef}
+        hallName={selectedHall}
+      />
     </div>
   );
 }

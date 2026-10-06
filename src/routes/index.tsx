@@ -22,7 +22,7 @@ function Index() {
   if (!mounted) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-[#0e1116] font-mono text-sm text-white/60">
-        Initializing CAD viewport…
+        Spúšťam 3D CAD prostredie…
       </div>
     );
   }
@@ -31,7 +31,7 @@ function Index() {
     <Suspense
       fallback={
         <div className="flex h-screen w-screen items-center justify-center bg-[#0e1116] font-mono text-sm text-emerald-300/80">
-          Loading geometry kernel…
+          Načítavam 3D model haly…
         </div>
       }
     >

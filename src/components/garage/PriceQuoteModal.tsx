@@ -409,7 +409,9 @@ export function PriceQuoteModal({
 
                 {p.hasPersonalDoor && (
                   <tr>
-                    <td className="p-2.5">Personálne vstupné dvere ({p.personalDoorSide})</td>
+                    <td className="p-2.5">
+                      Personálne vstupné dvere ({p.personalDoorSide === "left" ? "vľavo" : p.personalDoorSide === "right" ? "vpravo" : "vzadu"})
+                    </td>
                     <td className="p-2.5 text-right">1 ks</td>
                     <td className="p-2.5 text-right">{pricing.personalDoorCost.toFixed(2)} €</td>
                     <td className="p-2.5 text-right font-bold text-white print:text-black">{fmt(personalDoorCost)}</td>

@@ -204,6 +204,46 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
                   </>
                 );
               })()}
+              {/* Tie rod (vodorovné tiahlo na vnútorných rámoch pre haly KD14, KD16, KD18, KD20 podľa PDF) */}
+              {(() => {
+                const currentHall = p.hallType && p.hallType !== "Vlastný" ? getHallsConfig()[p.hallType] : null;
+                const hasTieRod = currentHall?.tieRods || p.width >= 14;
+                if (!hasTieRod || i === 0 || i === zs.length - 1) return null;
+                const halfW = p.width / 2;
+                const angle = Math.atan2(Hridge - Heave, halfW);
+                const x1 = -halfW * 0.35;
+                const x2 = halfW * 0.35;
+                const y1 = Heave + (halfW - Math.abs(x1)) * Math.tan(angle);
+                const y2 = Heave + (halfW - Math.abs(x2)) * Math.tan(angle);
+                return (
+                  <group key={`tie-rod-frame-${i}`}>
+                    <SteelTube
+                      from={[hxL, Heave, z]}
+                      to={[hxR, Heave, z]}
+                      size={sz * 0.65}
+                      thickness={th}
+                      color={col}
+                      wireframe={wf}
+                    />
+                    <SteelTube
+                      from={[x1, Heave, z]}
+                      to={[x1, y1, z]}
+                      size={sz * 0.45}
+                      thickness={th}
+                      color={col}
+                      wireframe={wf}
+                    />
+                    <SteelTube
+                      from={[x2, Heave, z]}
+                      to={[x2, y2, z]}
+                      size={sz * 0.45}
+                      thickness={th}
+                      color={col}
+                      wireframe={wf}
+                    />
+                  </group>
+                );
+              })()}
             </group>
           );
         }
@@ -573,23 +613,28 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
 
         if (hasThreeGablePosts) {
           const y_center = p.roofType === "gable" ? Hridge : Heave + (-hxL) * Math.tan(Math.atan2(Hhi - Heave, p.width));
+          // Predný stredový stĺp: iba ak na prednej stene nie je aktívny otvor brány
+          if (p.doorHeight === 0 || !p.doorWidth) {
+            out.push(
+              <SteelTube
+                key="gable-post-front-C"
+                from={[0, 0, -L / 2]}
+                to={[0, y_center, -L / 2]}
+                size={sz}
+                thickness={th}
+                color={col}
+                wireframe={wf}
+              />,
+              <SteelPlate
+                key="gable-plate-front-C"
+                position={[0, 0.006, -L / 2]}
+                size={[sz * 2.2, 0.012, sz * 2.2]}
+                color={col}
+                wireframe={wf}
+              />,
+            );
+          }
           out.push(
-            <SteelTube
-              key="gable-post-front-C"
-              from={[0, 0, -L / 2]}
-              to={[0, y_center, -L / 2]}
-              size={sz}
-              thickness={th}
-              color={col}
-              wireframe={wf}
-            />,
-            <SteelPlate
-              key="gable-plate-front-C"
-              position={[0, 0.006, -L / 2]}
-              size={[sz * 2.2, 0.012, sz * 2.2]}
-              color={col}
-              wireframe={wf}
-            />,
             <SteelTube
               key="gable-post-back-C"
               from={[0, 0, L / 2]}
@@ -606,6 +651,23 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
               color={col}
               wireframe={wf}
             />,
+          );
+
+          // Štítové krížové zavetrovania v krajných poliach (presne podľa výkresu a renderu KD16, KD18, KD20)
+          const bsz = sz * 0.45;
+          out.push(
+            // Predné čelo: ľavé krajné pole
+            <SteelTube key="gX-FL1" from={[hxL, 0.1, -L / 2]} to={[x_L_post, y_left_post - 0.2, -L / 2]} size={bsz} thickness={th} color={col} wireframe={wf} />,
+            <SteelTube key="gX-FL2" from={[hxL, Heave - 0.2, -L / 2]} to={[x_L_post, 0.1, -L / 2]} size={bsz} thickness={th} color={col} wireframe={wf} />,
+            // Predné čelo: pravé krajné pole
+            <SteelTube key="gX-FR1" from={[x_R_post, 0.1, -L / 2]} to={[hxR, Heave - 0.2, -L / 2]} size={bsz} thickness={th} color={col} wireframe={wf} />,
+            <SteelTube key="gX-FR2" from={[x_R_post, y_right_post - 0.2, -L / 2]} to={[hxR, 0.1, -L / 2]} size={bsz} thickness={th} color={col} wireframe={wf} />,
+            // Zadné čelo: ľavé krajné pole
+            <SteelTube key="gX-BL1" from={[hxL, 0.1, L / 2]} to={[x_L_post, y_left_post - 0.2, L / 2]} size={bsz} thickness={th} color={col} wireframe={wf} />,
+            <SteelTube key="gX-BL2" from={[hxL, Heave - 0.2, L / 2]} to={[x_L_post, 0.1, L / 2]} size={bsz} thickness={th} color={col} wireframe={wf} />,
+            // Zadné čelo: pravé krajné pole
+            <SteelTube key="gX-BR1" from={[x_R_post, 0.1, L / 2]} to={[hxR, Heave - 0.2, L / 2]} size={bsz} thickness={th} color={col} wireframe={wf} />,
+            <SteelTube key="gX-BR2" from={[x_R_post, y_right_post - 0.2, L / 2]} to={[hxR, 0.1, L / 2]} size={bsz} thickness={th} color={col} wireframe={wf} />,
           );
         }
 
