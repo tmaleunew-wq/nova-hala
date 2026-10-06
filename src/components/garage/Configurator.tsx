@@ -79,14 +79,14 @@ function Scene({
       )}
 
       <Grid
-        args={[40, 40]}
+        args={[100, 100]}
         cellSize={0.5}
         cellThickness={0.5}
         cellColor="#c0c4ca"
         sectionSize={2}
         sectionThickness={1}
         sectionColor="#8a8f97"
-        fadeDistance={30}
+        fadeDistance={80}
         fadeStrength={1.2}
         infiniteGrid
         position={[0, -0.149, 0]}
@@ -103,33 +103,44 @@ function CameraRig({ preset, params }: { preset: ViewPreset; params: GarageParam
     const L = params.length;
     const H = params.clearHeight;
     const center = new THREE.Vector3(0, H / 2, 0);
+
     const isMobileViewport = typeof window !== "undefined" && window.innerWidth < 768;
-    const aspect = typeof window !== "undefined" ? window.innerWidth / Math.max(1, window.innerHeight) : 1;
-    // On mobile screens (especially portrait), zoom out more so the entire building is smaller and fits perfectly
-    const mobileMult = isMobileViewport ? (aspect < 1 ? 2.5 : 2.0) : 1.6;
-    const d = Math.max(W, L) * mobileMult;
+    const aspect = typeof window !== "undefined" && window.innerHeight > 0 ? window.innerWidth / window.innerHeight : 1;
+
+    // Calculate bounding dimensions
+    const diag = Math.hypot(W, L);
+    const maxDimension = Math.max(diag, H * 1.5);
+
+    // Three.js perspective camera uses vertical FOV (35 deg)
+    const vFovRad = ((camera.fov || 35) * Math.PI) / 180;
+    const vertFactor = 2 * Math.tan(vFovRad / 2); // ≈ 0.63
+    // On portrait mobile (aspect < 1), horizontal aperture is narrower:
+    const horizFactor = vertFactor * Math.max(0.3, aspect);
+    const effectiveFactor = aspect < 1 ? horizFactor : vertFactor;
+
+    // Comfortable margin: 1.30 on mobile, 1.18 on desktop
+    const margin = isMobileViewport ? 1.30 : 1.18;
+    const dist = (maxDimension / effectiveFactor) * margin;
 
     let pos: THREE.Vector3;
     switch (preset) {
       case "plan":
-        pos = new THREE.Vector3(0.001, Math.max(W, L) * (isMobileViewport ? 2.8 : 1.8), 0);
+        pos = new THREE.Vector3(0.001, center.y + (Math.max(W, L) / effectiveFactor) * margin, 0);
         break;
       case "front":
-        pos = new THREE.Vector3(0, H / 2, -Math.max(W, L) * (isMobileViewport ? 2.2 : 1.4));
+        pos = new THREE.Vector3(0, center.y, center.z - (Math.max(W, H) / effectiveFactor) * margin);
         break;
       case "side":
-        pos = new THREE.Vector3(Math.max(W, L) * (isMobileViewport ? 2.2 : 1.4), H / 2, 0);
+        pos = new THREE.Vector3(center.x + (Math.max(L, H) / effectiveFactor) * margin, center.y, 0);
         break;
       case "iso":
-      default:
-        if (params.hallType && params.hallType !== "Vlastný") {
-          const eyeY = Math.max(3.8, H * 1.1);
-          pos = new THREE.Vector3(-W * 1.95, eyeY, -L * 1.15);
-        } else {
-          pos = new THREE.Vector3(d, d * 0.75, -d);
-        }
+      default: {
+        const isoDir = new THREE.Vector3(-1.15, 0.70, -1.0).normalize();
+        pos = center.clone().add(isoDir.multiplyScalar(dist));
         break;
+      }
     }
+
     camera.position.copy(pos);
     camera.lookAt(center);
     camera.updateProjectionMatrix();
@@ -137,7 +148,7 @@ function CameraRig({ preset, params }: { preset: ViewPreset; params: GarageParam
       controls.target.copy(center);
       controls.update();
     }
-  }, [preset, params.width, params.length, params.clearHeight, camera, controls]);
+  }, [preset, params.width, params.length, params.clearHeight, params.hallType, camera, controls]);
   return null;
 }
 
@@ -192,6 +203,7 @@ export default function Configurator() {
   const [quoteRequestSignal, setQuoteRequestSignal] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [showControls, setShowControls] = useState(false);
+  const [showHallSpecs, setShowHallSpecs] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -199,6 +211,7 @@ export default function Configurator() {
       setIsMobile(mobile);
     };
     handleResize();
+    setShowHallSpecs(window.innerWidth >= 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -505,11 +518,11 @@ export default function Configurator() {
     <div className="relative h-screen w-screen bg-[oklch(0.16_0.01_240)] select-none overflow-hidden">
       <Canvas
         shadows
-        camera={{ position: [10, 8, -10], fov: 35, near: 0.1, far: 200 }}
+        camera={{ position: [10, 8, -10], fov: 35, near: 0.1, far: 500 }}
         gl={{ antialias: true, preserveDrawingBuffer: true }}
       >
         <color attach="background" args={["#f5f5f5"]} />
-        <fog attach="fog" args={["#f5f5f5", 30, 90]} />
+        <fog attach="fog" args={["#f5f5f5", 80, 450]} />
         <Scene
           params={typedParams}
           exportRef={exportRef}
@@ -538,61 +551,66 @@ export default function Configurator() {
       )}
 
       {/* Top bar */}
-      <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between border-b border-white/5 bg-black/40 px-3 py-2 backdrop-blur">
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
-          <h1 className="font-mono text-xs md:text-sm tracking-widest text-white/90">
-            {isMobile ? "STEEL GARAGE" : "STEEL GARAGE — PARAMETRIC CAD"}
-          </h1>
-          {!isMobile && (
-            <span className="rounded border border-white/10 px-2 py-0.5 font-mono text-[10px] text-white/50">
-              v1.0
-            </span>
-          )}
-        </div>
-        {/* Quick Product Switcher */}
-        <div className="flex items-center gap-1.5 rounded border border-white/10 bg-black/40 px-2 py-0.5">
-          <span className="text-[10px] font-mono text-white/50 uppercase hidden md:inline">Produkt:</span>
-          <select
-            value={selectedHall}
-            onChange={(e) => {
-              applyHallType(e.target.value);
-            }}
-            className="rounded bg-[#161b22] px-2 py-0.5 font-mono text-[11px] font-bold text-emerald-400 border border-emerald-500/30 outline-none cursor-pointer hover:border-emerald-400 transition"
-          >
-            <option value="Vlastný">Vlastná garáž (Štandard)</option>
-            <optgroup label="Oceľové haly GTG">
-              {Object.keys(hallsConfig).map((name) => (
-                <option key={name} value={name}>{name} (Katalóg)</option>
-              ))}
-            </optgroup>
-          </select>
-          <button
-            onClick={() => setShowPicker(true)}
-            className="flex items-center gap-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 font-mono text-[10px] font-bold transition cursor-pointer"
-            title="Otvoriť vizuálny výber produktov z katalógu"
-          >
-            <span>⊞ Katalóg</span>
-          </button>
+      <div className="absolute left-0 right-0 top-0 z-20 flex flex-col md:flex-row md:items-center md:justify-between border-b border-white/5 bg-black/60 px-4 py-1.5 md:py-2 backdrop-blur gap-1.5">
+        <div className="flex items-center justify-between w-full md:w-auto gap-2">
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
+            <h1 className="font-mono text-xs md:text-sm tracking-widest text-white/90 font-bold whitespace-nowrap">
+              {isMobile ? "STEEL GARAGE" : "STEEL GARAGE — PARAMETRIC CAD"}
+            </h1>
+            {!isMobile && (
+              <span className="rounded border border-white/10 px-2 py-0.5 font-mono text-[10px] text-white/50">
+                v1.0
+              </span>
+            )}
+          </div>
+          {/* Quick Product Switcher */}
+          <div className="flex items-center gap-1 rounded border border-white/10 bg-black/40 px-1.5 py-0.5 max-w-[58%] sm:max-w-none">
+            <span className="text-[10px] font-mono text-white/50 uppercase hidden md:inline">Produkt:</span>
+            <select
+              value={selectedHall}
+              onChange={(e) => {
+                applyHallType(e.target.value);
+              }}
+              className="min-w-0 max-w-[125px] sm:max-w-none rounded bg-[#161b22] px-1.5 py-0.5 font-mono text-[11px] font-bold text-emerald-400 border border-emerald-500/30 outline-none cursor-pointer hover:border-emerald-400 transition truncate"
+            >
+              <option value="Vlastný">Vlastná garáž</option>
+              <optgroup label="Oceľové haly GTG">
+                {Object.keys(hallsConfig).map((name) => (
+                  <option key={name} value={name}>{name} (Katalóg)</option>
+                ))}
+              </optgroup>
+            </select>
+            <button
+              onClick={() => setShowPicker(true)}
+              className="flex items-center gap-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 font-mono text-[10px] font-bold transition cursor-pointer shrink-0"
+              title="Otvoriť vizuálny výber produktov z katalógu"
+            >
+              <span>⊞</span>
+              <span className="hidden sm:inline">Katalóg</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1">
-          {(["iso", "plan", "front", "side"] as const).map((v) => (
-            <button
-              key={v}
-              onClick={() => setPreset(v)}
-              className={`rounded px-2 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider transition ${
-                preset === v
-                  ? "bg-emerald-400/20 text-emerald-300 ring-1 ring-emerald-400/40"
-                  : "text-white/60 hover:bg-white/5 hover:text-white"
-              }`}
-            >
-              {v === "iso" ? (isMobile ? "ISO" : "Axonometria") : v === "plan" ? (isMobile ? "PÔD" : "Pôdorys") : v === "front" ? (isMobile ? "Čelo" : "Čelo") : (isMobile ? "Bok" : "Bok")}
-            </button>
-          ))}
+        <div className="flex items-center justify-between md:justify-end gap-1 w-full md:w-auto">
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+            {(["iso", "plan", "front", "side"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setPreset(v)}
+                className={`rounded px-2 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider transition ${
+                  preset === v
+                    ? "bg-emerald-400/20 text-emerald-300 ring-1 ring-emerald-400/40"
+                    : "text-white/60 hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                {v === "iso" ? (isMobile ? "ISO" : "Axonometria") : v === "plan" ? (isMobile ? "PÔD" : "Pôdorys") : v === "front" ? (isMobile ? "Čelo" : "Čelo") : (isMobile ? "Bok" : "Bok")}
+              </button>
+            ))}
+          </div>
           <button
             onClick={handleShare}
-            className="ml-1 md:ml-2 flex items-center gap-1 rounded bg-emerald-400/20 px-2 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider text-emerald-300 ring-1 ring-emerald-400/40 transition hover:bg-emerald-400/30"
+            className="ml-1 md:ml-2 flex items-center gap-1 rounded bg-emerald-400/20 px-2 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider text-emerald-300 ring-1 ring-emerald-400/40 transition hover:bg-emerald-400/30 shrink-0"
           >
             Zdieľať
           </button>
@@ -605,62 +623,79 @@ export default function Configurator() {
       </div>
 
       <PriceCalculator p={typedParams} quoteRequestSignal={quoteRequestSignal} />
-      <PremiumSpecPanel p={typedParams} />
 
-      {/* Hall PDF specs badge if selected */}
-      {selectedHall !== "Vlastný" && hallsConfig[selectedHall] && (() => {
-        const curHall = hallsConfig[selectedHall];
-        const activeVer = curHall.versions?.find((v) => Math.abs(v.H - (typedParams.clearHeight ?? 0)) < 0.05) || curHall.versions?.[0];
-        return (
-          <div className="pointer-events-auto absolute left-3 top-28 z-10 max-w-[340px] rounded border border-emerald-500/30 bg-[#0e1116]/85 p-2.5 font-mono text-[10px] text-white/90 backdrop-blur shadow-xl">
-            <div className="flex items-center justify-between border-b border-white/10 pb-1 mb-1.5">
-              <span className="font-bold text-emerald-400">KATALÓG GTG: {selectedHall}</span>
-              <span className="text-white/50">{curHall.framework || "EN 1090"}</span>
-            </div>
-            {activeVer && (
-              <div className="text-[9px] text-emerald-300 font-semibold mb-1 truncate">
-                {activeVer.label}
+      {/* Left stacked panels container (prevents any overlapping) */}
+      <div className="pointer-events-none absolute left-3.5 top-20 md:top-14 z-20 flex flex-col gap-2 w-[calc(100vw-140px)] max-w-[340px] md:w-[340px]">
+        <PremiumSpecPanel
+          p={typedParams}
+          className="pointer-events-auto w-full rounded border border-white/10 bg-black/70 font-mono text-[11px] text-white/80 backdrop-blur shadow-lg"
+        />
+
+        {/* Hall PDF specs badge if selected */}
+        {selectedHall !== "Vlastný" && hallsConfig[selectedHall] && (() => {
+          const curHall = hallsConfig[selectedHall];
+          const activeVer = curHall.versions?.find((v) => Math.abs(v.H - (typedParams.clearHeight ?? 0)) < 0.05) || curHall.versions?.[0];
+          return (
+            <div className="pointer-events-auto w-full rounded border border-emerald-500/30 bg-[#0e1116]/85 p-2.5 font-mono text-[10px] text-white/90 backdrop-blur shadow-xl">
+              <div
+                onClick={() => setShowHallSpecs(v => !v)}
+                className="flex items-center justify-between border-b border-white/10 pb-1 mb-1.5 cursor-pointer select-none"
+              >
+                <span className="font-bold text-emerald-400">KATALÓG GTG: {selectedHall}</span>
+                <span className="text-white/50 text-[9px] flex items-center gap-1">
+                  <span>{curHall.framework || "EN 1090"}</span>
+                  <span className="text-emerald-400 font-bold">{showHallSpecs ? "▴" : "▾"}</span>
+                </span>
               </div>
-            )}
-            <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-white/70">
-              <div>Šírka A: <span className="text-white">{curHall.width} m</span></div>
-              <div>Modul C: <span className="text-white">{curHall.moduleLength} m</span></div>
-              <div>Výška H: <span className="text-white">{activeVer ? `${activeVer.H.toFixed(3)} m` : `${curHall.heights[0]} m`}</span></div>
-              <div>Hrebeň H1: <span className="text-white">{activeVer ? `${activeVer.H1.toFixed(3)} m` : "-"}</span></div>
-              <div>Prejazd H2: <span className="text-white">{activeVer ? `${activeVer.H2.toFixed(3)} m` : "-"}</span></div>
-              {curHall.type === "shed" && activeVer?.H3 && (
-                <div>Vzadu H3/H4: <span className="text-white">{activeVer.H3}m / {activeVer.H4}m</span></div>
-              )}
-              <div>Rozteč D / E: <span className="text-white">{activeVer ? `${activeVer.D}m / ${activeVer.E}m` : "-"}</span></div>
-              <div>Stĺpy: <span className="text-white">{curHall.gablePillars || "RK"}</span></div>
-              <div>Sklon: <span className="text-white">{curHall.roofPitchDeg}°</span></div>
-              <div>Oceľ: <span className="text-white">{curHall.steelGrade || "S355"}</span></div>
-              {curHall.snowZone && (
-                <div>Zóna: <span className="text-white">Sneh {curHall.snowZone} / Vietor {curHall.windZone}</span></div>
-              )}
-              {curHall.claddingVersion && (
-                <div>Opláštenie: <span className="text-white">{curHall.claddingVersion}</span></div>
+              {showHallSpecs && (
+                <>
+                  {activeVer && (
+                    <div className="text-[9px] text-emerald-300 font-semibold mb-1 truncate">
+                      {activeVer.label}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-white/70">
+                    <div>Šírka A: <span className="text-white">{curHall.width} m</span></div>
+                    <div>Modul C: <span className="text-white">{curHall.moduleLength} m</span></div>
+                    <div>Výška H: <span className="text-white">{activeVer ? `${activeVer.H.toFixed(3)} m` : `${curHall.heights[0]} m`}</span></div>
+                    <div>Hrebeň H1: <span className="text-white">{activeVer ? `${activeVer.H1.toFixed(3)} m` : "-"}</span></div>
+                    <div>Prejazd H2: <span className="text-white">{activeVer ? `${activeVer.H2.toFixed(3)} m` : "-"}</span></div>
+                    {curHall.type === "shed" && activeVer?.H3 && (
+                      <div>Vzadu H3/H4: <span className="text-white">{activeVer.H3}m / {activeVer.H4}m</span></div>
+                    )}
+                    <div>Rozteč D / E: <span className="text-white">{activeVer ? `${activeVer.D}m / ${activeVer.E}m` : "-"}</span></div>
+                    <div>Stĺpy: <span className="text-white">{curHall.gablePillars || "RK"}</span></div>
+                    <div>Sklon: <span className="text-white">{curHall.roofPitchDeg}°</span></div>
+                    <div>Oceľ: <span className="text-white">{curHall.steelGrade || "S355"}</span></div>
+                    {curHall.snowZone && (
+                      <div>Zóna: <span className="text-white">Sneh {curHall.snowZone} / Vietor {curHall.windZone}</span></div>
+                    )}
+                    {curHall.claddingVersion && (
+                      <div>Opláštenie: <span className="text-white">{curHall.claddingVersion}</span></div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setShowCatalogModal(true)}
+                    className="mt-2 w-full flex items-center justify-center gap-1.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 py-1 text-[10px] font-bold cursor-pointer transition-colors"
+                  >
+                    <span>📷 Zobraziť predlohu z katalógu</span>
+                  </button>
+                </>
               )}
             </div>
-            <button
-              onClick={() => setShowCatalogModal(true)}
-              className="mt-2 w-full flex items-center justify-center gap-1.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 py-1 text-[10px] font-bold cursor-pointer transition-colors"
-            >
-              <span>📷 Zobraziť predlohu z katalógu</span>
-            </button>
-          </div>
-        );
-      })()}
+          );
+        })()}
+      </div>
 
       {/* Dimensions strip */}
-      <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded border border-white/10 bg-black/50 px-2 py-1 md:px-3 md:py-1.5 font-mono text-[9px] md:text-[10px] text-white/60 backdrop-blur text-center whitespace-nowrap">
+      <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 max-w-[92vw] truncate rounded border border-white/10 bg-black/50 px-2 py-1 md:px-3 md:py-1.5 font-mono text-[9px] md:text-[10px] text-white/60 backdrop-blur text-center">
         {isMobile ? "Ťahanie = rotácia · Profily " + ((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0) + " mm" : "Drag = orbit · Scroll = zoom · Right-drag = pan · Profily " + ((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0) + "×" + ((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0) + "×" + ((typedParams.profileThickness ?? DEFAULT_PARAMS.profileThickness) * 1000).toFixed(0) + " mm"}
       </div>
 
       {/* Controls Toggle Button */}
       <button
         onClick={() => setShowControls(v => !v)}
-        className="absolute right-4 top-16 z-30 flex items-center gap-1.5 rounded-full bg-emerald-400 text-slate-900 px-3 py-2 text-xs font-mono font-bold shadow-lg hover:bg-emerald-300 transition-all active:scale-95 cursor-pointer"
+        className="absolute right-3 top-20 md:top-14 z-30 flex items-center gap-1.5 rounded-full bg-emerald-400 text-slate-900 px-3 py-2 text-xs font-mono font-bold shadow-lg hover:bg-emerald-300 transition-all active:scale-95 cursor-pointer"
       >
         {showControls ? (
           <>
@@ -676,7 +711,7 @@ export default function Configurator() {
       </button>
 
       {/* Leva Controls container */}
-      <div className={`quote-export-panel absolute right-4 top-28 z-20 max-h-[72vh] overflow-y-auto rounded-lg bg-[#0e1116]/95 shadow-2xl border border-white/10 transition-all duration-300 ${
+      <div className={`quote-export-panel absolute right-3 top-[132px] md:top-28 z-30 max-h-[calc(100vh-150px)] md:max-h-[72vh] overflow-y-auto rounded-lg bg-[#0e1116]/95 shadow-2xl border border-white/10 transition-all duration-300 ${
         showControls ? "opacity-100 translate-x-0 pointer-events-auto" : "opacity-0 translate-x-12 pointer-events-none"
       } md:w-[320px] w-[calc(100vw-32px)] max-w-[360px]`}>
         <Leva

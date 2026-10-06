@@ -406,7 +406,7 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
       )}
 
       {claddingConfig.staticWarning && (
-        <div className="absolute top-16 left-4 z-10 max-w-xs rounded-lg border border-amber-500/30 bg-black/85 p-3.5 font-mono text-white shadow-2xl backdrop-blur-md">
+        <div className="absolute bottom-12 left-3 right-3 md:left-4 md:right-auto z-10 max-w-sm rounded-lg border border-amber-500/30 bg-black/85 p-3 font-mono text-white shadow-2xl backdrop-blur-md">
           <div className="flex items-start gap-2.5">
             <span className="text-amber-400 text-lg">⚠️</span>
             <div className="space-y-1">

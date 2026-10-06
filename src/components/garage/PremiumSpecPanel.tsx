@@ -115,7 +115,7 @@ const dot: Record<Status, string> = {
   err: "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.7)]",
 };
 
-export function PremiumSpecPanel({ p }: { p: GarageParams }) {
+export function PremiumSpecPanel({ p, className }: { p: GarageParams; className?: string }) {
   const [open, setOpen] = useState(false);
   const checks = useMemo(() => buildChecks(p), [p]);
   const load = useMemo(() => estimateLoad(p), [p]);
@@ -126,22 +126,22 @@ export function PremiumSpecPanel({ p }: { p: GarageParams }) {
   const status: Status = errors > 0 ? "err" : warns > 0 ? "warn" : "ok";
 
   return (
-    <div className="pointer-events-auto absolute left-3 top-14 z-10 w-[340px] rounded border border-white/10 bg-black/70 font-mono text-[11px] text-white/80 backdrop-blur">
+    <div className={className ?? "pointer-events-auto absolute left-3 top-14 z-10 w-[340px] rounded border border-white/10 bg-black/70 font-mono text-[11px] text-white/80 backdrop-blur"}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 border-b border-white/10 px-3 py-2 text-left hover:bg-white/5"
+        className="flex w-full items-center justify-between gap-2 border-b border-white/10 px-3 py-2 text-left hover:bg-white/5 cursor-pointer"
       >
-        <span className="flex items-center gap-2">
-          <span className={`h-2 w-2 rounded-full ${dot[status]}`} />
-          <span className="uppercase tracking-widest text-white/90">
+        <span className="flex items-center gap-2 min-w-0">
+          <span className={`h-2 w-2 rounded-full shrink-0 ${dot[status]}`} />
+          <span className="uppercase tracking-widest text-white/90 truncate text-[10px] md:text-[11px]">
             Prémiové opláštenie
           </span>
         </span>
-        <span className="text-[10px] text-white/40">
+        <span className="text-[10px] text-white/40 shrink-0">
           {status === "ok"
-            ? "Spĺňa štandard"
+            ? "Spĺňa"
             : status === "warn"
-              ? `${warns} upozornení`
+              ? `${warns} var.`
               : `${errors} chýb`}
           {" "}
           {open ? "▾" : "▸"}
