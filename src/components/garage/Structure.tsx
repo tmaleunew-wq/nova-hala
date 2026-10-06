@@ -456,7 +456,7 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
           y_right_post = Heave + (halfW - Math.abs(x_R_post)) * Math.tan(slopeAngle);
         } else {
           const angleShed = Math.atan2(Hhi - Heave, p.width);
-          y_left_post = Heave + (-x_L_post - hxL) * Math.tan(angleShed);
+          y_left_post = Heave + (x_L_post - hxL) * Math.tan(angleShed);
           y_right_post = Heave + (x_R_post - hxL) * Math.tan(angleShed);
         }
 
