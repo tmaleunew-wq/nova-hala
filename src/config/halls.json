@@ -41,7 +41,9 @@
         "E": 4.8
       }
     ],
-    "description": "Oceľová konštrukcia šírky 8 m s výškou stĺpov 4 m a 5 m. Modulový rozostup rámov po 4 m umožňuje dosiahnuť ľubovoľnú dĺžku haly."
+    "description": "Oceľová konštrukcia šírky 8 m s výškou stĺpov 4 m a 5 m. Modulový rozostup rámov po 4 m umožňuje dosiahnuť ľubovoľnú dĺžku haly.",
+    "subtitle": "Dvojgaráž & Remeselná dielňa",
+    "badge": "Dvojgaráž & Dielňa"
   },
   "KD10": {
     "name": "KD10",
@@ -85,7 +87,9 @@
         "E": 4.8
       }
     ],
-    "description": "Oceľová konštrukcia šírky 10 m s výškou stĺpov 4 m a 5 m. Modulový rozostup rámov po 4 m umožňuje dosiahnuť ľubovoľnú dĺžku haly."
+    "description": "Oceľová konštrukcia šírky 10 m s výškou stĺpov 4 m a 5 m. Modulový rozostup rámov po 4 m umožňuje dosiahnuť ľubovoľnú dĺžku haly.",
+    "subtitle": "Trojgaráž & Menší autoservis",
+    "badge": "Trojgaráž & Autoservis"
   },
   "KD12": {
     "name": "KD12",
@@ -129,7 +133,9 @@
         "E": 4.588
       }
     ],
-    "description": "Oceľová konštrukcia šírky 12 m s výškou stĺpov 4 m a 5 m. Modulový rozostup rámov po 4 m umožňuje dosiahnuť ľubovoľnú dĺžku haly."
+    "description": "Oceľová konštrukcia šírky 12 m s výškou stĺpov 4 m a 5 m. Modulový rozostup rámov po 4 m umožňuje dosiahnuť ľubovoľnú dĺžku haly.",
+    "subtitle": "Garáž pre nákladné autá & Sklad",
+    "badge": "Nákladné autá & Sklad"
   },
   "KD14": {
     "name": "KD14",
@@ -173,7 +179,9 @@
         "E": 4.588
       }
     ],
-    "description": "Oceľová konštrukcia šírky 14 m s výškou stĺpov 4 m a 5 m. Modulový rozostup rámov po 5 m umožňuje dosiahnuť ľubovoľnú dĺžku haly."
+    "description": "Oceľová konštrukcia šírky 14 m s výškou stĺpov 4 m a 5 m. Modulový rozostup rámov po 5 m umožňuje dosiahnuť ľubovoľnú dĺžku haly.",
+    "subtitle": "Logistický sklad & Servis mechanizácie",
+    "badge": "Logistika & Mechanizácia"
   },
   "KD16": {
     "name": "KD16",
@@ -233,7 +241,9 @@
         "Ep": 3.88
       }
     ],
-    "description": "Oceľová konštrukcia šírky 16 m s výškou stĺpov 5, 6 a 7 m. Modulový rozostup rámov po 5 m umožňuje dosiahnuť ľubovoľnú dĺžku haly."
+    "description": "Oceľová konštrukcia šírky 16 m s výškou stĺpov 5, 6 a 7 m. Modulový rozostup rámov po 5 m umožňuje dosiahnuť ľubovoľnú dĺžku haly.",
+    "subtitle": "Priemyselná hala & Poľnohospodársky hangár",
+    "badge": "Priemysel & Agro hangár"
   },
   "KD18": {
     "name": "KD18",
@@ -293,7 +303,9 @@
         "Ep": 4.36
       }
     ],
-    "description": "Oceľová konštrukcia šírky 18 m s výškou stĺpov 5, 6 a 7 m. Modulový rozostup rámov po 5 m umožňuje dosiahnuť ľubovoľnú dĺžku haly."
+    "description": "Oceľová konštrukcia šírky 18 m s výškou stĺpov 5, 6 a 7 m. Modulový rozostup rámov po 5 m umožňuje dosiahnuť ľubovoľnú dĺžku haly.",
+    "subtitle": "Výrobná hala & Distribučné centrum",
+    "badge": "Výroba & Distribúcia"
   },
   "KD20": {
     "name": "KD20",
@@ -353,7 +365,9 @@
         "Ep": 4.86
       }
     ],
-    "description": "Oceľová konštrukcia šírky 20 m s výškou stĺpov 5, 6 a 7 m. Modulový rozostup rámov po 5 m umožňuje dosiahnuť ľubovoľnú dĺžku haly."
+    "description": "Oceľová konštrukcia šírky 20 m s výškou stĺpov 5, 6 a 7 m. Modulový rozostup rámov po 5 m umožňuje dosiahnuť ľubovoľnú dĺžku haly.",
+    "subtitle": "Veľkokapacitný logistický hangár",
+    "badge": "Mega hangár & Logistika"
   },
   "KJ6": {
     "name": "KJ6",
@@ -400,7 +414,9 @@
         "E": 0.977
       }
     ],
-    "description": "Pultová konštrukcia šírky 6 m s výškou stĺpov 4 m a 5 m. Priehradový väzník s modulom 4 m, stavba bez nutnosti stavebného povolenia."
+    "description": "Pultová konštrukcia šírky 6 m s výškou stĺpov 4 m a 5 m. Priehradový väzník s modulom 4 m, stavba bez nutnosti stavebného povolenia.",
+    "subtitle": "Viacgarážové státie & Kompaktná garáž",
+    "badge": "Viacgarážové státie"
   },
   "KJ7": {
     "name": "KJ7",
@@ -447,6 +463,8 @@
         "E": 1.134
       }
     ],
-    "description": "Pultová konštrukcia šírky 6,95 m s výškou stĺpov 4 m a 5 m. Priehradový väzník s modulom 4 m, moderná stavba na ohlásenie stavby."
+    "description": "Pultová konštrukcia šírky 6,95 m s výškou stĺpov 4 m a 5 m. Priehradový väzník s modulom 4 m, moderná stavba na ohlásenie stavby.",
+    "subtitle": "Dodávková garáž & Firemné parkovanie",
+    "badge": "Dodávky & Parkovanie"
   }
 }

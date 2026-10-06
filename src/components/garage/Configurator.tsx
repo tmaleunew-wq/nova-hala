@@ -644,7 +644,7 @@ export default function Configurator() {
                 onClick={() => setShowHallSpecs(v => !v)}
                 className="flex items-center justify-between border-b border-white/10 pb-1 mb-1.5 cursor-pointer select-none"
               >
-                <span className="font-bold text-emerald-400">KATALÓG GTG: {selectedHall}</span>
+                <span className="font-bold text-emerald-400">KATALÓG GTG: {selectedHall}{curHall.subtitle ? ` · ${curHall.subtitle}` : ""}</span>
                 <span className="text-white/50 text-[9px] flex items-center gap-1">
                   <span>{curHall.framework || "EN 1090"}</span>
                   <span className="text-emerald-400 font-bold">{showHallSpecs ? "▴" : "▾"}</span>
@@ -758,7 +758,7 @@ export default function Configurator() {
               <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
                 <div>
                   <h3 className="text-base font-bold text-emerald-400">
-                    Katalógová predloha GTG 2025: {selectedHall}
+                    Katalógová predloha GTG 2025: {selectedHall}{curHall.subtitle ? ` — ${curHall.subtitle}` : ""}
                   </h3>
                   <p className="text-xs text-white/50">
                     Typ: {curHall.type === "gable" ? "Sedlová hala" : "Pultová hala"} · Norma EN 1090 EXC2 · Zinkovanie PN-EN ISO 1461

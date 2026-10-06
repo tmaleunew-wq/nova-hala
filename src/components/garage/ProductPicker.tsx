@@ -50,15 +50,18 @@ export function ProductPicker({
           >
             <div className="flex h-40 items-center justify-center text-6xl">🏠</div>
             <div className="border-t border-white/10 p-4">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-sm font-bold text-emerald-400">
-                  Vlastná garáž
-                </span>
-                {selectedHall === "Vlastný" && (
-                  <span className="rounded bg-emerald-400/20 px-2 py-0.5 font-mono text-[10px] text-emerald-300">
-                    Aktívne
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <span className="font-mono text-sm font-bold text-emerald-400">
+                    Vlastná garáž
                   </span>
-                )}
+                  <div className="text-xs font-semibold text-white/90 mt-0.5">
+                    Individuálna garáž na mieru
+                  </div>
+                </div>
+                <span className="rounded bg-emerald-400/20 border border-emerald-400/30 px-2 py-0.5 font-mono text-[10px] text-emerald-300 whitespace-nowrap shrink-0">
+                  {selectedHall === "Vlastný" ? "✓ Aktívne" : "Na mieru"}
+                </span>
               </div>
               <div className="mt-1 font-mono text-[10px] text-white/50">
                 Štandard · voliteľné rozmery, opláštenie, brána, okná
@@ -92,12 +95,19 @@ export function ProductPicker({
                   />
                 </div>
                 <div className="border-t border-white/10 p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-sm font-bold text-emerald-400">
-                      {name} <span className="text-white/40">(Katalóg)</span>
-                    </span>
-                    <span className="font-mono text-[10px] text-white/50">
-                      {isSelected ? "✓ Aktívne" : h.type === "shed" ? "Pultová" : "Sedlová"}
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-mono text-sm font-bold text-emerald-400">
+                        {name} <span className="text-white/40 text-xs font-normal">(Katalóg)</span>
+                      </span>
+                      {h.subtitle && (
+                        <div className="text-xs font-semibold text-white/90 mt-0.5">
+                          {h.subtitle}
+                        </div>
+                      )}
+                    </div>
+                    <span className="rounded bg-emerald-400/20 border border-emerald-400/30 px-2 py-0.5 font-mono text-[10px] text-emerald-300 whitespace-nowrap shrink-0">
+                      {isSelected ? "✓ Aktívne" : (h.badge || (h.type === "shed" ? "Pultová" : "Sedlová"))}
                     </span>
                   </div>
                   <div className="mt-1 font-mono text-[10px] text-white/50">

@@ -36,6 +36,8 @@ export interface HallConfig {
   defaultBays?: number;
   defaultLength?: number;
   description?: string;
+  subtitle?: string;
+  badge?: string;
   versions?: HallVersion[];
 }
 
