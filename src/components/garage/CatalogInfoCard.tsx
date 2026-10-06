@@ -190,7 +190,7 @@ export function CatalogInfoCard({
             onClick={onOpenCatalogModal}
             className="mt-2 w-full flex items-center justify-center gap-1.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 py-1 text-[10px] font-bold cursor-pointer transition-colors"
           >
-            <span>📷 Zobraziť predlohu z katalógu</span>
+            <span>📋 3D Predloha & Technický list ({selectedHall})</span>
           </button>
         </>
       )}
