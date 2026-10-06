@@ -778,28 +778,40 @@ export default function Configurator() {
                 <div className="rounded-lg border border-white/10 bg-black/40 p-2.5 overflow-hidden flex flex-col">
                   <div className="text-[11px] font-bold text-emerald-300 mb-1.5 flex items-center justify-between">
                     <span>1. Vizualizácia z katalógu</span>
-                    <span className="text-[9px] text-white/40">3D RENDER</span>
+                    <span className="text-[9px] text-white/40">3D RENDER (HD)</span>
                   </div>
-                  <div className="overflow-hidden rounded border border-white/5 bg-black/60 flex items-center justify-center min-h-[170px]">
+                  <a
+                    href={`/catalog/${selectedHall}_render.png`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Kliknite pre zväčšenie"
+                    className="overflow-hidden rounded border border-white/5 bg-black/60 flex items-center justify-center min-h-[170px] cursor-zoom-in hover:opacity-95 transition"
+                  >
                     <img
                       src={`/catalog/${selectedHall}_render.png`}
                       alt={`Vizualizácia ${selectedHall}`}
                       className="w-full h-auto max-h-[260px] object-contain"
                     />
-                  </div>
+                  </a>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/40 p-2.5 overflow-hidden flex flex-col">
                   <div className="text-[11px] font-bold text-emerald-300 mb-1.5 flex items-center justify-between">
                     <span>2. Výkres rámu a kót</span>
-                    <span className="text-[9px] text-white/40">CAD SCHEMA</span>
+                    <span className="text-[9px] text-white/40">CAD SCHEMA (HD)</span>
                   </div>
-                  <div className="overflow-hidden rounded border border-white/10 bg-white p-2 flex items-center justify-center min-h-[170px] shadow-inner">
+                  <a
+                    href={`/catalog/${selectedHall}_cad_diagram.png`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Kliknite pre zväčšenie výkresu"
+                    className="overflow-hidden rounded border border-white/10 bg-white p-2 flex items-center justify-center min-h-[170px] shadow-inner cursor-zoom-in hover:opacity-95 transition"
+                  >
                     <img
                       src={`/catalog/${selectedHall}_cad_diagram.png`}
                       alt={`Výkres ${selectedHall}`}
                       className="w-full h-auto max-h-[260px] object-contain"
                     />
-                  </div>
+                  </a>
                   <a
                     href={`/catalog/${selectedHall}_page_main.png`}
                     target="_blank"
