@@ -25,11 +25,13 @@ function Scene({
   exportRef,
   removedPanels,
   onTogglePanel,
+  hideDimensions,
 }: {
   params: GarageParams;
   exportRef: React.MutableRefObject<THREE.Group | null>;
   removedPanels: Record<string, boolean>;
   onTogglePanel: (id: string) => void;
+  hideDimensions?: boolean;
 }) {
   const { gl, scene } = useThree();
 
@@ -74,7 +76,7 @@ function Scene({
         {params.showAccessories && <Accessories p={params} explodeY={params.explode} />}
       </group>
 
-      {params.showCatalogDimensions !== false && params.hallType && params.hallType !== "Vlastný" && (
+      {!hideDimensions && params.showCatalogDimensions !== false && params.hallType && params.hallType !== "Vlastný" && (
         <CatalogDimensions p={params} />
       )}
 
@@ -528,6 +530,7 @@ export default function Configurator() {
           exportRef={exportRef}
           removedPanels={removedPanels}
           onTogglePanel={togglePanel}
+          hideDimensions={showCatalogModal || showPicker}
         />
         <OrbitControls makeDefault enableDamping dampingFactor={0.08} target={[0, typedParams.clearHeight / 2, 0]} />
         <CameraRig preset={preset} params={typedParams} />
@@ -749,8 +752,8 @@ export default function Configurator() {
       {showCatalogModal && selectedHall !== "Vlastný" && hallsConfig[selectedHall] && (() => {
         const curHall = hallsConfig[selectedHall];
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3 md:p-6 backdrop-blur-sm">
-            <div className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-xl border border-white/20 bg-[#0e1116] p-4 md:p-6 shadow-2xl font-mono text-white">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-3 md:p-6 backdrop-blur-md">
+            <div className="relative max-h-[94vh] w-full max-w-4xl overflow-y-auto rounded-xl border border-white/20 bg-[#0e1116] p-4 md:p-6 shadow-2xl font-mono text-white">
               {/* Header */}
               <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
                 <div>
@@ -764,6 +767,7 @@ export default function Configurator() {
                 <button
                   onClick={() => setShowCatalogModal(false)}
                   className="rounded-full bg-white/10 p-1.5 hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer"
+                  title="Zavrieť"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -771,43 +775,82 @@ export default function Configurator() {
 
               {/* Gallery of catalog images */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div className="rounded-lg border border-white/10 bg-black/40 p-2 overflow-hidden flex flex-col">
-                  <div className="text-[11px] font-bold text-emerald-300 mb-1 flex items-center justify-between">
+                <div className="rounded-lg border border-white/10 bg-black/40 p-2.5 overflow-hidden flex flex-col">
+                  <div className="text-[11px] font-bold text-emerald-300 mb-1.5 flex items-center justify-between">
                     <span>1. Vizualizácia z katalógu</span>
                     <span className="text-[9px] text-white/40">3D RENDER</span>
                   </div>
-                  <img
-                    src={`/catalog/${selectedHall}_render.png`}
-                    alt={`Vizualizácia ${selectedHall}`}
-                    className="w-full h-auto rounded border border-white/5 object-cover"
-                  />
+                  <div className="overflow-hidden rounded border border-white/5 bg-black/60 flex items-center justify-center min-h-[170px]">
+                    <img
+                      src={`/catalog/${selectedHall}_render.png`}
+                      alt={`Vizualizácia ${selectedHall}`}
+                      className="w-full h-auto max-h-[260px] object-contain"
+                    />
+                  </div>
                 </div>
-                <div className="rounded-lg border border-white/10 bg-black/40 p-2 overflow-hidden flex flex-col">
-                  <div className="text-[11px] font-bold text-emerald-300 mb-1 flex items-center justify-between">
+                <div className="rounded-lg border border-white/10 bg-black/40 p-2.5 overflow-hidden flex flex-col">
+                  <div className="text-[11px] font-bold text-emerald-300 mb-1.5 flex items-center justify-between">
                     <span>2. Výkres rámu a kót</span>
                     <span className="text-[9px] text-white/40">CAD SCHEMA</span>
                   </div>
-                  <img
-                    src={`/catalog/${selectedHall}_cad_diagram.png`}
-                    alt={`Výkres ${selectedHall}`}
-                    className="w-full h-auto rounded border border-white/5 object-contain bg-white/5"
-                  />
+                  <div className="overflow-hidden rounded border border-white/10 bg-white p-2 flex items-center justify-center min-h-[170px] shadow-inner">
+                    <img
+                      src={`/catalog/${selectedHall}_cad_diagram.png`}
+                      alt={`Výkres ${selectedHall}`}
+                      className="w-full h-auto max-h-[260px] object-contain"
+                    />
+                  </div>
+                  <a
+                    href={`/catalog/${selectedHall}_page_main.png`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 text-center text-[10px] text-emerald-300 hover:text-emerald-200 bg-emerald-500/15 border border-emerald-500/30 rounded py-1 px-2 font-mono flex items-center justify-center gap-1.5 transition"
+                  >
+                    <span>🔍 Zobraziť originálny katalógový list v plnom HD rozlíšení ↗</span>
+                  </a>
                 </div>
               </div>
 
               {/* Specification table */}
               <div className="rounded-lg border border-white/10 bg-white/5 p-4 mb-4 text-xs">
-                <div className="font-bold text-emerald-300 mb-2">Presné parametre 1:1 z katalógu GTG:</div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-white/80">
-                  <div>Šírka A: <span className="font-bold text-white">{curHall.width} m ({(curHall.width * 1000).toFixed(0)} mm)</span></div>
-                  <div>Modul C: <span className="font-bold text-white">{curHall.moduleLength} m</span></div>
-                  <div>Min. dĺžka B: <span className="font-bold text-white">&gt; {curHall.minLength} m</span></div>
-                  <div>Hlavný rám: <span className="font-bold text-white">{curHall.framework}</span></div>
-                  <div>Štítové stĺpy: <span className="font-bold text-white">{curHall.gablePillars}</span></div>
-                  <div>Sklon: <span className="font-bold text-white">{curHall.roofPitchDeg}°</span></div>
-                  <div>Zavetrovanie: <span className="font-bold text-white">{curHall.bracing || "ø10.7"}</span></div>
-                  <div>Ťahadlá: <span className="font-bold text-white">{curHall.tieRods || "ø16"}</span></div>
-                  <div>Zóny: <span className="font-bold text-white">Sneh {curHall.snowZone} / Vietor {curHall.windZone}</span></div>
+                <div className="font-bold text-emerald-300 mb-2.5">Presné parametre 1:1 z katalógu GTG:</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 text-white/80">
+                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
+                    <span className="text-white/60">Šírka A:</span>
+                    <span className="font-bold text-white">{curHall.width} m ({(curHall.width * 1000).toFixed(0)} mm)</span>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
+                    <span className="text-white/60">Modul C:</span>
+                    <span className="font-bold text-white">{curHall.moduleLength} m</span>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
+                    <span className="text-white/60">Min. dĺžka B:</span>
+                    <span className="font-bold text-white">&gt; {curHall.minLength} m</span>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
+                    <span className="text-white/60">Hlavný rám:</span>
+                    <span className="font-bold text-white">{curHall.framework}</span>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
+                    <span className="text-white/60">Štítové stĺpy:</span>
+                    <span className="font-bold text-white">{curHall.gablePillars}</span>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
+                    <span className="text-white/60">Sklon:</span>
+                    <span className="font-bold text-white">{curHall.roofPitchDeg}°</span>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
+                    <span className="text-white/60">Zavetrovanie:</span>
+                    <span className="font-bold text-white">{curHall.bracing || "ø10.7"}</span>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
+                    <span className="text-white/60">Ťahadlá:</span>
+                    <span className="font-bold text-white">{curHall.tieRods || "ø16"}</span>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
+                    <span className="text-white/60">Zóny:</span>
+                    <span className="font-bold text-white">Sneh {curHall.snowZone} / Vietor {curHall.windZone}</span>
+                  </div>
                 </div>
 
                 {curHall.versions && curHall.versions.length > 0 && (

@@ -91,7 +91,7 @@ export function CatalogDimensions({ p }: { p: GarageParams }) {
       <DimensionLine3D from={[-halfW - 0.15, y, z_front - 0.15]} to={[-halfW + 0.15, y, z_front + 0.15]} color={lineColor} thickness={0.016} />
       <DimensionLine3D from={[halfW - 0.15, y, z_front - 0.15]} to={[halfW + 0.15, y, z_front + 0.15]} color={lineColor} thickness={0.016} />
       {/* Badge A */}
-      <Html position={[0, y + 0.05, z_front]} center distanceFactor={16} style={{ pointerEvents: "none" }}>
+      <Html position={[0, y + 0.05, z_front]} center distanceFactor={16} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
         <div className="flex flex-col items-center select-none transform transition-transform duration-150 hover:scale-110">
           <div className="w-8 h-8 rounded-full bg-[#1d4ed8] border-2 border-white shadow-xl flex items-center justify-center text-white font-black text-sm tracking-wider">
             A
@@ -112,7 +112,7 @@ export function CatalogDimensions({ p }: { p: GarageParams }) {
       <DimensionLine3D from={[x_sideB - 0.15, y, -halfL - 0.15]} to={[x_sideB + 0.15, y, -halfL + 0.15]} color={lineColor} thickness={0.016} />
       <DimensionLine3D from={[x_sideB - 0.15, y, halfL - 0.15]} to={[x_sideB + 0.15, y, halfL + 0.15]} color={lineColor} thickness={0.016} />
       {/* Badge B */}
-      <Html position={[x_sideB, y + 0.05, 0]} center distanceFactor={16} style={{ pointerEvents: "none" }}>
+      <Html position={[x_sideB, y + 0.05, 0]} center distanceFactor={16} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
         <div className="flex flex-col items-center select-none transform transition-transform duration-150 hover:scale-110">
           <div className="w-8 h-8 rounded-full bg-[#1d4ed8] border-2 border-white shadow-xl flex items-center justify-center text-white font-black text-sm tracking-wider">
             B
@@ -133,7 +133,7 @@ export function CatalogDimensions({ p }: { p: GarageParams }) {
       <DimensionLine3D from={[x_sideC - 0.15, y, -halfL - 0.15]} to={[x_sideC + 0.15, y, -halfL + 0.15]} color={lineColor} thickness={0.016} />
       <DimensionLine3D from={[x_sideC - 0.15, y, z_firstBay - 0.15]} to={[x_sideC + 0.15, y, z_firstBay + 0.15]} color={lineColor} thickness={0.016} />
       {/* Badge C */}
-      <Html position={[x_sideC, y + 0.05, (-halfL + z_firstBay) / 2]} center distanceFactor={16} style={{ pointerEvents: "none" }}>
+      <Html position={[x_sideC, y + 0.05, (-halfL + z_firstBay) / 2]} center distanceFactor={16} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
         <div className="flex flex-col items-center select-none transform transition-transform duration-150 hover:scale-110">
           <div className="w-8 h-8 rounded-full bg-[#1d4ed8] border-2 border-white shadow-xl flex items-center justify-center text-white font-black text-sm tracking-wider">
             C
