@@ -242,6 +242,7 @@ export default function Configurator() {
 
   const initHall = initialUrlParams.hallType && initialUrlParams.hallType !== "Vlastný" ? hallsConfig[initialUrlParams.hallType] : null;
   const isCatalog = !!initHall;
+  const [selectedPoleHeight, setSelectedPoleHeight] = useState<string>(() => initHall?.versions?.[0] ? `${initHall.versions[0].poleHeight}m` : "4m");
   const initBays = initHall ? (initHall.defaultBays ?? 5) : DEFAULT_PARAMS.bayCount;
   const initLength = initHall ? (initHall.defaultLength ?? (initBays * initHall.moduleLength)) : DEFAULT_PARAMS.length;
   const activeHall = selectedHall !== "Vlastný" ? hallsConfig[selectedHall] : initHall;
@@ -282,11 +283,13 @@ export default function Configurator() {
         },
       },
       hallHeight: {
-        value: hallHeightOptions[0] ?? "4m",
+        value: selectedPoleHeight,
         options: hallHeightOptions,
         label: "Výška stĺpa",
         disabled: isCustom,
+        transient: false,
         onChange: (val) => {
+          setSelectedPoleHeight(val);
           if (selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
             const h = hallsConfig[selectedHall];
             const poleNum = parseInt(val, 10);
@@ -302,7 +305,6 @@ export default function Configurator() {
                 : (foundVer.H2 ?? Math.min(3.8, foundVer.H - 0.2));
               (setParams as any)({
                 clearHeight: foundVer.H,
-                hallHeight: `${foundVer.poleHeight}m`,
                 doorWidth: gateW,
                 doorHeight: gateH,
               });
@@ -469,6 +471,7 @@ export default function Configurator() {
       const defaultVer = h.versions?.[0];
       const defaultH = defaultVer ? defaultVer.H : h.heights[0];
       const defaultPole = defaultVer ? `${defaultVer.poleHeight}m` : "4m";
+      setSelectedPoleHeight(defaultPole);
       const isShed = h.type === "shed";
       const gateW = isShed ? Math.min(3.0, h.width * 0.5) : (defaultVer?.E ?? 4.8);
       const gateH = isShed
@@ -534,8 +537,9 @@ export default function Configurator() {
 
   if (selectedHall && selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
     const h = hallsConfig[selectedHall];
+    const poleNum = parseInt(selectedPoleHeight, 10);
     const activeVer =
-      h.versions?.find((v) => Math.abs(v.H - (cleanParams.clearHeight ?? 0)) < 0.05) ||
+      (poleNum ? h.versions?.find((v) => v.poleHeight === poleNum) : undefined) ||
       h.versions?.[0];
     const minBays = Math.max(2, Math.round(h.minLength / h.moduleLength));
     const numLen = cleanParams.length ? parseFloat(String(cleanParams.length).replace("m", "")) : (h.defaultLength ?? (h.defaultBays ? h.defaultBays * h.moduleLength : 20));
@@ -548,7 +552,7 @@ export default function Configurator() {
       width: h.width,
       roofType: h.type as any,
       roofPitchDeg: h.roofPitchDeg,
-      clearHeight: cleanParams.clearHeight ?? activeVer?.H ?? h.heights[0],
+      clearHeight: activeVer ? activeVer.H : (cleanParams.clearHeight ?? h.heights[0]),
       length: exactLen,
       bayCount: exactBays,
       showStructure: cleanParams.showStructure ?? true,
@@ -733,7 +737,10 @@ export default function Configurator() {
         {/* Hall PDF specs badge if selected */}
         {selectedHall !== "Vlastný" && hallsConfig[selectedHall] && (() => {
           const curHall = hallsConfig[selectedHall];
-          const activeVer = curHall.versions?.find((v) => Math.abs(v.H - (typedParams.clearHeight ?? 0)) < 0.05) || curHall.versions?.[0];
+          const poleNum = parseInt(selectedPoleHeight, 10);
+          const activeVer =
+            (poleNum ? curHall.versions?.find((v) => v.poleHeight === poleNum) : undefined) ||
+            curHall.versions?.[0];
           return (
             <div className="pointer-events-auto w-full rounded border border-emerald-500/30 bg-[#0e1116]/85 p-2.5 font-mono text-[10px] text-white/90 backdrop-blur shadow-xl">
               <div
