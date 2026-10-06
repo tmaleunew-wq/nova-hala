@@ -14,8 +14,9 @@ import { generateOrderExcelXml } from "@/lib/garage/excelGenerator";
 import { fetchInquiriesFromSupabase, supabase } from "@/lib/supabase";
 
 import { AdminAuthGate } from "@/components/garage/AdminAuthGate";
-
 import { PriceQuoteModal } from "@/components/garage/PriceQuoteModal";
+import { AdminPricingAdjustment } from "@/components/garage/AdminPricingAdjustment";
+import { AdminPricingTable } from "@/components/garage/AdminPricingTable";
 
 export const Route = createFileRoute("/admin")({
   component: () => (
@@ -507,268 +508,61 @@ function AdminDashboard() {
           </div>
 
           {/* Unit Price Adjustment Grid */}
-          <div className="rounded-lg border border-white/10 bg-[#0e1218] p-5">
-            <div className="flex items-center gap-2 mb-4 text-emerald-400 border-b border-white/5 pb-2">
-              <Sliders className="h-4 w-4" />
-              <h3 className="text-xs uppercase font-bold tracking-widest">Nastavenie Jednotkových Cien Pre Kalkulačku (€)</h3>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-              <div>
-                <label className="block text-white/50 mb-1">Cena ocele (€/kg)</label>
-                <input
-                  type="number"
-                  step="0.05"
-                  value={steelPricePerKg}
-                  onChange={(e) => setSteelPricePerKg(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none font-bold text-emerald-300"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white/50 mb-1">Sendvič (€/m²)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  value={sandwichPricePerSqM}
-                  onChange={(e) => setSandwichPricePerSqM(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none font-bold text-emerald-300"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white/50 mb-1">Trapéz (€/m²)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  value={trapezoidPricePerSqM}
-                  onChange={(e) => setTrapezoidPricePerSqM(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white/50 mb-1">Garážová brána (€)</label>
-                <input
-                  type="number"
-                  step="10"
-                  value={garageDoorCost}
-                  onChange={(e) => setGarageDoorCost(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white/50 mb-1">Vstupné dvere (€)</label>
-                <input
-                  type="number"
-                  step="10"
-                  value={personalDoorCost}
-                  onChange={(e) => setPersonalDoorCost(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white/50 mb-1">Okno (€/ks)</label>
-                <input
-                  type="number"
-                  step="5"
-                  value={windowCost}
-                  onChange={(e) => setWindowCost(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white/50 mb-1">Montáž a práca (€)</label>
-                <input
-                  type="number"
-                  step="50"
-                  value={laborCost}
-                  onChange={(e) => setLaborCost(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white/50 mb-1">Marža / Zisk (%)</label>
-                <input
-                  type="number"
-                  step="1"
-                  value={marginPercent}
-                  onChange={(e) => setMarginPercent(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none font-bold text-emerald-300"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white/50 mb-1">Voliteľná položka 1 (€)</label>
-                <div className="flex gap-1">
-                  <input
-                    type="text"
-                    placeholder="Názov 1"
-                    value={customItem1Label}
-                    onChange={(e) => setCustomItem1Label(e.target.value)}
-                    className="w-1/2 bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none text-[11px]"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Suma €"
-                    value={customItem1Cost || ""}
-                    onChange={(e) => setCustomItem1Cost(parseFloat(e.target.value) || 0)}
-                    className="w-1/2 bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none font-bold text-amber-300 text-xs"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-white/50 mb-1">Voliteľná položka 2 (€)</label>
-                <div className="flex gap-1">
-                  <input
-                    type="text"
-                    placeholder="Názov 2"
-                    value={customItem2Label}
-                    onChange={(e) => setCustomItem2Label(e.target.value)}
-                    className="w-1/2 bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none text-[11px]"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Suma €"
-                    value={customItem2Cost || ""}
-                    onChange={(e) => setCustomItem2Cost(parseFloat(e.target.value) || 0)}
-                    className="w-1/2 bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white focus:border-emerald-400 focus:outline-none font-bold text-amber-300 text-xs"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          <AdminPricingAdjustment
+            steelPricePerKg={steelPricePerKg}
+            setSteelPricePerKg={setSteelPricePerKg}
+            sandwichPricePerSqM={sandwichPricePerSqM}
+            setSandwichPricePerSqM={setSandwichPricePerSqM}
+            trapezoidPricePerSqM={trapezoidPricePerSqM}
+            setTrapezoidPricePerSqM={setTrapezoidPricePerSqM}
+            garageDoorCost={garageDoorCost}
+            setGarageDoorCost={setGarageDoorCost}
+            personalDoorCost={personalDoorCost}
+            setPersonalDoorCost={setPersonalDoorCost}
+            windowCost={windowCost}
+            setWindowCost={setWindowCost}
+            laborCost={laborCost}
+            setLaborCost={setLaborCost}
+            marginPercent={marginPercent}
+            setMarginPercent={setMarginPercent}
+            customItem1Label={customItem1Label}
+            setCustomItem1Label={setCustomItem1Label}
+            customItem1Cost={customItem1Cost}
+            setCustomItem1Cost={setCustomItem1Cost}
+            customItem2Label={customItem2Label}
+            setCustomItem2Label={setCustomItem2Label}
+            customItem2Cost={customItem2Cost}
+            setCustomItem2Cost={setCustomItem2Cost}
+          />
 
           {/* Pricing Table Summary */}
-          <div className="rounded-lg border border-white/10 bg-[#0e1218] p-5">
-            <div className="flex items-center gap-2 mb-4 text-emerald-400 border-b border-white/5 pb-2">
-              <Calculator className="h-4 w-4" />
-              <h3 className="text-xs uppercase font-bold tracking-widest">Podrobný Rozpis Kalkulácie pre {clientName}</h3>
-            </div>
-
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-white/10 text-white/40">
-                  <th className="py-2 font-normal">Položka špecifikácie</th>
-                  <th className="py-2 text-right font-normal">Množstvo</th>
-                  <th className="py-2 text-right font-normal">Jedn. cena</th>
-                  <th className="py-2 text-right font-normal">Cena bez DPH</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                <tr>
-                  <td className="py-2 pr-2">
-                    <div className="font-bold text-slate-200">Oceľová nosná konštrukcia (jakl)</div>
-                    <div className="text-[10px] text-white/40">Celková dĺžka profilov: {totalSteelLength.toFixed(1)} m</div>
-                  </td>
-                  <td className="py-2 text-right font-mono">{totalSteelWeight.toFixed(0)} kg</td>
-                  <td className="py-2 text-right font-mono">{steelPricePerKg.toFixed(2)} €</td>
-                  <td className="py-2 text-right font-mono font-bold text-slate-100">{calculatedSteelCost.toFixed(2)} €</td>
-                </tr>
-
-                <tr>
-                  <td className="py-2 pr-2">
-                    <div className="font-bold text-slate-200">Opláštenie ({params.panelType === "sandwich" ? "Sendvič" : "Trapéz"})</div>
-                    <div className="text-[10px] text-white/40">Steny ({params.claddingColor}) + Strecha ({params.roofColor})</div>
-                  </td>
-                  <td className="py-2 text-right font-mono">{totalCladdingArea.toFixed(1)} m²</td>
-                  <td className="py-2 text-right font-mono">{activeCladdingUnitPrice.toFixed(2)} €</td>
-                  <td className="py-2 text-right font-mono font-bold text-slate-100">{calculatedCladdingCost.toFixed(2)} €</td>
-                </tr>
-
-                <tr>
-                  <td className="py-2 pr-2">
-                    <div className="font-bold text-slate-200">Sekcionálna garážová brána</div>
-                    <div className="text-[10px] text-white/40">Rozmer: {params.doorWidth} × {params.doorHeight} m</div>
-                  </td>
-                  <td className="py-2 text-right font-mono">1 ks</td>
-                  <td className="py-2 text-right font-mono">{garageDoorCost.toFixed(2)} €</td>
-                  <td className="py-2 text-right font-mono font-bold text-slate-100">{calculatedGarageDoorCost.toFixed(2)} €</td>
-                </tr>
-
-                {params.hasPersonalDoor && (
-                  <tr>
-                    <td className="py-2 pr-2">
-                      <div className="font-bold text-slate-200">Personálne dvere</div>
-                      <div className="text-[10px] text-white/40">Umiestnenie: {params.personalDoorSide} strana</div>
-                    </td>
-                    <td className="py-2 text-right font-mono">1 ks</td>
-                    <td className="py-2 text-right font-mono">{personalDoorCost.toFixed(2)} €</td>
-                    <td className="py-2 text-right font-mono font-bold text-slate-100">{calculatedPersonalDoorCost.toFixed(2)} €</td>
-                  </tr>
-                )}
-
-                {params.hasWindows && params.windowCount > 0 && (
-                  <tr>
-                    <td className="py-2 pr-2">
-                      <div className="font-bold text-slate-200">Svetlíkové okná</div>
-                      <div className="text-[10px] text-white/40">{params.windowCount}x ({params.windowWidth}×{params.windowHeight}m)</div>
-                    </td>
-                    <td className="py-2 text-right font-mono">{params.windowCount} ks</td>
-                    <td className="py-2 text-right font-mono">{windowCost.toFixed(2)} €</td>
-                    <td className="py-2 text-right font-mono font-bold text-slate-100">{calculatedWindowsCost.toFixed(2)} €</td>
-                  </tr>
-                )}
-
-                {calculatedCustomItem1Cost > 0 && (
-                  <tr>
-                    <td className="py-2 pr-2">
-                      <div className="font-bold text-amber-300">{customItem1Label.trim() || "Voliteľná položka 1"}</div>
-                    </td>
-                    <td className="py-2 text-right font-mono">1 ks</td>
-                    <td className="py-2 text-right font-mono">{calculatedCustomItem1Cost.toFixed(2)} €</td>
-                    <td className="py-2 text-right font-mono font-bold text-amber-300">{calculatedCustomItem1Cost.toFixed(2)} €</td>
-                  </tr>
-                )}
-
-                {calculatedCustomItem2Cost > 0 && (
-                  <tr>
-                    <td className="py-2 pr-2">
-                      <div className="font-bold text-amber-300">{customItem2Label.trim() || "Voliteľná položka 2"}</div>
-                    </td>
-                    <td className="py-2 text-right font-mono">1 ks</td>
-                    <td className="py-2 text-right font-mono">{calculatedCustomItem2Cost.toFixed(2)} €</td>
-                    <td className="py-2 text-right font-mono font-bold text-amber-300">{calculatedCustomItem2Cost.toFixed(2)} €</td>
-                  </tr>
-                )}
-
-                <tr>
-                  <td className="py-2 pr-2">
-                    <div className="font-bold text-slate-200">Montáž, prácnosť a doprava</div>
-                  </td>
-                  <td className="py-2 text-right font-mono">Komplet</td>
-                  <td className="py-2 text-right font-mono">{(laborCost + transportCost).toFixed(2)} €</td>
-                  <td className="py-2 text-right font-mono font-bold text-slate-100">{(laborCost + transportCost).toFixed(2)} €</td>
-                </tr>
-
-                {marginPercent > 0 && (
-                  <tr>
-                    <td className="py-2 pr-2">
-                      <div className="font-bold text-slate-200">Marža / Zisk ({marginPercent}%)</div>
-                    </td>
-                    <td className="py-2 text-right font-mono">{marginPercent} %</td>
-                    <td className="py-2 text-right font-mono">—</td>
-                    <td className="py-2 text-right font-mono font-bold text-slate-100">{marginAmount.toFixed(2)} €</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-
-            {/* Totals Summary */}
-            <div className="mt-4 border-t border-white/20 pt-3 flex items-center justify-between text-sm">
-              <div className="text-white/60">
-                Spolu bez DPH: <span className="font-bold text-white font-mono">{finalSubtotalBeforeVat.toFixed(2)} €</span>
-              </div>
-              <div className="text-lg font-bold text-emerald-400 font-mono">
-                CELKOVÁ CENA S DPH: {finalTotalWithVat.toFixed(2)} €
-              </div>
-            </div>
-          </div>
+          <AdminPricingTable
+            clientName={clientName}
+            params={params}
+            totalSteelLength={totalSteelLength}
+            totalSteelWeight={totalSteelWeight}
+            steelPricePerKg={steelPricePerKg}
+            calculatedSteelCost={calculatedSteelCost}
+            totalCladdingArea={totalCladdingArea}
+            activeCladdingUnitPrice={activeCladdingUnitPrice}
+            calculatedCladdingCost={calculatedCladdingCost}
+            garageDoorCost={garageDoorCost}
+            calculatedGarageDoorCost={calculatedGarageDoorCost}
+            personalDoorCost={personalDoorCost}
+            calculatedPersonalDoorCost={calculatedPersonalDoorCost}
+            windowCost={windowCost}
+            calculatedWindowsCost={calculatedWindowsCost}
+            customItem1Label={customItem1Label}
+            calculatedCustomItem1Cost={calculatedCustomItem1Cost}
+            customItem2Label={customItem2Label}
+            calculatedCustomItem2Cost={calculatedCustomItem2Cost}
+            laborCost={laborCost}
+            transportCost={transportCost}
+            marginPercent={marginPercent}
+            marginAmount={marginAmount}
+            finalSubtotalBeforeVat={finalSubtotalBeforeVat}
+            finalTotalWithVat={finalTotalWithVat}
+          />
 
         </div>
       </div>

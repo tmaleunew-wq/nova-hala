@@ -7,158 +7,15 @@ import { useControls, folder, button, Leva } from "leva";
 import { SlidersHorizontal, X } from "lucide-react";
 import * as THREE from "three";
 import { DEFAULT_PARAMS, type GarageParams } from "@/lib/garage/types";
-import { Structure } from "./Structure";
-import { Cladding } from "./Cladding";
-import { Accessories } from "./Accessories";
-import { Foundation } from "./Foundation";
-import { setupProceduralEnvMap } from "@/lib/garage/pbrMaterialHelper";
 import { PriceCalculator } from "./PriceCalculator";
 import { PremiumSpecPanel } from "./PremiumSpecPanel";
-import { CatalogDimensions } from "./CatalogDimensions";
 import { ProductPicker } from "./ProductPicker";
-import { Environment } from "./Environment";
 import { ArModal } from "./ArModal";
+import { HallCatalogModal } from "./HallCatalogModal";
+import { CatalogInfoCard } from "./CatalogInfoCard";
+import { TopNavigation } from "./TopNavigation";
 import { getHallsConfig } from "@/lib/garage/configHelper";
-
-type ViewPreset = "iso" | "plan" | "front" | "side";
-
-function Scene({
-  params,
-  exportRef,
-  removedPanels,
-  onTogglePanel,
-  hideDimensions,
-  showEnvironment,
-}: {
-  params: GarageParams;
-  exportRef: React.MutableRefObject<THREE.Group | null>;
-  removedPanels: Record<string, boolean>;
-  onTogglePanel: (id: string) => void;
-  hideDimensions?: boolean;
-  showEnvironment?: boolean;
-}) {
-  const { gl, scene } = useThree();
-
-  useEffect(() => {
-    const envMap = setupProceduralEnvMap(scene, gl);
-    return () => {
-      if (scene.environment === envMap) {
-        scene.environment = null;
-      }
-      envMap.dispose();
-    };
-  }, [gl, scene]);
-
-  return (
-    <>
-      <ambientLight intensity={0.55} />
-      <directionalLight
-        position={[8, 12, 6]}
-        intensity={1.4}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-left={-15}
-        shadow-camera-right={15}
-        shadow-camera-top={15}
-        shadow-camera-bottom={-15}
-      />
-      <directionalLight position={[-6, 8, -4]} intensity={0.35} />
-      <hemisphereLight args={["#ffffff", "#9ca3af", 0.55]} />
-
-      <group ref={exportRef}>
-        {params.showFoundation && <Foundation p={params} />}
-        {params.showStructure && <Structure p={params} explodeY={params.explode} />}
-        {params.showCladding && (
-          <Cladding
-            p={params}
-            explodeY={params.explode}
-            removedPanels={removedPanels}
-            onTogglePanel={onTogglePanel}
-          />
-        )}
-        {params.showAccessories && <Accessories p={params} explodeY={params.explode} />}
-      </group>
-
-      {!hideDimensions && params.showCatalogDimensions !== false && params.hallType && params.hallType !== "Vlastný" && (
-        <CatalogDimensions p={params} />
-      )}
-
-      {showEnvironment && <Environment p={params} />}
-
-      {!showEnvironment && <Grid
-        args={[100, 100]}
-        cellSize={0.5}
-        cellThickness={0.5}
-        cellColor="#c0c4ca"
-        sectionSize={2}
-        sectionThickness={1}
-        sectionColor="#8a8f97"
-        fadeDistance={80}
-        fadeStrength={1.2}
-        infiniteGrid
-        position={[0, -0.149, 0]}
-      />}
-    </>
-  );
-}
-
-function CameraRig({ preset, params }: { preset: ViewPreset; params: GarageParams }) {
-  const { camera, controls } = useThree() as { camera: THREE.PerspectiveCamera; controls: { target: THREE.Vector3; update: () => void } | null };
-  useEffect(() => {
-    if (!camera) return;
-    const W = params.width;
-    const L = params.length;
-    const H = params.clearHeight;
-    const center = new THREE.Vector3(0, H / 2, 0);
-
-    const isMobileViewport = typeof window !== "undefined" && window.innerWidth < 768;
-    const aspect = typeof window !== "undefined" && window.innerHeight > 0 ? window.innerWidth / window.innerHeight : 1;
-
-    // Calculate bounding dimensions
-    const diag = Math.hypot(W, L);
-    const maxDimension = Math.max(diag, H * 1.5);
-
-    // Three.js perspective camera uses vertical FOV (35 deg)
-    const vFovRad = ((camera.fov || 35) * Math.PI) / 180;
-    const vertFactor = 2 * Math.tan(vFovRad / 2); // ≈ 0.63
-    // On portrait mobile (aspect < 1), horizontal aperture is narrower:
-    const horizFactor = vertFactor * Math.max(0.3, aspect);
-    const effectiveFactor = aspect < 1 ? horizFactor : vertFactor;
-
-    // Comfortable margin: 1.30 on mobile, 1.18 on desktop
-    const margin = isMobileViewport ? 1.30 : 1.18;
-    const dist = (maxDimension / effectiveFactor) * margin;
-
-    let pos: THREE.Vector3;
-    switch (preset) {
-      case "plan":
-        pos = new THREE.Vector3(0.001, center.y + (Math.max(W, L) / effectiveFactor) * margin, 0);
-        break;
-      case "front":
-        pos = new THREE.Vector3(0, center.y, center.z - (Math.max(W, H) / effectiveFactor) * margin);
-        break;
-      case "side":
-        pos = new THREE.Vector3(center.x + (Math.max(L, H) / effectiveFactor) * margin, center.y, 0);
-        break;
-      case "iso":
-      default: {
-        const isoDir = new THREE.Vector3(-1.15, 0.70, -1.0).normalize();
-        pos = center.clone().add(isoDir.multiplyScalar(dist));
-        break;
-      }
-    }
-
-    camera.position.copy(pos);
-    camera.lookAt(center);
-    camera.updateProjectionMatrix();
-    if (controls) {
-      controls.target.copy(center);
-      controls.update();
-    }
-  }, [preset, params.width, params.length, params.clearHeight, params.hallType, camera, controls]);
-  return null;
-}
+import { Scene, CameraRig, type ViewPreset } from "./GarageScene";
 
 function getParamsFromURL(): Partial<GarageParams> {
   if (typeof window === "undefined") return {};
@@ -642,90 +499,20 @@ export default function Configurator() {
       )}
 
       {/* Top bar */}
-      <div className="absolute left-0 right-0 top-0 z-20 flex flex-col md:flex-row md:items-center md:justify-between border-b border-white/5 bg-black/60 px-4 py-1.5 md:py-2 backdrop-blur gap-1.5">
-        <div className="flex items-center justify-between w-full md:w-auto gap-2">
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
-            <h1 className="font-mono text-xs md:text-sm tracking-widest text-white/90 font-bold whitespace-nowrap">
-              {isMobile ? "STEEL GARAGE" : "STEEL GARAGE — PARAMETRIC CAD"}
-            </h1>
-            {!isMobile && (
-              <span className="rounded border border-white/10 px-2 py-0.5 font-mono text-[10px] text-white/50">
-                v1.0
-              </span>
-            )}
-          </div>
-          {/* Quick Product Switcher */}
-          <div className="flex items-center gap-1 rounded border border-white/10 bg-black/40 px-1.5 py-0.5 max-w-[58%] sm:max-w-none">
-            <span className="text-[10px] font-mono text-white/50 uppercase hidden md:inline">Produkt:</span>
-            <select
-              value={selectedHall}
-              onChange={(e) => {
-                applyHallType(e.target.value);
-              }}
-              className="min-w-0 max-w-[125px] sm:max-w-none rounded bg-[#161b22] px-1.5 py-0.5 font-mono text-[11px] font-bold text-emerald-400 border border-emerald-500/30 outline-none cursor-pointer hover:border-emerald-400 transition truncate"
-            >
-              <option value="Vlastný">Vlastná garáž</option>
-              <optgroup label="Oceľové haly GTG">
-                {Object.keys(hallsConfig).map((name) => (
-                  <option key={name} value={name}>{name} (Katalóg)</option>
-                ))}
-              </optgroup>
-            </select>
-            <button
-              onClick={() => setShowPicker(true)}
-              className="flex items-center gap-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 font-mono text-[10px] font-bold transition cursor-pointer shrink-0"
-              title="Otvoriť vizuálny výber produktov z katalógu"
-            >
-              <span>⊞</span>
-              <span className="hidden sm:inline">Katalóg</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between md:justify-end gap-1 w-full md:w-auto">
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-            {(["iso", "plan", "front", "side"] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => setPreset(v)}
-                className={`rounded px-2 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider transition ${
-                  preset === v
-                    ? "bg-emerald-400/20 text-emerald-300 ring-1 ring-emerald-400/40"
-                    : "text-white/60 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                {v === "iso" ? (isMobile ? "ISO" : "Axonometria") : v === "plan" ? (isMobile ? "PÔD" : "Pôdorys") : v === "front" ? (isMobile ? "Čelo" : "Čelo") : (isMobile ? "Bok" : "Bok")}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => setShowEnvironment((v) => !v)}
-            title={showEnvironment ? "Vypnúť okolie haly" : "Zapnúť okolie haly"}
-            className={`ml-1 md:ml-2 rounded px-2 py-1 font-mono text-[10px] md:text-xs transition shrink-0 ring-1 ${showEnvironment ? "bg-emerald-400/20 text-emerald-300 ring-emerald-400/40" : "text-white/60 ring-white/10 hover:bg-white/5"}`}
-          >
-            🌳{!isMobile && " Okolie"}
-          </button>
-          <button
-            onClick={() => setShowArModal(true)}
-            title="Zobraziť v rozšírenej realite (AR) alebo stiahnuť 3D model"
-            className="ml-1 md:ml-2 flex items-center gap-1 rounded bg-emerald-400/20 px-2 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider text-emerald-300 ring-1 ring-emerald-400/40 transition hover:bg-emerald-400/30 shrink-0 cursor-pointer"
-          >
-            📱 AR
-          </button>
-          <button
-            onClick={handleShare}
-            className="ml-1 md:ml-2 flex items-center gap-1 rounded bg-emerald-400/20 px-2 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider text-emerald-300 ring-1 ring-emerald-400/40 transition hover:bg-emerald-400/30 shrink-0"
-          >
-            Zdieľať
-          </button>
-        </div>
-        {!isMobile && (
-          <div className="font-mono text-[10px] text-white/40">
-            {(typedParams.width ?? DEFAULT_PARAMS.width).toFixed(1)} × {(typedParams.length ?? DEFAULT_PARAMS.length).toFixed(1)} × {(typedParams.clearHeight ?? DEFAULT_PARAMS.clearHeight).toFixed(1)} m
-          </div>
-        )}
-      </div>
+      <TopNavigation
+        isMobile={isMobile}
+        selectedHall={selectedHall}
+        applyHallType={applyHallType}
+        hallsConfig={hallsConfig}
+        setShowPicker={setShowPicker}
+        preset={preset}
+        setPreset={setPreset}
+        showEnvironment={showEnvironment}
+        setShowEnvironment={setShowEnvironment}
+        setShowArModal={setShowArModal}
+        handleShare={handleShare}
+        typedParams={typedParams}
+      />
 
       <PriceCalculator p={typedParams} quoteRequestSignal={quoteRequestSignal} />
 
@@ -737,128 +524,20 @@ export default function Configurator() {
         />
 
         {/* Hall PDF specs badge if selected */}
-        {selectedHall !== "Vlastný" && hallsConfig[selectedHall] && (() => {
-          const curHall = hallsConfig[selectedHall];
-          const poleNum = parseInt(selectedPoleHeight, 10);
-          const activeVer =
-            (poleNum ? curHall.versions?.find((v) => v.poleHeight === poleNum) : undefined) ||
-            curHall.versions?.[0];
-          return (
-            <div className="pointer-events-auto w-full rounded border border-emerald-500/30 bg-[#0e1116]/85 p-2.5 font-mono text-[10px] text-white/90 backdrop-blur shadow-xl">
-              <div
-                onClick={() => setShowHallSpecs(v => !v)}
-                className="flex items-center justify-between border-b border-white/10 pb-1 mb-1.5 cursor-pointer select-none"
-              >
-                <span className="font-bold text-emerald-400">KATALÓG GTG: {selectedHall}{curHall.subtitle ? ` · ${curHall.subtitle}` : ""}</span>
-                <span className="text-white/50 text-[9px] flex items-center gap-1">
-                  <span>{curHall.framework || "EN 1090"}</span>
-                  <span className="text-emerald-400 font-bold">{showHallSpecs ? "▴" : "▾"}</span>
-                </span>
-              </div>
-              {showHallSpecs && (
-                <>
-                  {/* Voľba výšky stĺpa podľa katalógu (napr. 4m / 5m) */}
-                  {curHall.versions && curHall.versions.length > 0 && (
-                    <div className="flex items-center justify-between mb-1.5 bg-white/5 px-2 py-1 rounded border border-white/10">
-                      <span className="text-white/60">Výška stĺpa:</span>
-                      <div className="flex gap-1">
-                        {curHall.versions.map((ver) => {
-                          const isSel = selectedPoleHeight === `${ver.poleHeight}m`;
-                          return (
-                            <button
-                              key={ver.poleHeight}
-                              onClick={() => {
-                                setSelectedPoleHeight(`${ver.poleHeight}m`);
-                                (setParams as any)({
-                                  clearHeight: ver.H,
-                                  poleHeightSelect: `${ver.poleHeight}m`,
-                                });
-                              }}
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
-                                isSel
-                                  ? "bg-emerald-500 text-black shadow"
-                                  : "bg-white/10 text-white/80 hover:bg-white/20"
-                              }`}
-                            >
-                              {ver.poleHeight}m
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Dĺžka B - Základ 20m, modulové pridanie / odobratie */}
-                  <div className="flex items-center justify-between bg-white/5 px-2 py-1 rounded border border-white/10 mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-white/60">Dĺžka B:</span>
-                      <span className="text-emerald-400 font-bold text-[11px]">{selectedLength} m</span>
-                      <span className="text-white/40 text-[9px]">({Math.round(selectedLength / curHall.moduleLength)} × {curHall.moduleLength}m)</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => {
-                          const minL = curHall.minLength ?? curHall.moduleLength * 2;
-                          const newL = Math.max(minL, selectedLength - curHall.moduleLength);
-                          setSelectedLength(newL);
-                          (setParams as any)({ length: `${newL}m`, bayCount: Math.round(newL / curHall.moduleLength) });
-                        }}
-                        disabled={selectedLength <= (curHall.minLength ?? curHall.moduleLength * 2)}
-                        className="px-2 py-0.5 rounded bg-white/10 hover:bg-emerald-500/30 text-white font-bold cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                        title={`Odobrať modul -${curHall.moduleLength}m`}
-                      >
-                        − {curHall.moduleLength}m
-                      </button>
-                      <button
-                        onClick={() => {
-                          const newL = selectedLength + curHall.moduleLength;
-                          setSelectedLength(newL);
-                          (setParams as any)({ length: `${newL}m`, bayCount: Math.round(newL / curHall.moduleLength) });
-                        }}
-                        className="px-2 py-0.5 rounded bg-white/10 hover:bg-emerald-500/30 text-white font-bold cursor-pointer"
-                        title={`Pridať modul +${curHall.moduleLength}m`}
-                      >
-                        + {curHall.moduleLength}m
-                      </button>
-                    </div>
-                  </div>
-
-                  {activeVer && (
-                    <div className="text-[9px] text-emerald-300 font-semibold mb-1 truncate">
-                      {activeVer.label}
-                    </div>
-                  )}
-                  <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-white/70">
-                    <div>Šírka A: <span className="text-white">{curHall.width} m</span></div>
-                    <div>Modul C: <span className="text-white">{curHall.moduleLength} m</span></div>
-                    <div>Výška H: <span className="text-white">{activeVer ? `${activeVer.H.toFixed(3)} m` : `${curHall.heights[0]} m`}</span></div>
-                    <div>Hrebeň H1: <span className="text-white">{activeVer ? `${activeVer.H1.toFixed(3)} m` : "-"}</span></div>
-                    <div>Prejazd H2: <span className="text-white">{activeVer ? `${activeVer.H2.toFixed(3)} m` : "-"}</span></div>
-                    {curHall.type === "shed" && activeVer?.H3 && (
-                      <div>Vzadu H3/H4: <span className="text-white">{activeVer.H3}m / {activeVer.H4}m</span></div>
-                    )}
-                    <div>Rozteč D / E: <span className="text-white">{activeVer ? `${activeVer.D}m / ${activeVer.E}m` : "-"}</span></div>
-                    <div>Stĺpy: <span className="text-white">{curHall.gablePillars || "RK"}</span></div>
-                    <div>Sklon: <span className="text-white">{curHall.roofPitchDeg}°</span></div>
-                    <div>Oceľ: <span className="text-white">{curHall.steelGrade || "S355"}</span></div>
-                    {curHall.snowZone && (
-                      <div>Zóna: <span className="text-white">Sneh {curHall.snowZone} / Vietor {curHall.windZone}</span></div>
-                    )}
-                    {curHall.claddingVersion && (
-                      <div>Opláštenie: <span className="text-white">{curHall.claddingVersion}</span></div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setShowCatalogModal(true)}
-                    className="mt-2 w-full flex items-center justify-center gap-1.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 py-1 text-[10px] font-bold cursor-pointer transition-colors"
-                  >
-                    <span>📷 Zobraziť predlohu z katalógu</span>
-                  </button>
-                </>
-              )}
-            </div>
-          );
-        })()}
+        {selectedHall !== "Vlastný" && hallsConfig[selectedHall] && (
+          <CatalogInfoCard
+            selectedHall={selectedHall}
+            curHall={hallsConfig[selectedHall]}
+            showHallSpecs={showHallSpecs}
+            setShowHallSpecs={setShowHallSpecs}
+            selectedPoleHeight={selectedPoleHeight}
+            setSelectedPoleHeight={setSelectedPoleHeight}
+            selectedLength={selectedLength}
+            setSelectedLength={setSelectedLength}
+            onSetParams={(p) => (setParams as any)(p)}
+            onOpenCatalogModal={() => setShowCatalogModal(true)}
+          />
+        )}
       </div>
 
       {/* Dimensions strip */}
@@ -920,179 +599,14 @@ export default function Configurator() {
       `}</style>
 
       {/* Catalog 1:1 Reference Modal */}
-      {showCatalogModal && selectedHall !== "Vlastný" && hallsConfig[selectedHall] && (() => {
-        const curHall = hallsConfig[selectedHall];
-        return (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-3 md:p-6 backdrop-blur-md">
-            <div className="relative max-h-[94vh] w-full max-w-4xl overflow-y-auto rounded-xl border border-white/20 bg-[#0e1116] p-4 md:p-6 shadow-2xl font-mono text-white">
-              {/* Header */}
-              <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
-                <div>
-                  <h3 className="text-base font-bold text-emerald-400">
-                    Katalógová predloha GTG 2025: {selectedHall}{curHall.subtitle ? ` — ${curHall.subtitle}` : ""}
-                  </h3>
-                  <p className="text-xs text-white/50">
-                    Typ: {curHall.type === "gable" ? "Sedlová hala" : "Pultová hala"} · Norma EN 1090 EXC2 · Zinkovanie PN-EN ISO 1461
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowCatalogModal(false)}
-                  className="rounded-full bg-white/10 p-1.5 hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer"
-                  title="Zavrieť"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Gallery of catalog images */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div className="rounded-lg border border-white/10 bg-black/40 p-2.5 overflow-hidden flex flex-col">
-                  <div className="text-[11px] font-bold text-emerald-300 mb-1.5 flex items-center justify-between">
-                    <span>1. Vizualizácia z katalógu</span>
-                    <span className="text-[9px] text-white/40">3D RENDER (HD)</span>
-                  </div>
-                  <a
-                    href={`/catalog/${selectedHall}_render.png`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="Kliknite pre zväčšenie"
-                    className="overflow-hidden rounded border border-white/5 bg-black/60 flex items-center justify-center min-h-[170px] cursor-zoom-in hover:opacity-95 transition"
-                  >
-                    <img
-                      src={`/catalog/${selectedHall}_render.png`}
-                      alt={`Vizualizácia ${selectedHall}`}
-                      className="w-full h-auto max-h-[260px] object-contain"
-                    />
-                  </a>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-black/40 p-2.5 overflow-hidden flex flex-col">
-                  <div className="text-[11px] font-bold text-emerald-300 mb-1.5 flex items-center justify-between">
-                    <span>2. Výkres rámu a kót</span>
-                    <span className="text-[9px] text-white/40">CAD SCHEMA (HD)</span>
-                  </div>
-                  <a
-                    href={`/catalog/${selectedHall}_cad_diagram.png`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="Kliknite pre zväčšenie výkresu"
-                    className="overflow-hidden rounded border border-white/10 bg-white p-2 flex items-center justify-center min-h-[170px] shadow-inner cursor-zoom-in hover:opacity-95 transition"
-                  >
-                    <img
-                      src={`/catalog/${selectedHall}_cad_diagram.png`}
-                      alt={`Výkres ${selectedHall}`}
-                      className="w-full h-auto max-h-[260px] object-contain"
-                    />
-                  </a>
-                  <a
-                    href={`/catalog/${selectedHall}_page_main.png`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 text-center text-[10px] text-emerald-300 hover:text-emerald-200 bg-emerald-500/15 border border-emerald-500/30 rounded py-1 px-2 font-mono flex items-center justify-center gap-1.5 transition"
-                  >
-                    <span>🔍 Zobraziť originálny katalógový list v plnom HD rozlíšení ↗</span>
-                  </a>
-                </div>
-              </div>
-
-              {/* Specification table */}
-              <div className="rounded-lg border border-white/10 bg-white/5 p-4 mb-4 text-xs">
-                <div className="font-bold text-emerald-300 mb-2.5">Presné parametre 1:1 z katalógu GTG:</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 text-white/80">
-                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
-                    <span className="text-white/60">Šírka A:</span>
-                    <span className="font-bold text-white">{curHall.width} m ({(curHall.width * 1000).toFixed(0)} mm)</span>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
-                    <span className="text-white/60">Modul C:</span>
-                    <span className="font-bold text-white">{curHall.moduleLength} m</span>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
-                    <span className="text-white/60">Min. dĺžka B:</span>
-                    <span className="font-bold text-white">&gt; {curHall.minLength} m</span>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
-                    <span className="text-white/60">Hlavný rám:</span>
-                    <span className="font-bold text-white">{curHall.framework}</span>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
-                    <span className="text-white/60">Štítové stĺpy:</span>
-                    <span className="font-bold text-white">{curHall.gablePillars}</span>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
-                    <span className="text-white/60">Sklon:</span>
-                    <span className="font-bold text-white">{curHall.roofPitchDeg}°</span>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
-                    <span className="text-white/60">Zavetrovanie:</span>
-                    <span className="font-bold text-white">{curHall.bracing || "ø10.7"}</span>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
-                    <span className="text-white/60">Ťahadlá:</span>
-                    <span className="font-bold text-white">{curHall.tieRods || "ø16"}</span>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-start sm:gap-2 bg-black/30 sm:bg-transparent px-2 py-1 sm:p-0 rounded">
-                    <span className="text-white/60">Zóny:</span>
-                    <span className="font-bold text-white">Sneh {curHall.snowZone} / Vietor {curHall.windZone}</span>
-                  </div>
-                </div>
-
-                {curHall.versions && curHall.versions.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-white/10">
-                    <div className="font-semibold text-white/60 mb-2">Dostupné výškové verzie:</div>
-                    <div className="flex flex-wrap gap-2">
-                      {curHall.versions.map((ver) => {
-                        const isCur = Math.abs(ver.H - (typedParams.clearHeight ?? 0)) < 0.05;
-                        return (
-                          <button
-                            key={ver.label}
-                            onClick={() => {
-                              const isShed = curHall.type === "shed";
-                              const gateW = isShed ? Math.min(3.0, curHall.width * 0.5) : (ver.E ?? 4.8);
-                              const gateH = isShed
-                                ? (ver.H4 ? Math.min(ver.H4 - 0.15, 3.2) : 2.5)
-                                : (ver.H2 ? Math.min(ver.H2 - 0.15, 4.8) : Math.min(3.8, ver.H - 0.2));
-                              const bays = curHall.defaultBays ?? (curHall.name === "KD8" ? 5 : 4);
-                              const len = curHall.defaultLength ?? (bays * curHall.moduleLength);
-                              (setParams as any)({
-                                showStructure: true,
-                                showCladding: false,
-                                showAccessories: false,
-                                clearHeight: ver.H,
-                                hallHeight: `${ver.poleHeight}m`,
-                                doorWidth: gateW,
-                                doorHeight: gateH,
-                                bayCount: bays,
-                                length: len,
-                              });
-                            }}
-                            className={`rounded px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                              isCur
-                                ? "bg-emerald-400 text-slate-900 shadow-md ring-2 ring-emerald-300"
-                                : "bg-white/10 text-white hover:bg-white/20 border border-white/10"
-                            }`}
-                          >
-                            ✓ Nastaviť 1:1: {ver.label} (H={ver.H}m, H1={ver.H1}m, H2={ver.H2}m)
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Close Button */}
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setShowCatalogModal(false)}
-                  className="rounded bg-emerald-500 px-4 py-2 text-xs font-bold text-slate-900 hover:bg-emerald-400 transition-colors cursor-pointer"
-                >
-                  Hotovo, pokračovať v konfigurácii
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      <HallCatalogModal
+        isOpen={showCatalogModal}
+        onClose={() => setShowCatalogModal(false)}
+        selectedHall={selectedHall}
+        hallsConfig={hallsConfig}
+        typedParams={typedParams}
+        onApplyVersion={(params) => (setParams as any)(params)}
+      />
       {/* AR Modal */}
       <ArModal
         isOpen={showArModal}
