@@ -52,7 +52,7 @@ export function ProductPicker({
           >
             <div className="h-40 overflow-hidden bg-[#ececec] flex items-center justify-center">
               <img
-                src={`${imageCatalog}/vlastna_garaz.png`}
+                src={`${imageCatalog}/vlastna_garaz.png?v=3`}
                 alt="Vlastná garáž"
                 loading="lazy"
                 className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
@@ -97,7 +97,7 @@ export function ProductPicker({
               >
                 <div className="h-40 overflow-hidden bg-[#161b22]">
                   <img
-                    src={`${imageCatalog}/${name}_render.png`}
+                    src={`${imageCatalog}/${name}_render.png?v=3`}
                     alt={`Katalóg ${name}`}
                     loading="lazy"
                     className="h-full w-full object-cover transition duration-500 group-hover:scale-105"

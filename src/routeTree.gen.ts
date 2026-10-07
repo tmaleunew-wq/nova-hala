@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VyhodnotenieRouteImport } from './routes/vyhodnotenie'
+import { Route as Variant3RouteImport } from './routes/variant3'
 import { Route as Variant2RouteImport } from './routes/variant2'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -17,6 +18,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const VyhodnotenieRoute = VyhodnotenieRouteImport.update({
   id: '/vyhodnotenie',
   path: '/vyhodnotenie',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Variant3Route = Variant3RouteImport.update({
+  id: '/variant3',
+  path: '/variant3',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Variant2Route = Variant2RouteImport.update({
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/variant2': typeof Variant2Route
+  '/variant3': typeof Variant3Route
   '/vyhodnotenie': typeof VyhodnotenieRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/variant2': typeof Variant2Route
+  '/variant3': typeof Variant3Route
   '/vyhodnotenie': typeof VyhodnotenieRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/variant2': typeof Variant2Route
+  '/variant3': typeof Variant3Route
   '/vyhodnotenie': typeof VyhodnotenieRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/variant2' | '/vyhodnotenie'
+  fullPaths: '/' | '/admin' | '/variant2' | '/variant3' | '/vyhodnotenie'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/variant2' | '/vyhodnotenie'
-  id: '__root__' | '/' | '/admin' | '/variant2' | '/vyhodnotenie'
+  to: '/' | '/admin' | '/variant2' | '/variant3' | '/vyhodnotenie'
+  id: '__root__' | '/' | '/admin' | '/variant2' | '/variant3' | '/vyhodnotenie'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   Variant2Route: typeof Variant2Route
+  Variant3Route: typeof Variant3Route
   VyhodnotenieRoute: typeof VyhodnotenieRoute
 }
 
@@ -76,6 +86,13 @@ declare module '@tanstack/react-router' {
       path: '/vyhodnotenie'
       fullPath: '/vyhodnotenie'
       preLoaderRoute: typeof VyhodnotenieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/variant3': {
+      id: '/variant3'
+      path: '/variant3'
+      fullPath: '/variant3'
+      preLoaderRoute: typeof Variant3RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/variant2': {
@@ -106,6 +123,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   Variant2Route: Variant2Route,
+  Variant3Route: Variant3Route,
   VyhodnotenieRoute: VyhodnotenieRoute,
 }
 export const routeTree = rootRouteImport

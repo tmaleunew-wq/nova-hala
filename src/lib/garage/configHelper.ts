@@ -1,6 +1,7 @@
 import defaultConfig from "@/config/default.json";
 import premiumConfig from "@/config/premium.json";
 import variant2Config from "@/config/variant2.json";
+import variant3Config from "@/config/variant3.json";
 import hallsConfig from "@/config/halls.json";
 
 export interface HallVersion {
@@ -62,6 +63,7 @@ export interface CladdingConfig {
   sandwichPricePerSqM: number;
   trapezoidPricePerSqM: number;
   imageCatalog?: string;
+  catalogWithCladding?: boolean;
 }
 
 export function getCladdingConfig(clientName?: string | null): CladdingConfig {
@@ -69,6 +71,7 @@ export function getCladdingConfig(clientName?: string | null): CladdingConfig {
     default: defaultConfig as CladdingConfig,
     premium: premiumConfig as CladdingConfig,
     variant2: variant2Config as unknown as Partial<CladdingConfig>,
+    variant3: variant3Config as unknown as Partial<CladdingConfig>,
   };
 
   const client = clientName || "default";
@@ -83,4 +86,9 @@ export function getCladdingConfig(clientName?: string | null): CladdingConfig {
 export function getImageCatalog(clientName?: string | null): string {
   const config = getCladdingConfig(clientName);
   return config.imageCatalog || "/catalog";
+}
+
+export function getCatalogWithCladding(clientName?: string | null): boolean {
+  const config = getCladdingConfig(clientName);
+  return config.catalogWithCladding ?? false;
 }

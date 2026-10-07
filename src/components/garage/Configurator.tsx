@@ -14,7 +14,7 @@ import { ArModal } from "./ArModal";
 import { HallCatalogModal } from "./HallCatalogModal";
 import { CatalogInfoCard } from "./CatalogInfoCard";
 import { TopNavigation } from "./TopNavigation";
-import { getHallsConfig, getImageCatalog } from "@/lib/garage/configHelper";
+import { getHallsConfig, getImageCatalog, getCatalogWithCladding } from "@/lib/garage/configHelper";
 import { Scene, CameraRig, type ViewPreset } from "./GarageScene";
 
 function getParamsFromURL(): Partial<GarageParams> {
@@ -84,7 +84,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   const [initialUrlParams] = useState(() => getParamsFromURL());
   const hallsConfig = getHallsConfig();
   const urlVariant = typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("variant") || new URLSearchParams(window.location.search).get("client")) : null;
-  const activeVariant = variant || (urlVariant === "2" ? "variant2" : urlVariant) || "default";
+  const activeVariant = variant || (urlVariant === "2" ? "variant2" : urlVariant === "3" ? "variant3" : urlVariant) || "default";
   const imageCatalog = getImageCatalog(activeVariant);
   const hallOptions = ["Vlastný", ...Object.keys(hallsConfig)];
   const [selectedHall, setSelectedHall] = useState(initialUrlParams.hallType ?? "Vlastný");
@@ -93,8 +93,9 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   const [showPicker, setShowPicker] = useState(false);
   const [showEnvironment, setShowEnvironment] = useState(false);
   const [showArModal, setShowArModal] = useState(false);
-  const [catalogWithCladding, setCatalogWithCladding] = useState(() => initialUrlParams.showCladding ?? false);
-  const catalogWithCladdingRef = useRef(initialUrlParams.showCladding ?? false);
+  const configWithCladding = getCatalogWithCladding(activeVariant);
+  const [catalogWithCladding, setCatalogWithCladding] = useState(() => initialUrlParams.showCladding ?? configWithCladding);
+  const catalogWithCladdingRef = useRef(initialUrlParams.showCladding ?? configWithCladding);
   const isApplyingRef = useRef(false);
   const applyHallTypeRef = useRef<(v: string, withCladding?: boolean) => void>(() => {});
   useEffect(() => {
@@ -313,11 +314,15 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   }), [selectedHall]);
 
   const applyHallType = (v: string, withCladding?: boolean) => {
-    setSelectedHall(v);
-    const useCladding = withCladding !== undefined ? withCladding : catalogWithCladding;
+    if (isApplyingRef.current) return;
+    isApplyingRef.current = true;
+    const useCladding = withCladding !== undefined ? withCladding : (catalogWithCladdingRef.current || configWithCladding);
+    catalogWithCladdingRef.current = useCladding;
     setCatalogWithCladding(useCladding);
+    setSelectedHall(v);
     if (useCladding) setShowPicker(false);
-    if (v !== "Vlastný" && hallsConfig[v]) {
+    try {
+      if (v !== "Vlastný" && hallsConfig[v]) {
       const h = hallsConfig[v];
       let profSize = 0.10;
       let profThick = 0.004;
@@ -390,10 +395,14 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         doorWidth: DEFAULT_PARAMS.doorWidth,
         doorHeight: DEFAULT_PARAMS.doorHeight,
         hasPersonalDoor: DEFAULT_PARAMS.hasPersonalDoor,
-        hasWindows: DEFAULT_PARAMS.hasWindows,
       });
     }
-  };
+  } finally {
+    setTimeout(() => {
+      isApplyingRef.current = false;
+    }, 100);
+  }
+};
   applyHallTypeRef.current = applyHallType;
   if (typeof window !== "undefined") {
     (window as any).__applyHallType = applyHallType;
@@ -430,12 +439,17 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       length: exactLen,
       bayCount: exactBays,
       showStructure: cleanParams.showStructure ?? (initialUrlParams.showStructure ?? true),
-      showCladding: catalogWithCladding || (cleanParams.showCladding ?? (initialUrlParams.showCladding ?? false)),
-      showAccessories: catalogWithCladding || (cleanParams.showAccessories ?? (initialUrlParams.showAccessories ?? false)),
-      showCatalogDimensions: !catalogWithCladding && (cleanParams.showCatalogDimensions ?? (initialUrlParams.showCatalogDimensions ?? true)),
-      hasPersonalDoor: catalogWithCladding || cleanParams.hasPersonalDoor || false,
-      hasWindows: catalogWithCladding || cleanParams.hasWindows || false,
+      showCladding: configWithCladding || catalogWithCladdingRef.current || catalogWithCladding || (cleanParams.showCladding ?? (initialUrlParams.showCladding ?? false)),
+      showAccessories: configWithCladding || catalogWithCladdingRef.current || catalogWithCladding || (cleanParams.showAccessories ?? (initialUrlParams.showAccessories ?? false)),
+      showCatalogDimensions: (!configWithCladding && !catalogWithCladdingRef.current && !catalogWithCladding) && (cleanParams.showCatalogDimensions ?? (initialUrlParams.showCatalogDimensions ?? true)),
+      hasPersonalDoor: configWithCladding || catalogWithCladdingRef.current || catalogWithCladding || cleanParams.hasPersonalDoor || false,
+      hasWindows: configWithCladding || catalogWithCladdingRef.current || catalogWithCladding || cleanParams.hasWindows || false,
     };
+  }
+
+  if (typeof window !== "undefined") {
+    (window as any).__currentTypedParams = typedParams;
+    (window as any).__exportRef = exportRef;
   }
 
   const togglePanel = (id: string) => {
