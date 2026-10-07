@@ -346,7 +346,14 @@ export function Cladding({
   const sz = p.profileSize;
 
   // openings
-  const doorHole: Rect = { cx: 0, cy: p.doorHeight / 2 + 0.02, w: p.doorWidth, h: p.doorHeight };
+  const isDoubleGate = (p.gateCount ?? 1) === 2;
+  const gateSpacing = Math.min(p.doorWidth * 0.55 + 0.2, (W - p.doorWidth) / 2);
+  const frontDoorHoles: Rect[] = isDoubleGate
+    ? [
+        { cx: -gateSpacing, cy: p.doorHeight / 2 + 0.02, w: p.doorWidth, h: p.doorHeight },
+        { cx: gateSpacing, cy: p.doorHeight / 2 + 0.02, w: p.doorWidth, h: p.doorHeight },
+      ]
+    : [{ cx: 0, cy: p.doorHeight / 2 + 0.02, w: p.doorWidth, h: p.doorHeight }];
   const personalHole: Rect = { cx: getPersonalDoorZ(p), cy: 1.0, w: 0.9, h: 2.0 };
   const winSpread: Rect[] = [];
   if (p.hasWindows && p.windowCount > 0) {
@@ -374,7 +381,7 @@ export function Cladding({
           id="front"
           width={W + sz + panelThickness}
           height={Heave}
-          holes={[doorHole]}
+          holes={frontDoorHoles}
           texture={wallTex}
           color={p.claddingColor}
           wireframe={p.wireframe}
@@ -390,8 +397,11 @@ export function Cladding({
       {/* BACK (z=+L/2), normal +Z */}
       {(() => {
         const backHoles: Rect[] = [];
+        if (p.hasBackDoor) {
+          backHoles.push({ cx: 0, cy: p.doorHeight / 2 + 0.02, w: p.doorWidth, h: p.doorHeight });
+        }
         if (p.personalDoorSide === "back" && p.hasPersonalDoor) {
-          backHoles.push({ cx: 0, cy: 1.0, w: 0.9, h: 2.0 });
+          backHoles.push({ cx: p.hasBackDoor ? W / 4 : 0, cy: 1.0, w: 0.9, h: 2.0 });
         }
         if (p.hasWindows && p.windowSide === "back" && p.windowCount > 0) {
           for (const wRect of winSpread) {

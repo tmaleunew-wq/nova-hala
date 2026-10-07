@@ -135,7 +135,8 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
   // 3. Components
   const basePlatesCount = frames * 2;
   const basePlateCost = basePlatesCount * 12.00;
-  const garageDoorCost = 550.00;
+  const totalGates = (p.gateCount ?? 1) + (p.hasBackDoor ? 1 : 0);
+  const garageDoorCost = totalGates * 550.00;
   const personalDoorCost = p.hasPersonalDoor ? 220.00 : 0.00;
   const windowsCost = p.windowCount * 140.00;
   const foundationCost = p.showFoundation ? (W * L * 65.00) : 0.00;
@@ -199,7 +200,8 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
     ].join("\n");
 
     // ── SECTION 3: Doplnky ──
-    const doorType = `Garážová brána: ${p.doorWidth}x${p.doorHeight}m (${p.sectionalDoorColor})`;
+    const gateTypeLabel = p.gateType === "upAndOver" ? "výklopná" : p.gateType === "doubleLeaf" ? "dvojkrídlová" : "sekčná";
+    const doorType = `Garážová brána: ${totalGates}x ${p.doorWidth}x${p.doorHeight}m (${gateTypeLabel}, ${p.sectionalDoorColor})`;
     const windowVal = p.hasWindows && p.windowCount > 0
       ? `${p.windowCount}x (${p.windowWidth}x${p.windowHeight}m) – ${sideLabel(p.windowSide)} strana`
       : "Žiadne";

@@ -39,6 +39,9 @@ export interface GarageParams {
   // openings
   doorWidth: number;
   doorHeight: number;
+  gateCount?: 1 | 2;
+  gateType?: "sectional" | "upAndOver" | "doubleLeaf";
+  hasBackDoor?: boolean;
   hasPersonalDoor: boolean;
   personalDoorSide: "left" | "right" | "back";
   hasWindows: boolean;
@@ -92,6 +95,9 @@ export const DEFAULT_PARAMS: GarageParams = {
   flashingMatchesPanels: true,
   doorWidth: 2.5,
   doorHeight: 2.2,
+  gateCount: 1,
+  gateType: "sectional",
+  hasBackDoor: false,
   hasPersonalDoor: true,
   personalDoorSide: "right",
   hasWindows: true,

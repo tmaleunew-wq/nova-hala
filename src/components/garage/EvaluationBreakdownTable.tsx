@@ -127,15 +127,21 @@ export function EvaluationBreakdownTable({
           </tr>
 
           {/* Garage Door */}
-          <tr>
-            <td className="py-2.5 pr-2">
-              <div className="font-bold text-slate-200 print:text-black">Sekcionálna garážová brána</div>
-              <div className="text-[10px] text-white/40 print:text-slate-500">Rozmer: {params.doorWidth} × {params.doorHeight} m</div>
-            </td>
-            <td className="py-2.5 text-right font-mono">1 ks</td>
-            <td className="py-2.5 text-right font-mono">{garageDoorCost.toFixed(2)} €</td>
-            <td className="py-2.5 text-right font-mono font-bold text-slate-100 print:text-black">{calculatedGarageDoorCost.toFixed(2)} €</td>
-          </tr>
+          {(() => {
+            const count = (params.gateCount ?? 1) + (params.hasBackDoor ? 1 : 0);
+            const gateName = params.gateType === "upAndOver" ? "Výklopná garážová brána" : params.gateType === "doubleLeaf" ? "Dvojkrídlová garážová brána" : "Sekcionálna garážová brána";
+            return (
+              <tr>
+                <td className="py-2.5 pr-2">
+                  <div className="font-bold text-slate-200 print:text-black">{gateName}</div>
+                  <div className="text-[10px] text-white/40 print:text-slate-500">Rozmer: {params.doorWidth} × {params.doorHeight} m {params.hasBackDoor ? "(vrátane zadnej brány)" : ""}</div>
+                </td>
+                <td className="py-2.5 text-right font-mono">{count} ks</td>
+                <td className="py-2.5 text-right font-mono">{garageDoorCost.toFixed(2)} €</td>
+                <td className="py-2.5 text-right font-mono font-bold text-slate-100 print:text-black">{(calculatedGarageDoorCost * count).toFixed(2)} €</td>
+              </tr>
+            );
+          })()}
 
           {/* Personal Door */}
           {params.hasPersonalDoor && (

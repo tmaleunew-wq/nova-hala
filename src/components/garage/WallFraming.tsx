@@ -96,7 +96,13 @@ export function WallFraming({
     if (!isTubularBraced) {
       frontCuts.length = 0;
       if (h < p.doorHeight) {
-        frontCuts.push({ start: x_L_post, end: x_R_post });
+        if ((p.gateCount ?? 1) === 2) {
+          const spacing = Math.min(p.doorWidth * 0.55 + 0.2, (p.width - p.doorWidth) / 2);
+          frontCuts.push({ start: -spacing - p.doorWidth / 2, end: -spacing + p.doorWidth / 2 });
+          frontCuts.push({ start: spacing - p.doorWidth / 2, end: spacing + p.doorWidth / 2 });
+        } else {
+          frontCuts.push({ start: x_L_post, end: x_R_post });
+        }
       }
       const frontGirts = subtractIntervals(hxL, hxR, frontCuts);
       for (const seg of frontGirts) {
@@ -114,10 +120,13 @@ export function WallFraming({
       }
     }
 
-    // 2. BACK WALL (z = L/2) - Cut by personal door if on back or windows if on back
+    // 2. BACK WALL (z = L/2) - Cut by personal door if on back or windows if on back or back gate
     backCuts.length = 0;
+    if (p.hasBackDoor && h < p.doorHeight) {
+      backCuts.push({ start: -p.doorWidth / 2, end: p.doorWidth / 2 });
+    }
     if (p.personalDoorSide === "back" && p.hasPersonalDoor && h < 2.0) {
-      backCuts.push({ start: -0.45, end: 0.45 });
+      backCuts.push({ start: p.hasBackDoor ? p.width / 4 - 0.45 : -0.45, end: p.hasBackDoor ? p.width / 4 + 0.45 : 0.45 });
     }
     if (p.hasWindows && p.windowSide === "back" && p.windowCount > 0) {
       const winXs = getWindowCoords(p);

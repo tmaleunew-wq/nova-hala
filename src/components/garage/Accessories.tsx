@@ -6,19 +6,29 @@ import { ridgeHeight, highEave, getFrameZ, getPersonalDoorZ, getWindowZs, getWin
 import { createPBRCladdingMaterial, createPBRSmoothMaterial } from "@/lib/garage/pbrMaterialHelper";
 import { FlashingsAndGutters } from "./FlashingsAndGutters";
 
-/** Sectional door panels (front). */
-function SectionalDoor({ p, explodeY }: { p: GarageParams; explodeY: number }) {
+/** Garage door supporting Sectional, Up & Over (Výklopná), and Double-leaf (Dvojkrídlová) types */
+function GarageDoor({
+  p,
+  cx,
+  cz,
+  rotY = 0,
+}: {
+  p: GarageParams;
+  cx: number;
+  cz: number;
+  rotY?: number;
+}) {
+  const gateType = p.gateType || "sectional";
   const panels = 4;
   const panelH = p.doorHeight / panels;
-  const z = -p.length / 2 - 0.025 + explodeY * -2.2;
 
   // Local state for smooth animation
   const progressRef = useRef(0);
   const [currentProgress, setCurrentProgress] = useState(0);
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     const target = p.doorOpen ? 1 : 0;
-    const speed = 2.0; // speed of animation (takes 0.5s to fully open)
+    const speed = 2.0;
     const diff = target - progressRef.current;
     if (Math.abs(diff) > 0.001) {
       progressRef.current += Math.sign(diff) * Math.min(Math.abs(diff), speed * delta);
@@ -29,68 +39,170 @@ function SectionalDoor({ p, explodeY }: { p: GarageParams; explodeY: number }) {
     }
   });
 
-  const R = 0.25; // radius of track curvature
+  const R = 0.25;
   const y_c = p.doorHeight - R;
-  const curveLength = R * Math.PI / 2;
-  const travelDistance = currentProgress * (p.doorHeight - 0.05); // slightly less than full height to keep some guidance
+  const curveLength = (R * Math.PI) / 2;
+  const travelDistance = currentProgress * (p.doorHeight - 0.05);
 
   return (
-    <group position={[0, 0, z]}>
-      {Array.from({ length: panels }).map((_, i) => {
-        const baseY = 0.02 + i * panelH + panelH / 2;
-        const u = baseY + travelDistance;
+    <group position={[cx, 0, cz]} rotation={[0, rotY, 0]}>
+      {/* 1. SEKČNÁ BRÁNA */}
+      {gateType === "sectional" && (
+        <>
+          {Array.from({ length: panels }).map((_, i) => {
+            const baseY = 0.02 + i * panelH + panelH / 2;
+            const u = baseY + travelDistance;
 
-        let panelY = baseY;
-        let panelZ = 0;
-        let rotX = 0;
+            let panelY = baseY;
+            let panelZ = 0;
+            let rotX = 0;
 
-        if (u < y_c) {
-          // Vertical section
-          panelY = u;
-          panelZ = 0;
-          rotX = 0;
-        } else if (u < y_c + curveLength) {
-          // Curved section
-          const alpha = (u - y_c) / R; // angle from 0 to pi/2
-          panelY = y_c + R * Math.sin(alpha);
-          panelZ = R - R * Math.cos(alpha);
-          rotX = -alpha;
-        } else {
-          // Horizontal section
-          const dHoriz = u - (y_c + curveLength);
-          panelY = p.doorHeight;
-          panelZ = R + dHoriz;
-          rotX = -Math.PI / 2;
-        }
+            if (u < y_c) {
+              panelY = u;
+              panelZ = 0;
+              rotX = 0;
+            } else if (u < y_c + curveLength) {
+              const alpha = (u - y_c) / R;
+              panelY = y_c + R * Math.sin(alpha);
+              panelZ = R - R * Math.cos(alpha);
+              rotX = -alpha;
+            } else {
+              const dHoriz = u - (y_c + curveLength);
+              panelY = p.doorHeight;
+              panelZ = R + dHoriz;
+              rotX = -Math.PI / 2;
+            }
 
+            return (
+              <mesh
+                key={i}
+                position={[0, panelY, panelZ]}
+                rotation={[rotX, 0, 0]}
+                castShadow
+                receiveShadow
+              >
+                <boxGeometry args={[p.doorWidth, panelH - 0.01, 0.04]} />
+                <meshStandardMaterial
+                  color={p.sectionalDoorColor}
+                  metalness={0.7}
+                  roughness={0.4}
+                  wireframe={p.wireframe}
+                />
+              </mesh>
+            );
+          })}
+
+          {/* Tracks */}
+          {[-1, 1].map((s) => (
+            <group key={s}>
+              <mesh position={[(s * p.doorWidth) / 2, p.doorHeight / 2 + 0.02, 0.02]} castShadow>
+                <boxGeometry args={[0.04, p.doorHeight, 0.02]} />
+                <meshStandardMaterial color="#3a3f47" metalness={0.8} roughness={0.4} wireframe={p.wireframe} />
+              </mesh>
+              <mesh position={[(s * p.doorWidth) / 2, p.doorHeight + 0.02, p.doorHeight / 2 + 0.02]} castShadow>
+                <boxGeometry args={[0.02, 0.02, p.doorHeight]} />
+                <meshStandardMaterial color="#3a3f47" metalness={0.8} roughness={0.4} wireframe={p.wireframe} />
+              </mesh>
+            </group>
+          ))}
+        </>
+      )}
+
+      {/* 2. VÝKLOPNÁ BRÁNA (Up & Over) */}
+      {gateType === "upAndOver" && (() => {
+        const tiltAngle = -currentProgress * (Math.PI / 2.15);
+        const tiltY = 0.02 + p.doorHeight / 2 + currentProgress * (p.doorHeight / 2.2);
+        const tiltZ = currentProgress * (p.doorHeight * 0.65);
         return (
-          <mesh 
-            key={i} 
-            position={[0, panelY, panelZ]} 
-            rotation={[rotX, 0, 0]}
-            castShadow 
-            receiveShadow
-          >
-            <boxGeometry args={[p.doorWidth, panelH - 0.01, 0.04]} />
-            <meshStandardMaterial color={p.sectionalDoorColor} metalness={0.7} roughness={0.4} wireframe={p.wireframe} />
-          </mesh>
+          <group position={[0, tiltY, tiltZ]} rotation={[tiltAngle, 0, 0]}>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[p.doorWidth - 0.02, p.doorHeight - 0.02, 0.04]} />
+              <meshStandardMaterial
+                color={p.sectionalDoorColor}
+                metalness={0.7}
+                roughness={0.4}
+                wireframe={p.wireframe}
+              />
+            </mesh>
+            {/* Obvodový rám výklopnej brány */}
+            <mesh position={[0, 0, 0.005]}>
+              <boxGeometry args={[p.doorWidth, p.doorHeight, 0.015]} />
+              <meshStandardMaterial color="#1a1c20" metalness={0.8} roughness={0.5} wireframe={p.wireframe} />
+            </mesh>
+            {/* Madlo a zámok v strede dole */}
+            <group position={[0, -p.doorHeight / 2 + 0.35, 0.035]}>
+              <mesh castShadow>
+                <boxGeometry args={[0.16, 0.035, 0.03]} />
+                <meshStandardMaterial color="#111111" metalness={0.9} roughness={0.2} />
+              </mesh>
+              <mesh position={[0, 0.04, 0]}>
+                <cylinderGeometry args={[0.012, 0.012, 0.01, 16]} />
+                <meshStandardMaterial color="#silver" metalness={0.9} roughness={0.1} />
+              </mesh>
+            </group>
+          </group>
         );
-      })}
-      {/* door tracks */}
-      {[-1, 1].map((s) => (
-        <group key={s}>
-          {/* Vertical track */}
-          <mesh position={[(s * p.doorWidth) / 2, p.doorHeight / 2 + 0.02, 0.02]} castShadow>
-            <boxGeometry args={[0.04, p.doorHeight, 0.02]} />
-            <meshStandardMaterial color="#3a3f47" metalness={0.8} roughness={0.4} wireframe={p.wireframe} />
-          </mesh>
-          {/* Horizontal track under the ceiling */}
-          <mesh position={[(s * p.doorWidth) / 2, p.doorHeight + 0.02, p.doorHeight / 2 + 0.02]} castShadow>
-            <boxGeometry args={[0.02, 0.02, p.doorHeight]} />
-            <meshStandardMaterial color="#3a3f47" metalness={0.8} roughness={0.4} wireframe={p.wireframe} />
-          </mesh>
-        </group>
-      ))}
+      })()}
+
+      {/* 3. DVOJKRÍDLOVÁ BRÁNA (Double-leaf) */}
+      {gateType === "doubleLeaf" && (() => {
+        const leafW = (p.doorWidth - 0.02) / 2;
+        const swingAngle = currentProgress * (Math.PI * 0.5);
+        return (
+          <group position={[0, 0.02 + p.doorHeight / 2, 0]}>
+            {/* Ľavé krídlo */}
+            <group position={[-p.doorWidth / 2, 0, 0]} rotation={[0, swingAngle, 0]}>
+              <mesh position={[leafW / 2, 0, 0]} castShadow receiveShadow>
+                <boxGeometry args={[leafW, p.doorHeight - 0.02, 0.04]} />
+                <meshStandardMaterial
+                  color={p.sectionalDoorColor}
+                  metalness={0.7}
+                  roughness={0.4}
+                  wireframe={p.wireframe}
+                />
+              </mesh>
+              {/* Pánty */}
+              {[-0.4, 0.4].map((py, idx) => (
+                <mesh key={idx} position={[0.01, py * (p.doorHeight / 2), 0.025]}>
+                  <cylinderGeometry args={[0.015, 0.015, 0.08, 16]} />
+                  <meshStandardMaterial color="#222" metalness={0.8} roughness={0.3} />
+                </mesh>
+              ))}
+            </group>
+
+            {/* Pravé krídlo s kľučkou */}
+            <group position={[p.doorWidth / 2, 0, 0]} rotation={[0, -swingAngle, 0]}>
+              <mesh position={[-leafW / 2, 0, 0]} castShadow receiveShadow>
+                <boxGeometry args={[leafW, p.doorHeight - 0.02, 0.04]} />
+                <meshStandardMaterial
+                  color={p.sectionalDoorColor}
+                  metalness={0.7}
+                  roughness={0.4}
+                  wireframe={p.wireframe}
+                />
+              </mesh>
+              {/* Kľučka na pravom krídle */}
+              <group position={[-leafW + 0.1, -0.1, 0.035]}>
+                <mesh castShadow>
+                  <boxGeometry args={[0.03, 0.14, 0.015]} />
+                  <meshStandardMaterial color="#1a1a1a" metalness={0.8} roughness={0.3} />
+                </mesh>
+                <mesh position={[-0.04, 0.03, 0.02]} rotation={[0, 0, 0]} castShadow>
+                  <boxGeometry args={[0.1, 0.02, 0.02]} />
+                  <meshStandardMaterial color="# silver" metalness={0.9} roughness={0.1} />
+                </mesh>
+              </group>
+              {/* Pánty */}
+              {[-0.4, 0.4].map((py, idx) => (
+                <mesh key={idx} position={[-0.01, py * (p.doorHeight / 2), 0.025]}>
+                  <cylinderGeometry args={[0.015, 0.015, 0.08, 16]} />
+                  <meshStandardMaterial color="#222" metalness={0.8} roughness={0.3} />
+                </mesh>
+              ))}
+            </group>
+          </group>
+        );
+      })()}
     </group>
   );
 }
@@ -299,9 +411,23 @@ function Windows({ p, explodeY }: { p: GarageParams; explodeY: number }) {
 }
 
 export function Accessories({ p, explodeY }: { p: GarageParams; explodeY: number }) {
+  const gateCount = p.gateCount || 1;
+  const isDouble = gateCount === 2;
+  const W = p.width;
+  const L = p.length;
+  const zFront = -L / 2 - 0.025 + explodeY * -2.2;
+  const zBack = L / 2 + 0.025 + explodeY * 2.2;
+  const gateSpacing = Math.min(p.doorWidth * 0.55 + 0.2, (W - p.doorWidth) / 2);
+  const frontGatesX = isDouble ? [-gateSpacing, gateSpacing] : [0];
+
   return (
     <group>
-      <SectionalDoor p={p} explodeY={explodeY} />
+      {frontGatesX.map((gx, idx) => (
+        <GarageDoor key={`gate-front-${idx}`} p={p} cx={gx} cz={zFront} rotY={0} />
+      ))}
+      {p.hasBackDoor && (
+        <GarageDoor key="gate-back" p={p} cx={0} cz={zBack} rotY={Math.PI} />
+      )}
       <PersonalDoor p={p} explodeY={explodeY} />
       <Windows p={p} explodeY={explodeY} />
       {p.showCladding && (
