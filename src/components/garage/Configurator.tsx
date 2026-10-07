@@ -131,10 +131,10 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   const [params, setParams] = useControls(() => ({
     "Zobrazenie": folder({
       showStructure: { value: initialUrlParams.showStructure ?? true, label: "Konštrukcia" },
-      showCladding: { value: initialUrlParams.showCladding ?? (isCatalog ? false : DEFAULT_PARAMS.showCladding), label: "Opláštenie" },
-      showAccessories: { value: initialUrlParams.showAccessories ?? (isCatalog ? false : DEFAULT_PARAMS.showAccessories), label: "Príslušenstvo" },
+      showCladding: { value: initialUrlParams.showCladding ?? (isCatalog ? configWithCladding : DEFAULT_PARAMS.showCladding), label: "Opláštenie" },
+      showAccessories: { value: initialUrlParams.showAccessories ?? (isCatalog ? configWithCladding : DEFAULT_PARAMS.showAccessories), label: "Príslušenstvo" },
       showFoundation: { value: initialUrlParams.showFoundation ?? DEFAULT_PARAMS.showFoundation, label: "Základová doska" },
-      showCatalogDimensions: { value: initialUrlParams.showCatalogDimensions ?? (isCatalog ? true : false), label: "Kóty A-B-C" },
+      showCatalogDimensions: { value: initialUrlParams.showCatalogDimensions ?? (isCatalog ? !configWithCladding : false), label: "Kóty A-B-C" },
       wireframe: { value: initialUrlParams.wireframe ?? DEFAULT_PARAMS.wireframe, label: "Wireframe" },
       explode: { value: initialUrlParams.explode ?? DEFAULT_PARAMS.explode, min: 0, max: 1, step: 0.01, label: "Exploded view" },
     }, { collapsed: true }),
@@ -439,11 +439,11 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       length: exactLen,
       bayCount: exactBays,
       showStructure: cleanParams.showStructure ?? (initialUrlParams.showStructure ?? true),
-      showCladding: configWithCladding || catalogWithCladdingRef.current || catalogWithCladding || (cleanParams.showCladding ?? (initialUrlParams.showCladding ?? false)),
-      showAccessories: configWithCladding || catalogWithCladdingRef.current || catalogWithCladding || (cleanParams.showAccessories ?? (initialUrlParams.showAccessories ?? false)),
-      showCatalogDimensions: (!configWithCladding && !catalogWithCladdingRef.current && !catalogWithCladding) && (cleanParams.showCatalogDimensions ?? (initialUrlParams.showCatalogDimensions ?? true)),
-      hasPersonalDoor: configWithCladding || catalogWithCladdingRef.current || catalogWithCladding || cleanParams.hasPersonalDoor || false,
-      hasWindows: configWithCladding || catalogWithCladdingRef.current || catalogWithCladding || cleanParams.hasWindows || false,
+      showCladding: cleanParams.showCladding !== undefined ? cleanParams.showCladding : (configWithCladding || (initialUrlParams.showCladding ?? false)),
+      showAccessories: cleanParams.showAccessories !== undefined ? cleanParams.showAccessories : (configWithCladding || (initialUrlParams.showAccessories ?? false)),
+      showCatalogDimensions: cleanParams.showCatalogDimensions !== undefined ? cleanParams.showCatalogDimensions : (!configWithCladding && (initialUrlParams.showCatalogDimensions ?? true)),
+      hasPersonalDoor: cleanParams.hasPersonalDoor !== undefined ? cleanParams.hasPersonalDoor : configWithCladding,
+      hasWindows: cleanParams.hasWindows !== undefined ? cleanParams.hasWindows : configWithCladding,
     };
   }
 

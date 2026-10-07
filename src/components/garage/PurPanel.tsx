@@ -39,6 +39,7 @@ export function PurPanel({
   thickness = 0.08,
   wireframe = false,
   visible = true,
+  onToggle,
   isSandwich = true,
   claddingOrientation = "vertical",
   panelType,
@@ -192,6 +193,10 @@ export function PurPanel({
         receiveShadow={false}
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggle?.();
+        }}
       >
         <boxGeometry args={[width, height, thickness]} />
         <meshStandardMaterial
@@ -205,7 +210,14 @@ export function PurPanel({
   }
 
   return (
-    <group onPointerOver={handlePointerOver} onPointerOut={handlePointerOut}>
+    <group
+      onPointerOver={handlePointerOver}
+      onPointerOut={handlePointerOut}
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle?.();
+      }}
+    >
       <mesh geometry={outerGeom} castShadow receiveShadow material={pbrMaterial || undefined}>
         {wireframe && (
           <meshStandardMaterial color={activeColorStr} side={THREE.DoubleSide} wireframe />

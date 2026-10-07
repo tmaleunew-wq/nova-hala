@@ -124,6 +124,7 @@ function PurGableTriangle({
       <mesh
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
+        onClick={(e) => { e.stopPropagation(); onToggle?.(); }}
       >
         <meshStandardMaterial
           color={hovered ? "#34d399" : "#3b82f6"}
@@ -139,6 +140,7 @@ function PurGableTriangle({
     <group
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
+      onClick={(e) => { e.stopPropagation(); onToggle?.(); }}
     >
       <mesh geometry={outerGeom} castShadow receiveShadow material={pbrMaterial || undefined}>
         {wireframe && <meshStandardMaterial color={activeColorStr} side={THREE.DoubleSide} wireframe />}
@@ -277,6 +279,7 @@ function PurShedTriangle({
         geometry={outerGeom}
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
+        onClick={(e) => { e.stopPropagation(); onToggle?.(); }}
       >
         <meshStandardMaterial
           color={hovered ? "#34d399" : "#3b82f6"}
@@ -292,6 +295,7 @@ function PurShedTriangle({
     <group
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
+      onClick={(e) => { e.stopPropagation(); onToggle?.(); }}
     >
       <mesh geometry={outerGeom} castShadow receiveShadow material={pbrMaterial || undefined}>
         {wireframe && <meshStandardMaterial color={activeColorStr} side={THREE.DoubleSide} wireframe />}
