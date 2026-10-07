@@ -414,7 +414,7 @@ function Windows({ p, explodeY }: { p: GarageParams; explodeY: number }) {
 }
 
 export function Accessories({ p, explodeY }: { p: GarageParams; explodeY: number }) {
-  const gateCount = p.gateCount || 1;
+  const gateCount = Number(p.gateCount) || 1;
   const isDouble = gateCount === 2;
   const W = p.width;
   const L = p.length;

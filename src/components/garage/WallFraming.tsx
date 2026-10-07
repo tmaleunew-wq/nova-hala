@@ -234,72 +234,99 @@ export function WallFraming({
     y_right_post = Heave + (x_R_post - hxL) * Math.tan(angleShed);
   }
 
+  const isDouble = Number(p.gateCount ?? 1) === 2;
+  const dLayout = isDouble ? getDoubleGateLayout(p.width, p.doorWidth) : null;
+  const halfDoor = dLayout ? dLayout.actualDoorW / 2 : 0;
+
+  const getPostY = (x: number) => {
+    if (p.roofType === "gable") {
+      return Heave + (halfW - Math.abs(x)) * Math.tan(slopeAngle);
+    }
+    const angleShed = Math.atan2(Hhi - Heave, p.width);
+    return Heave + (x - hxL) * Math.tan(angleShed);
+  };
+
+  const frontPostXs = isDouble && dLayout
+    ? [dLayout.leftCx - halfDoor, dLayout.leftCx + halfDoor, dLayout.rightCx - halfDoor, dLayout.rightCx + halfDoor]
+    : [x_L_post, x_R_post];
+
   // Front Gable Pillars (štítové stĺpy predné)
-  out.push(
-    <SteelTube
-      key="gable-post-front-L"
-      from={[x_L_post, 0, -L / 2]}
-      to={[x_L_post, y_left_post, -L / 2]}
-      size={sz}
-      thickness={th}
-      color={col}
-      wireframe={wf}
-    />,
-  );
-  out.push(
-    <SteelPlate
-      key="gable-plate-front-L"
-      position={[x_L_post, 0.006, -L / 2]}
-      size={[sz * 2.2, 0.012, sz * 2.2]}
-      color={col}
-      wireframe={wf}
-    />,
-  );
-  out.push(
-    <SteelTube
-      key="gable-post-front-R"
-      from={[x_R_post, 0, -L / 2]}
-      to={[x_R_post, y_right_post, -L / 2]}
-      size={sz}
-      thickness={th}
-      color={col}
-      wireframe={wf}
-    />,
-  );
-  out.push(
-    <SteelPlate
-      key="gable-plate-front-R"
-      position={[x_R_post, 0.006, -L / 2]}
-      size={[sz * 2.2, 0.012, sz * 2.2]}
-      color={col}
-      wireframe={wf}
-    />,
-  );
-  if (p.doorHeight > 0 && !isTubularBraced) {
-    const doorTop = Math.min(p.doorHeight, y_left_post - 0.2);
+  frontPostXs.forEach((xPos, idx) => {
+    const yTop = getPostY(xPos);
     out.push(
       <SteelTube
-        key="door-frame-top"
-        from={[x_L_post, doorTop, -L / 2]}
-        to={[x_R_post, doorTop, -L / 2]}
+        key={`gable-post-front-${idx}`}
+        from={[xPos, 0, -L / 2]}
+        to={[xPos, yTop, -L / 2]}
         size={sz}
         thickness={th}
         color={col}
         wireframe={wf}
       />,
     );
-    if (!currentHall && p.roofType === "gable" && Hridge > doorTop) {
+    out.push(
+      <SteelPlate
+        key={`gable-plate-front-${idx}`}
+        position={[xPos, 0.006, -L / 2]}
+        size={[sz * 2.2, 0.012, sz * 2.2]}
+        color={col}
+        wireframe={wf}
+      />,
+    );
+  });
+
+  if (p.doorHeight > 0 && !isTubularBraced) {
+    if (isDouble && dLayout) {
+      const doorTopL = Math.min(p.doorHeight, getPostY(dLayout.leftCx) - 0.2);
+      const doorTopR = Math.min(p.doorHeight, getPostY(dLayout.rightCx) - 0.2);
       out.push(
         <SteelTube
-          key="door-frame-ridge-strut"
-          from={[0, doorTop, -L / 2]}
-          to={[0, Hridge, -L / 2]}
+          key="door-frame-top-L"
+          from={[dLayout.leftCx - halfDoor, doorTopL, -L / 2]}
+          to={[dLayout.leftCx + halfDoor, doorTopL, -L / 2]}
           size={sz}
           thickness={th}
           color={col}
           wireframe={wf}
         />,
       );
+      out.push(
+        <SteelTube
+          key="door-frame-top-R"
+          from={[dLayout.rightCx - halfDoor, doorTopR, -L / 2]}
+          to={[dLayout.rightCx + halfDoor, doorTopR, -L / 2]}
+          size={sz}
+          thickness={th}
+          color={col}
+          wireframe={wf}
+        />,
+      );
+    } else {
+      const doorTop = Math.min(p.doorHeight, y_left_post - 0.2);
+      out.push(
+        <SteelTube
+          key="door-frame-top"
+          from={[x_L_post, doorTop, -L / 2]}
+          to={[x_R_post, doorTop, -L / 2]}
+          size={sz}
+          thickness={th}
+          color={col}
+          wireframe={wf}
+        />,
+      );
+      if (!currentHall && p.roofType === "gable" && Hridge > doorTop) {
+        out.push(
+          <SteelTube
+            key="door-frame-ridge-strut"
+            from={[0, doorTop, -L / 2]}
+            to={[0, Hridge, -L / 2]}
+            size={sz}
+            thickness={th}
+            color={col}
+            wireframe={wf}
+          />,
+        );
+      }
     }
   }
 

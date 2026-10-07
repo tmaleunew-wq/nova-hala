@@ -346,7 +346,7 @@ export function Cladding({
   const sz = p.profileSize;
 
   // openings
-  const isDoubleGate = (p.gateCount ?? 1) === 2;
+  const isDoubleGate = Number(p.gateCount ?? 1) === 2;
   const dLayout = getDoubleGateLayout(W, p.doorWidth);
   const frontDoorHoles: Rect[] = isDoubleGate
     ? [

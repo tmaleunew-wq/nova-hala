@@ -69,6 +69,9 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   const [quoteRequestSignal, setQuoteRequestSignal] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [notes, setNotes] = useState(initialUrlParams.notes ?? "");
+  const [gateCountState, setGateCountState] = useState<number>(() => Number(initialUrlParams.gateCount) || 1);
+  const [gateTypeState, setGateTypeState] = useState<string>(() => initialUrlParams.gateType ?? "sectional");
+  const [hasBackDoorState, setHasBackDoorState] = useState<boolean>(() => !!initialUrlParams.hasBackDoor);
   const [isSummaryOpen, setIsSummaryOpen] = useState(true);
   const [showControls, setShowControls] = useState(false);
   const [showHallSpecs, setShowHallSpecs] = useState(false);
@@ -271,12 +274,15 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     }, { collapsed: true }),
     "Dvere a okná": folder({
       gateCount: {
-        value: isCatalog ? 1 : (initialUrlParams.gateCount ?? DEFAULT_PARAMS.gateCount ?? 1),
+        value: isCatalog ? 1 : gateCountState,
         options: { "1 brána": 1, "2 brány (dvojgaráž)": 2 },
         label: "Počet brán",
         disabled: !isCustom,
+        transient: false,
         onChange: (val) => {
-          if (val === 2 && isCustom) {
+          const num = Number(val);
+          setGateCountState(num);
+          if (num === 2 && isCustom) {
             const curW = params.width ?? 4;
             if (curW < 5.8) {
               (setParams as any)({ width: 6.0, doorWidth: 2.5 });
@@ -285,15 +291,23 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         },
       },
       gateType: {
-        value: isCatalog ? "sectional" : (initialUrlParams.gateType ?? DEFAULT_PARAMS.gateType ?? "sectional"),
+        value: isCatalog ? "sectional" : gateTypeState,
         options: { "Sekčná s pohonom": "sectional", "Výklopná": "upAndOver", "Dvojkrídlová": "doubleLeaf" },
         label: "Typ brány",
         disabled: !isCustom,
+        transient: false,
+        onChange: (val) => setGateTypeState(String(val)),
       },
       doorOpen: { value: isCatalog ? false : (initialUrlParams.doorOpen ?? DEFAULT_PARAMS.doorOpen), label: "Otvoriť bránu 🔓" },
       doorWidth: { value: isCatalog ? (initHall.type === "shed" ? Math.min(3.0, initHall.width * 0.5) : (initHall.versions?.[0]?.E ?? 4.8)) : (initialUrlParams.doorWidth ?? DEFAULT_PARAMS.doorWidth), min: 1.0, max: 6.0, step: 0.1, label: "Brána Š [m]" },
       doorHeight: { value: isCatalog ? (initHall.type === "shed" ? (initHall.versions?.[0]?.H4 ? Math.min(initHall.versions[0].H4 - 0.15, 3.2) : 2.5) : (initHall.versions?.[0]?.H2 ? Math.min(initHall.versions[0].H2 - 0.15, 4.8) : Math.min(3.8, (initHall.versions?.[0]?.H ?? initHall.heights[0]) - 0.2))) : (initialUrlParams.doorHeight ?? DEFAULT_PARAMS.doorHeight), min: 1.8, max: 6.5, step: 0.1, label: "Brána V [m]" },
-      hasBackDoor: { value: isCatalog ? false : (initialUrlParams.hasBackDoor ?? DEFAULT_PARAMS.hasBackDoor ?? false), label: "Zadná brána (prejazd)", disabled: !isCustom },
+      hasBackDoor: {
+        value: isCatalog ? false : hasBackDoorState,
+        label: "Zadná brána (prejazd)",
+        disabled: !isCustom,
+        transient: false,
+        onChange: (val) => setHasBackDoorState(!!val),
+      },
       hasPersonalDoor: { value: isCatalog ? false : (initialUrlParams.hasPersonalDoor ?? DEFAULT_PARAMS.hasPersonalDoor), label: "Personálne dvere" },
       personalDoorSide: { value: initialUrlParams.personalDoorSide ?? DEFAULT_PARAMS.personalDoorSide, options: { "Vľavo": "left", "Vpravo": "right", "Vzadu": "back" }, label: "Strana dverí" },
       hasWindows: { value: isCatalog ? false : (initialUrlParams.hasWindows ?? DEFAULT_PARAMS.hasWindows), label: "Okná" },
@@ -433,8 +447,18 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       (cleanParams as any)[k] = v;
     }
   }
+  if (cleanParams.gateCount !== undefined) {
+    cleanParams.gateCount = Number(cleanParams.gateCount);
+  }
 
-  let typedParams: GarageParams = { ...DEFAULT_PARAMS, ...cleanParams, notes };
+  let typedParams: GarageParams = {
+    ...DEFAULT_PARAMS,
+    ...cleanParams,
+    notes,
+    gateCount: (isCatalog ? 1 : gateCountState) as 1 | 2,
+    gateType: (isCatalog ? "sectional" : gateTypeState) as any,
+    hasBackDoor: isCatalog ? false : hasBackDoorState,
+  };
 
   if (selectedHall && selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
     const h = hallsConfig[selectedHall];

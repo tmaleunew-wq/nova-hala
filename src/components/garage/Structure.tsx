@@ -70,17 +70,20 @@ export function getWindowCoords(p: { width: number; length: number; bayCount: nu
 
 
 export function getDoubleGateLayout(W: number, doorWidth: number) {
-  const sideMargin = Math.max(0.25, Math.min(0.4, (W - 2 * doorWidth) * 0.3));
-  const centerPillar = Math.max(0.3, Math.min(0.6, (W - 2 * doorWidth) * 0.4));
-  const maxDoorW = Math.max(1.2, (W - 2 * sideMargin - centerPillar) / 2);
-  const actualDoorW = Math.min(doorWidth, maxDoorW);
-  const actualCenterPillar = Math.max(0.25, W - 2 * actualDoorW - 2 * sideMargin);
-  const dist = actualDoorW + actualCenterPillar;
+  const minSide = 0.25;
+  const minCenter = 0.35;
+  const maxPossibleDoorW = Math.max(1.0, (W - 2 * minSide - minCenter) / 2);
+  const actualDoorW = Math.max(1.0, Math.min(doorWidth, maxPossibleDoorW));
+  const remaining = Math.max(0, W - 2 * actualDoorW);
+  const sideMargin = Math.max(minSide, remaining * 0.25);
+  const centerPillar = Math.max(minCenter, W - 2 * actualDoorW - 2 * sideMargin);
+  const dist = actualDoorW + centerPillar;
   return {
     actualDoorW,
     leftCx: -dist / 2,
     rightCx: dist / 2,
-    centerPillar: actualCenterPillar,
+    centerPillar,
+    sideMargin,
   };
 }
 
