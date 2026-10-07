@@ -130,8 +130,8 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       hallLengthOptions.push(`${b * activeHall.moduleLength}m`);
     }
   } else {
-    for (let b = 2; b <= 12; b++) {
-      hallLengthOptions.push(`${b * 3}m`);
+    for (let l = 4; l <= 20; l += (l < 12 ? 1 : 2)) {
+      hallLengthOptions.push(`${l}m`);
     }
   }
 
@@ -193,16 +193,6 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         step: 0.1,
         label: "Šírka X [m]",
         disabled: !isCustom,
-        onChange: (w) => {
-          const numW = Number(w);
-          if (Number.isFinite(numW)) {
-            const isDbl = gateCountState === 2;
-            const maxW = isDbl ? Math.max(1.2, (numW - 0.85) / 2) : Math.max(1.5, numW - 0.5);
-            if ((params as any)?.doorWidth > maxW) {
-              (setParams as any)({ doorWidth: Math.round(maxW * 10) / 10 });
-            }
-          }
-        },
       },
       length: {
         value: `${isCatalog ? (activeHall?.defaultLength ?? initLength) : (initialUrlParams.length ?? initLength)}m`,
@@ -211,10 +201,15 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         disabled: false,
         onChange: (val) => {
           const num = typeof val === "number" ? val : parseFloat(String(val).replace("m", ""));
-          if (!Number.isNaN(num) && selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
-            const h = hallsConfig[selectedHall];
-            const bays = Math.round(num / h.moduleLength);
-            (setParams as any)({ bayCount: bays });
+          if (!Number.isNaN(num) && num > 0) {
+            if (selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
+              const h = hallsConfig[selectedHall];
+              const bays = Math.round(num / h.moduleLength);
+              (setParams as any)({ bayCount: bays });
+            } else {
+              const bays = Math.max(2, Math.round(num / 3));
+              (setParams as any)({ bayCount: bays });
+            }
           }
         }
       },
@@ -225,15 +220,6 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         step: 0.001,
         label: "Svetlá výška Z [m]",
         disabled: !isCustom,
-        onChange: (h) => {
-          const numH = Number(h);
-          if (Number.isFinite(numH)) {
-            const maxH = Math.max(1.8, numH - 0.2);
-            if ((params as any)?.doorHeight > maxH) {
-              (setParams as any)({ doorHeight: Math.round(maxH * 10) / 10 });
-            }
-          }
-        },
       },
       roofType: {
         value: isCatalog ? (initHall.type as any) : (initialUrlParams.roofType ?? DEFAULT_PARAMS.roofType),
@@ -343,14 +329,6 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         max: 6.0,
         step: 0.1,
         label: "Brána Š [m]",
-        onChange: (dw) => {
-          const curW = (params as any)?.width ?? DEFAULT_PARAMS.width;
-          const isDbl = gateCountState === 2;
-          const maxAllowed = isDbl ? Math.max(1.2, (curW - 0.85) / 2) : Math.max(1.5, curW - 0.5);
-          if (Number(dw) > maxAllowed) {
-            (setParams as any)({ doorWidth: Math.round(maxAllowed * 10) / 10 });
-          }
-        },
       },
       doorHeight: {
         value: isCatalog ? (initHall.type === "shed" ? (initHall.versions?.[0]?.H4 ? Math.min(initHall.versions[0].H4 - 0.15, 3.2) : 2.5) : (initHall.versions?.[0]?.H2 ? Math.min(initHall.versions[0].H2 - 0.15, 4.8) : Math.min(3.8, (initHall.versions?.[0]?.H ?? initHall.heights[0]) - 0.2))) : (initialUrlParams.doorHeight ?? DEFAULT_PARAMS.doorHeight),
@@ -358,13 +336,6 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         max: 6.0,
         step: 0.1,
         label: "Brána V [m]",
-        onChange: (dh) => {
-          const curH = (params as any)?.clearHeight ?? DEFAULT_PARAMS.clearHeight;
-          const maxAllowed = Math.max(1.8, curH - 0.2);
-          if (Number(dh) > maxAllowed) {
-            (setParams as any)({ doorHeight: Math.round(maxAllowed * 10) / 10 });
-          }
-        },
       },
       hasBackDoor: {
         value: isCatalog ? false : hasBackDoorState,
@@ -528,6 +499,12 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     hasBackDoor: isCatalog ? false : hasBackDoorState,
   };
 
+  const numL = typeof typedParams.length === "number" ? typedParams.length : parseFloat(String(typedParams.length).replace("m", ""));
+  typedParams.length = Number.isFinite(numL) && numL > 0 ? numL : DEFAULT_PARAMS.length;
+  typedParams.width = Number(typedParams.width) || DEFAULT_PARAMS.width;
+  typedParams.clearHeight = Number(typedParams.clearHeight) || DEFAULT_PARAMS.clearHeight;
+  typedParams.bayCount = Math.max(2, Math.round(cleanParams.bayCount || (typedParams.length / 3)));
+
   if (selectedHall && selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
     const h = hallsConfig[selectedHall];
     const poleNum = parseInt(selectedPoleHeight, 10);
@@ -578,29 +555,6 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       [id]: !prev[id],
     }));
   };
-
-  // Automatické obmedzenie ovládacích prvkov brány na rozmery garáže
-  useEffect(() => {
-    const curW = Number((params as any)?.width) || DEFAULT_PARAMS.width;
-    const curH = Number((params as any)?.clearHeight) || DEFAULT_PARAMS.clearHeight;
-    const isDbl = ((params as any)?.gateCount ?? gateCountState) === 2;
-    const maxW = isDbl ? Math.max(1.2, (curW - 0.85) / 2) : Math.max(1.5, curW - 0.5);
-    const maxH = Math.max(1.8, curH - 0.2);
-
-    const curDW = Number((params as any)?.doorWidth);
-    const curDH = Number((params as any)?.doorHeight);
-
-    const updates: any = {};
-    if (Number.isFinite(curDW) && curDW > maxW + 0.001) {
-      updates.doorWidth = Math.round(maxW * 10) / 10;
-    }
-    if (Number.isFinite(curDH) && curDH > maxH + 0.001) {
-      updates.doorHeight = Math.round(maxH * 10) / 10;
-    }
-    if (Object.keys(updates).length > 0) {
-      (setParams as any)(updates);
-    }
-  }, [(params as any)?.width, (params as any)?.clearHeight, (params as any)?.doorWidth, (params as any)?.doorHeight, gateCountState]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

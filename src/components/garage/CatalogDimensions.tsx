@@ -118,7 +118,7 @@ export function CatalogDimensions({ p }: { p: GarageParams }) {
             B
           </div>
           <div className="mt-1 px-1.5 py-0.5 rounded bg-slate-900/80 backdrop-blur border border-white/20 text-[10px] font-mono font-bold text-white shadow whitespace-nowrap">
-            {p.length.toFixed(1)} m
+            {Number(p.length).toFixed(1)} m
           </div>
         </div>
       </Html>
