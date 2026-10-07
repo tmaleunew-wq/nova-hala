@@ -275,6 +275,14 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         options: { "1 brána": 1, "2 brány (dvojgaráž)": 2 },
         label: "Počet brán",
         disabled: !isCustom,
+        onChange: (val) => {
+          if (val === 2 && isCustom) {
+            const curW = params.width ?? 4;
+            if (curW < 5.8) {
+              (setParams as any)({ width: 6.0, doorWidth: 2.5 });
+            }
+          }
+        },
       },
       gateType: {
         value: isCatalog ? "sectional" : (initialUrlParams.gateType ?? DEFAULT_PARAMS.gateType ?? "sectional"),

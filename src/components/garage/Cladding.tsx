@@ -2,7 +2,7 @@ import "@react-three/fiber";
 import { useMemo, useState } from "react";
 import * as THREE from "three";
 import type { GarageParams } from "@/lib/garage/types";
-import { ridgeHeight, highEave, getFrameZ, getPersonalDoorZ, getWindowZs, getWindowCoords } from "./Structure";
+import { ridgeHeight, highEave, getFrameZ, getPersonalDoorZ, getWindowZs, getWindowCoords, getDoubleGateLayout } from "./Structure";
 import { makeTrapezoidTexture } from "@/lib/garage/textures";
 import { createPBRCladdingMaterial, createPBRSmoothMaterial, createPBRTileMaterial } from "@/lib/garage/pbrMaterialHelper";
 import { getCladdingConfig } from "@/lib/garage/configHelper";
@@ -347,11 +347,11 @@ export function Cladding({
 
   // openings
   const isDoubleGate = (p.gateCount ?? 1) === 2;
-  const gateSpacing = Math.min(p.doorWidth * 0.55 + 0.2, (W - p.doorWidth) / 2);
+  const dLayout = getDoubleGateLayout(W, p.doorWidth);
   const frontDoorHoles: Rect[] = isDoubleGate
     ? [
-        { cx: -gateSpacing, cy: p.doorHeight / 2 + 0.02, w: p.doorWidth, h: p.doorHeight },
-        { cx: gateSpacing, cy: p.doorHeight / 2 + 0.02, w: p.doorWidth, h: p.doorHeight },
+        { cx: dLayout.leftCx, cy: p.doorHeight / 2 + 0.02, w: dLayout.actualDoorW, h: p.doorHeight },
+        { cx: dLayout.rightCx, cy: p.doorHeight / 2 + 0.02, w: dLayout.actualDoorW, h: p.doorHeight },
       ]
     : [{ cx: 0, cy: p.doorHeight / 2 + 0.02, w: p.doorWidth, h: p.doorHeight }];
   const personalHole: Rect = { cx: getPersonalDoorZ(p), cy: 1.0, w: 0.9, h: 2.0 };

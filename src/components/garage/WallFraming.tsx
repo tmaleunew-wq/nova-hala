@@ -2,7 +2,7 @@ import React from "react";
 import type { GarageParams } from "@/lib/garage/types";
 import { getHallsConfig } from "@/lib/garage/configHelper";
 import { SteelTube, SteelPlate } from "./SteelTube";
-import { getPersonalDoorZ, getWindowCoords } from "./Structure";
+import { getPersonalDoorZ, getWindowCoords, getDoubleGateLayout } from "./Structure";
 
 interface WallFramingProps {
   p: GarageParams;
@@ -97,9 +97,10 @@ export function WallFraming({
       frontCuts.length = 0;
       if (h < p.doorHeight) {
         if ((p.gateCount ?? 1) === 2) {
-          const spacing = Math.min(p.doorWidth * 0.55 + 0.2, (p.width - p.doorWidth) / 2);
-          frontCuts.push({ start: -spacing - p.doorWidth / 2, end: -spacing + p.doorWidth / 2 });
-          frontCuts.push({ start: spacing - p.doorWidth / 2, end: spacing + p.doorWidth / 2 });
+          const dLayout = getDoubleGateLayout(p.width, p.doorWidth);
+          const halfDoor = dLayout.actualDoorW / 2;
+          frontCuts.push({ start: dLayout.leftCx - halfDoor, end: dLayout.leftCx + halfDoor });
+          frontCuts.push({ start: dLayout.rightCx - halfDoor, end: dLayout.rightCx + halfDoor });
         } else {
           frontCuts.push({ start: x_L_post, end: x_R_post });
         }
