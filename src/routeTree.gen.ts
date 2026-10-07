@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VyhodnotenieRouteImport } from './routes/vyhodnotenie'
+import { Route as Variant2RouteImport } from './routes/variant2'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
 const VyhodnotenieRoute = VyhodnotenieRouteImport.update({
   id: '/vyhodnotenie',
   path: '/vyhodnotenie',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Variant2Route = Variant2RouteImport.update({
+  id: '/variant2',
+  path: '/variant2',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -32,30 +38,34 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/variant2': typeof Variant2Route
   '/vyhodnotenie': typeof VyhodnotenieRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/variant2': typeof Variant2Route
   '/vyhodnotenie': typeof VyhodnotenieRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/variant2': typeof Variant2Route
   '/vyhodnotenie': typeof VyhodnotenieRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/vyhodnotenie'
+  fullPaths: '/' | '/admin' | '/variant2' | '/vyhodnotenie'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/vyhodnotenie'
-  id: '__root__' | '/' | '/admin' | '/vyhodnotenie'
+  to: '/' | '/admin' | '/variant2' | '/vyhodnotenie'
+  id: '__root__' | '/' | '/admin' | '/variant2' | '/vyhodnotenie'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  Variant2Route: typeof Variant2Route
   VyhodnotenieRoute: typeof VyhodnotenieRoute
 }
 
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/vyhodnotenie'
       fullPath: '/vyhodnotenie'
       preLoaderRoute: typeof VyhodnotenieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/variant2': {
+      id: '/variant2'
+      path: '/variant2'
+      fullPath: '/variant2'
+      preLoaderRoute: typeof Variant2RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  Variant2Route: Variant2Route,
   VyhodnotenieRoute: VyhodnotenieRoute,
 }
 export const routeTree = rootRouteImport

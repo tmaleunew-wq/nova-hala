@@ -5,11 +5,13 @@ export function ProductPicker({
   selectedHall,
   onSelect,
   onClose,
+  imageCatalog = "/catalog",
 }: {
   halls: Record<string, HallConfig>;
   selectedHall?: string;
   onSelect: (name: string) => void;
   onClose?: () => void;
+  imageCatalog?: string;
 }) {
   const names = Object.keys(halls);
   return (
@@ -50,7 +52,7 @@ export function ProductPicker({
           >
             <div className="h-40 overflow-hidden bg-[#ececec] flex items-center justify-center">
               <img
-                src="/catalog/vlastna_garaz.png"
+                src={`${imageCatalog}/vlastna_garaz.png`}
                 alt="Vlastná garáž"
                 loading="lazy"
                 className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
@@ -95,7 +97,7 @@ export function ProductPicker({
               >
                 <div className="h-40 overflow-hidden bg-[#161b22]">
                   <img
-                    src={`/catalog/${name}_render.png`}
+                    src={`${imageCatalog}/${name}_render.png`}
                     alt={`Katalóg ${name}`}
                     loading="lazy"
                     className="h-full w-full object-cover transition duration-500 group-hover:scale-105"

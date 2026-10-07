@@ -14,7 +14,7 @@ import { ArModal } from "./ArModal";
 import { HallCatalogModal } from "./HallCatalogModal";
 import { CatalogInfoCard } from "./CatalogInfoCard";
 import { TopNavigation } from "./TopNavigation";
-import { getHallsConfig } from "@/lib/garage/configHelper";
+import { getHallsConfig, getImageCatalog } from "@/lib/garage/configHelper";
 import { Scene, CameraRig, type ViewPreset } from "./GarageScene";
 
 function getParamsFromURL(): Partial<GarageParams> {
@@ -53,15 +53,15 @@ function getParamsFromURL(): Partial<GarageParams> {
       parsed.roofType = h.type as any;
       parsed.roofPitchDeg = h.roofPitchDeg;
     }
-    parsed.showStructure = true;
-    parsed.showCladding = false;
-    parsed.showAccessories = false;
-    parsed.showCatalogDimensions = true;
+    parsed.showStructure = searchParams.get("showStructure") !== null ? searchParams.get("showStructure") === "true" : true;
+    parsed.showCladding = searchParams.get("showCladding") !== null ? searchParams.get("showCladding") === "true" : false;
+    parsed.showAccessories = searchParams.get("showAccessories") !== null ? searchParams.get("showAccessories") === "true" : false;
+    parsed.showCatalogDimensions = searchParams.get("showCatalogDimensions") !== null ? searchParams.get("showCatalogDimensions") === "true" : true;
   }
   return parsed;
 }
 
-export default function Configurator() {
+export default function Configurator({ variant }: { variant?: string } = {}) {
   const exportRef = useRef<THREE.Group | null>(null);
   const [preset, setPreset] = useState<ViewPreset>("iso");
   const [removedPanels, setRemovedPanels] = useState<Record<string, boolean>>({});
@@ -83,6 +83,9 @@ export default function Configurator() {
 
   const [initialUrlParams] = useState(() => getParamsFromURL());
   const hallsConfig = getHallsConfig();
+  const urlVariant = typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("variant") || new URLSearchParams(window.location.search).get("client")) : null;
+  const activeVariant = variant || (urlVariant === "2" ? "variant2" : urlVariant) || "default";
+  const imageCatalog = getImageCatalog(activeVariant);
   const hallOptions = ["Vlastný", ...Object.keys(hallsConfig)];
   const [selectedHall, setSelectedHall] = useState(initialUrlParams.hallType ?? "Vlastný");
   const isCustom = selectedHall === "Vlastný";
@@ -90,7 +93,10 @@ export default function Configurator() {
   const [showPicker, setShowPicker] = useState(false);
   const [showEnvironment, setShowEnvironment] = useState(false);
   const [showArModal, setShowArModal] = useState(false);
-  const applyHallTypeRef = useRef<(v: string) => void>(() => {});
+  const [catalogWithCladding, setCatalogWithCladding] = useState(() => initialUrlParams.showCladding ?? false);
+  const catalogWithCladdingRef = useRef(initialUrlParams.showCladding ?? false);
+  const isApplyingRef = useRef(false);
+  const applyHallTypeRef = useRef<(v: string, withCladding?: boolean) => void>(() => {});
   useEffect(() => {
     if (typeof window !== "undefined" && (!initialUrlParams.hallType || window.location.search === "")) {
       setShowPicker(true);
@@ -123,11 +129,11 @@ export default function Configurator() {
 
   const [params, setParams] = useControls(() => ({
     "Zobrazenie": folder({
-      showStructure: { value: isCatalog ? true : (initialUrlParams.showStructure ?? true), label: "Konštrukcia" },
-      showCladding: { value: isCatalog ? false : (initialUrlParams.showCladding ?? DEFAULT_PARAMS.showCladding), label: "Opláštenie" },
-      showAccessories: { value: isCatalog ? false : (initialUrlParams.showAccessories ?? DEFAULT_PARAMS.showAccessories), label: "Príslušenstvo" },
+      showStructure: { value: initialUrlParams.showStructure ?? true, label: "Konštrukcia" },
+      showCladding: { value: initialUrlParams.showCladding ?? (isCatalog ? false : DEFAULT_PARAMS.showCladding), label: "Opláštenie" },
+      showAccessories: { value: initialUrlParams.showAccessories ?? (isCatalog ? false : DEFAULT_PARAMS.showAccessories), label: "Príslušenstvo" },
       showFoundation: { value: initialUrlParams.showFoundation ?? DEFAULT_PARAMS.showFoundation, label: "Základová doska" },
-      showCatalogDimensions: { value: isCatalog ? (initialUrlParams.showCatalogDimensions ?? true) : false, label: "Kóty A-B-C" },
+      showCatalogDimensions: { value: initialUrlParams.showCatalogDimensions ?? (isCatalog ? true : false), label: "Kóty A-B-C" },
       wireframe: { value: initialUrlParams.wireframe ?? DEFAULT_PARAMS.wireframe, label: "Wireframe" },
       explode: { value: initialUrlParams.explode ?? DEFAULT_PARAMS.explode, min: 0, max: 1, step: 0.01, label: "Exploded view" },
     }, { collapsed: true }),
@@ -137,7 +143,9 @@ export default function Configurator() {
         options: hallOptions,
         label: "Typ z PDF",
         onChange: (v) => {
-          applyHallTypeRef.current(v);
+          if (v !== selectedHall) {
+            applyHallTypeRef.current(v);
+          }
         },
       },
       hallHeight: {
@@ -304,8 +312,11 @@ export default function Configurator() {
     }, { collapsed: true }),
   }), [selectedHall]);
 
-  const applyHallType = (v: string) => {
+  const applyHallType = (v: string, withCladding?: boolean) => {
     setSelectedHall(v);
+    const useCladding = withCladding !== undefined ? withCladding : catalogWithCladding;
+    setCatalogWithCladding(useCladding);
+    if (useCladding) setShowPicker(false);
     if (v !== "Vlastný" && hallsConfig[v]) {
       const h = hallsConfig[v];
       let profSize = 0.10;
@@ -340,9 +351,9 @@ export default function Configurator() {
       (setParams as any)({
         hallType: v,
         showStructure: true,
-        showCladding: false,
-        showAccessories: false,
-        showCatalogDimensions: true,
+        showCladding: useCladding,
+        showAccessories: useCladding,
+        showCatalogDimensions: !useCladding,
         width: h.width,
         roofType: h.type as any,
         roofPitchDeg: h.roofPitchDeg,
@@ -352,8 +363,8 @@ export default function Configurator() {
         bayCount: defaultBays,
         profileSize: profSize,
         profileThickness: profThick,
-        hasPersonalDoor: false,
-        hasWindows: false,
+        hasPersonalDoor: useCladding,
+        hasWindows: useCladding,
         doorWidth: gateW,
         doorHeight: gateH,
         doorOpen: false,
@@ -384,6 +395,10 @@ export default function Configurator() {
     }
   };
   applyHallTypeRef.current = applyHallType;
+  if (typeof window !== "undefined") {
+    (window as any).__applyHallType = applyHallType;
+    (window as any).__setParams = setParams;
+  }
 
   const cleanParams: Partial<GarageParams> = {};
   for (const [k, v] of Object.entries(params)) {
@@ -414,9 +429,12 @@ export default function Configurator() {
       clearHeight: activeVer ? activeVer.H : (cleanParams.clearHeight ?? h.heights[0]),
       length: exactLen,
       bayCount: exactBays,
-      showStructure: cleanParams.showStructure ?? true,
-      showCladding: cleanParams.showCladding ?? false,
-      showAccessories: cleanParams.showAccessories ?? false,
+      showStructure: cleanParams.showStructure ?? (initialUrlParams.showStructure ?? true),
+      showCladding: catalogWithCladding || (cleanParams.showCladding ?? (initialUrlParams.showCladding ?? false)),
+      showAccessories: catalogWithCladding || (cleanParams.showAccessories ?? (initialUrlParams.showAccessories ?? false)),
+      showCatalogDimensions: !catalogWithCladding && (cleanParams.showCatalogDimensions ?? (initialUrlParams.showCatalogDimensions ?? true)),
+      hasPersonalDoor: catalogWithCladding || cleanParams.hasPersonalDoor || false,
+      hasWindows: catalogWithCladding || cleanParams.hasWindows || false,
     };
   }
 
@@ -490,6 +508,7 @@ export default function Configurator() {
         <ProductPicker
           halls={hallsConfig}
           selectedHall={selectedHall}
+          imageCatalog={imageCatalog}
           onSelect={(v) => {
             applyHallType(v);
             setShowPicker(false);

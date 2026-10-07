@@ -12,5 +12,6 @@
   "flashingsAndSeals": "Štandardné klampiarske prvky",
   "staticWarning": "",
   "sandwichPricePerSqM": 32.50,
-  "trapezoidPricePerSqM": 16.80
+  "trapezoidPricePerSqM": 16.80,
+  "imageCatalog": "/catalog"
 }
