@@ -416,3 +416,97 @@ export function makeTileDisplacementTexture(
   return tex;
 }
 
+export function makeWoodTexture(
+  type: "golden_oak" | "walnut" = "golden_oak",
+  grainRepeat = 8,
+): THREE.CanvasTexture {
+  const size = 512;
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext("2d")!;
+
+  const isOak = type === "golden_oak";
+  const imgData = ctx.createImageData(size, size);
+  const data = imgData.data;
+
+  for (let y = 0; y < size; y++) {
+    const wave = Math.sin(y * 0.04) * 14 + Math.sin(y * 0.1) * 6;
+    for (let x = 0; x < size; x++) {
+      const ring = Math.sin((x + wave) * (grainRepeat * 0.05));
+      const micro = Math.sin(x * 1.8 + wave * 1.5) * 0.12;
+      const t = Math.max(0, Math.min(1, 0.5 + 0.5 * ring + micro));
+
+      let r: number, g: number, b: number;
+      if (isOak) {
+        // Zlatý dub: medový, teplý jantárový základ s tmavšími dubovými letokruhmi
+        r = Math.round(155 + t * 55);
+        g = Math.round(95 + t * 45);
+        b = Math.round(35 + t * 25);
+      } else {
+        // Tmavý orech: sýty ebenovo-čokoládový základ s tmavohnedými vláknami
+        r = Math.round(65 + t * 40);
+        g = Math.round(40 + t * 25);
+        b = Math.round(22 + t * 18);
+      }
+
+      const idx = (y * size + x) * 4;
+      data[idx] = r;
+      data[idx + 1] = g;
+      data[idx + 2] = b;
+      data[idx + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 8;
+  return tex;
+}
+
+export function makeWoodNormalTexture(grainRepeat = 8): THREE.CanvasTexture {
+  const size = 512;
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext("2d")!;
+
+  const imgData = ctx.createImageData(size, size);
+  const data = imgData.data;
+
+  for (let y = 0; y < size; y++) {
+    const wave = Math.sin(y * 0.04) * 14;
+    for (let x = 0; x < size; x++) {
+      const dxd = Math.cos((x + wave) * (grainRepeat * 0.05)) * 0.35;
+      const r = Math.round(128 + dxd * 60);
+      const idx = (y * size + x) * 4;
+      data[idx] = Math.max(0, Math.min(255, r));
+      data[idx + 1] = 128;
+      data[idx + 2] = 230;
+      data[idx + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 8;
+  return tex;
+}
+
+export function makeWoodRoughnessTexture(): THREE.CanvasTexture {
+  const size = 512;
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "rgb(130, 130, 130)"; // Satin semi-matte finish (roughness ~0.5)
+  ctx.fillRect(0, 0, size, size);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 8;
+  return tex;
+}
+

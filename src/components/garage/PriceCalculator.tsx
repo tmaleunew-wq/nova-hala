@@ -129,7 +129,7 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
     roofArea = Math.hypot(W, Hhi - Heave) * L;
   }
   const totalCladdingArea = wallArea + gableArea + roofArea;
-  const panelPricePerSqM = (p.panelType === "sandwich" || p.panelType === "smooth") ? claddingConfig.sandwichPricePerSqM : claddingConfig.trapezoidPricePerSqM; // EUR/m2
+  const panelPricePerSqM = (p.panelType === "sandwich" || p.panelType === "smooth" || p.panelType === "wood_oak" || p.panelType === "wood_walnut") ? claddingConfig.sandwichPricePerSqM : claddingConfig.trapezoidPricePerSqM; // EUR/m2
   const claddingCost = totalCladdingArea * panelPricePerSqM;
 
   // 3. Components
@@ -170,7 +170,7 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
     const evaluationUrl = `${window.location.origin}/vyhodnotenie?${searchParams.toString()}`;
 
     // Panel type labels
-    const panelLabel = p.panelType === "sandwich" ? "Sendvičový panel" : p.panelType === "smooth" ? "Hladký panel" : "Trapézový plech";
+    const panelLabel = p.panelType === "sandwich" ? "Sendvičový panel" : p.panelType === "smooth" ? "Hladký panel" : p.panelType === "wood_oak" ? "Zlatý dub (drevodekor)" : p.panelType === "wood_walnut" ? "Tmavý orech (drevodekor)" : "Trapézový plech";
     const roofPanelLabel = p.roofPanelType === "trapezoid" ? "Trapézový plech" : p.roofPanelType === "smooth" ? "Hladký panel" : "Škridľový profil";
     const fastenerLabel = p.fastenerGrade === "A2" ? "Nerez A2" : p.fastenerGrade === "A4" ? "Nerez A4" : "Pozinkované";
     const sideLabel = (s: string) => s === "left" ? "ľavá" : s === "right" ? "pravá" : "zadná";

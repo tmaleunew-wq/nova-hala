@@ -3,6 +3,8 @@ import { useMemo } from "react";
 import type { GarageParams } from "@/lib/garage/types";
 import { ridgeHeight, highEave, getFrameZ } from "./Structure";
 
+const isThickWall = (type?: string) => type === "sandwich" || type === "smooth" || type === "wood_oak" || type === "wood_walnut";
+
 export function Gutters({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   const L = p.length;
   const W = p.width;
@@ -11,7 +13,7 @@ export function Gutters({ p, explodeY }: { p: GarageParams; explodeY: number }) 
   const Hhi = highEave(p);
   const ex = explodeY * 1.5;
 
-  const wallThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+  const wallThickness = isThickWall(p.panelType) ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
   const sz = p.profileSize;
   const gapWidth = sz / 2 + wallThickness;
   const overhang = 0.25;
@@ -120,7 +122,7 @@ export function CornerFlashings({ p, explodeY }: { p: GarageParams; explodeY: nu
   const Hhi = highEave(p);
   const ex = explodeY * 1.5; // align with Cladding's explode speed
   
-  const wallThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+  const wallThickness = isThickWall(p.panelType) ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
   const sz = p.profileSize;
   const trimWidth = 0.18; // 180mm flashing legs to overlap and cover panel edges
   const trimThick = 0.002;
@@ -176,7 +178,7 @@ export function JointFlashings({ p, explodeY }: { p: GarageParams; explodeY: num
   const Heave = p.clearHeight;
   const Hhi = highEave(p);
   const ex = explodeY * 1.5;
-  const wallThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+  const wallThickness = isThickWall(p.panelType) ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
   const sz = p.profileSize;
 
   const t = 0.002; // very thin flashing
@@ -222,7 +224,7 @@ export function Bargeboards({ p, explodeY }: { p: GarageParams; explodeY: number
   const Hhi = highEave(p);
   const ex = explodeY;
 
-  const wallThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+  const wallThickness = isThickWall(p.panelType) ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
   const roofThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.roofPanelThicknessMm / 1000) : 0.01;
   const sz = p.profileSize;
 
@@ -235,7 +237,7 @@ export function Bargeboards({ p, explodeY }: { p: GarageParams; explodeY: number
   }), [color]);
 
   const slopes = useMemo(() => {
-    const wallThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+    const wallThickness = isThickWall(p.panelType) ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
     const gapWidth = p.profileSize / 2 + wallThickness;
     const angle = p.roofType === "gable"
       ? Math.atan2(Hridge - Heave, W / 2)
@@ -337,7 +339,7 @@ export function EaveFlashings({ p, explodeY }: { p: GarageParams; explodeY: numb
   const Hhi = highEave(p);
   const ex = explodeY;
 
-  const wallThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+  const wallThickness = isThickWall(p.panelType) ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
   const sz = p.profileSize;
 
   const color = p.roofColor || "#2a2d33";

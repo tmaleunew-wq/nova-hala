@@ -72,6 +72,8 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   const [gateCountState, setGateCountState] = useState<number>(() => Number(initialUrlParams.gateCount) || 1);
   const [gateTypeState, setGateTypeState] = useState<string>(() => initialUrlParams.gateType ?? "sectional");
   const [hasBackDoorState, setHasBackDoorState] = useState<boolean>(() => !!initialUrlParams.hasBackDoor);
+  const [gateDecorState, setGateDecorState] = useState<string>(() => initialUrlParams.gateDecor ?? "none");
+  const [gate2DecorState, setGate2DecorState] = useState<string>(() => initialUrlParams.gate2Decor ?? "none");
   const [isSummaryOpen, setIsSummaryOpen] = useState(true);
   const [showControls, setShowControls] = useState(false);
   const [showHallSpecs, setShowHallSpecs] = useState(false);
@@ -191,6 +193,16 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         step: 0.1,
         label: "Šírka X [m]",
         disabled: !isCustom,
+        onChange: (w) => {
+          const numW = Number(w);
+          if (Number.isFinite(numW)) {
+            const isDbl = gateCountState === 2;
+            const maxW = isDbl ? Math.max(1.2, (numW - 0.85) / 2) : Math.max(1.5, numW - 0.5);
+            if ((params as any)?.doorWidth > maxW) {
+              (setParams as any)({ doorWidth: Math.round(maxW * 10) / 10 });
+            }
+          }
+        },
       },
       length: {
         value: `${isCatalog ? (activeHall?.defaultLength ?? initLength) : (initialUrlParams.length ?? initLength)}m`,
@@ -213,6 +225,15 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         step: 0.001,
         label: "Svetlá výška Z [m]",
         disabled: !isCustom,
+        onChange: (h) => {
+          const numH = Number(h);
+          if (Number.isFinite(numH)) {
+            const maxH = Math.max(1.8, numH - 0.2);
+            if ((params as any)?.doorHeight > maxH) {
+              (setParams as any)({ doorHeight: Math.round(maxH * 10) / 10 });
+            }
+          }
+        },
       },
       roofType: {
         value: isCatalog ? (initHall.type as any) : (initialUrlParams.roofType ?? DEFAULT_PARAMS.roofType),
@@ -263,12 +284,13 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     }, { collapsed: true }),
     "Opláštenie": folder({
       claddingColor: { value: initialUrlParams.claddingColor ?? DEFAULT_PARAMS.claddingColor, label: "Steny RAL" },
-      panelType: { value: initialUrlParams.panelType ?? DEFAULT_PARAMS.panelType, options: { "Trapézový plech": "trapezoid", "Sendvičové panely": "sandwich", "Hladký panel": "smooth" }, label: "Typ stien" },
+      panelType: { value: initialUrlParams.panelType ?? DEFAULT_PARAMS.panelType, options: { "Trapézový plech": "trapezoid", "Sendvičové panely": "sandwich", "Hladký panel": "smooth", "Zlatý dub (drevodekor)": "wood_oak", "Tmavý orech (drevodekor)": "wood_walnut" }, label: "Typ stien" },
       claddingOrientation: { value: initialUrlParams.claddingOrientation ?? DEFAULT_PARAMS.claddingOrientation, options: { "Vertikálne": "vertical", "Pozdĺžne": "horizontal" }, label: "Smer stien" },
       roofColor: { value: initialUrlParams.roofColor ?? DEFAULT_PARAMS.roofColor, label: "Strecha RAL" },
       roofPanelType: { value: initialUrlParams.roofPanelType ?? DEFAULT_PARAMS.roofPanelType, options: { "Trapézový plech": "trapezoid", "Hladký panel": "smooth", "Škridla": "tile" }, label: "Typ strechy" },
       roofCladdingOrientation: { value: initialUrlParams.roofCladdingOrientation ?? DEFAULT_PARAMS.roofCladdingOrientation, options: { "Vertikálne": "vertical", "Pozdĺžne": "horizontal" }, label: "Smer strechy" },
-      sectionalDoorColor: { value: initialUrlParams.sectionalDoorColor ?? DEFAULT_PARAMS.sectionalDoorColor, label: "Garážová brána RAL" },
+      sectionalDoorColor: { value: initialUrlParams.sectionalDoorColor ?? DEFAULT_PARAMS.sectionalDoorColor, label: "Brána 1 RAL" },
+      sectionalDoor2Color: { value: initialUrlParams.sectionalDoor2Color ?? DEFAULT_PARAMS.sectionalDoor2Color ?? "#3a3f47", label: "Brána 2 RAL" },
       doorColor: { value: initialUrlParams.doorColor ?? DEFAULT_PARAMS.doorColor, label: "Personálne dvere RAL" },
       trimmingColor: { value: initialUrlParams.trimmingColor ?? DEFAULT_PARAMS.trimmingColor, label: "Rohy & Odkvapy RAL" },
     }, { collapsed: true }),
@@ -298,9 +320,52 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         transient: false,
         onChange: (val) => setGateTypeState(String(val)),
       },
+      gateDecor: {
+        value: isCatalog ? "none" : gateDecorState,
+        options: { "Podľa RAL farby": "none", "Zlatý dub (drevodekor)": "wood_oak", "Tmavý orech (drevodekor)": "wood_walnut" },
+        label: "Brána 1 drevodekor",
+        disabled: !isCustom,
+        transient: false,
+        onChange: (val) => setGateDecorState(String(val)),
+      },
+      gate2Decor: {
+        value: isCatalog ? "none" : gate2DecorState,
+        options: { "Podľa RAL farby": "none", "Zlatý dub (drevodekor)": "wood_oak", "Tmavý orech (drevodekor)": "wood_walnut" },
+        label: "Brána 2 drevodekor",
+        disabled: !isCustom,
+        transient: false,
+        onChange: (val) => setGate2DecorState(String(val)),
+      },
       doorOpen: { value: isCatalog ? false : (initialUrlParams.doorOpen ?? DEFAULT_PARAMS.doorOpen), label: "Otvoriť bránu 🔓" },
-      doorWidth: { value: isCatalog ? (initHall.type === "shed" ? Math.min(3.0, initHall.width * 0.5) : (initHall.versions?.[0]?.E ?? 4.8)) : (initialUrlParams.doorWidth ?? DEFAULT_PARAMS.doorWidth), min: 1.0, max: 6.0, step: 0.1, label: "Brána Š [m]" },
-      doorHeight: { value: isCatalog ? (initHall.type === "shed" ? (initHall.versions?.[0]?.H4 ? Math.min(initHall.versions[0].H4 - 0.15, 3.2) : 2.5) : (initHall.versions?.[0]?.H2 ? Math.min(initHall.versions[0].H2 - 0.15, 4.8) : Math.min(3.8, (initHall.versions?.[0]?.H ?? initHall.heights[0]) - 0.2))) : (initialUrlParams.doorHeight ?? DEFAULT_PARAMS.doorHeight), min: 1.8, max: 6.5, step: 0.1, label: "Brána V [m]" },
+      doorWidth: {
+        value: isCatalog ? (initHall.type === "shed" ? Math.min(3.0, initHall.width * 0.5) : (initHall.versions?.[0]?.E ?? 4.8)) : (initialUrlParams.doorWidth ?? DEFAULT_PARAMS.doorWidth),
+        min: 1.5,
+        max: 6.0,
+        step: 0.1,
+        label: "Brána Š [m]",
+        onChange: (dw) => {
+          const curW = (params as any)?.width ?? DEFAULT_PARAMS.width;
+          const isDbl = gateCountState === 2;
+          const maxAllowed = isDbl ? Math.max(1.2, (curW - 0.85) / 2) : Math.max(1.5, curW - 0.5);
+          if (Number(dw) > maxAllowed) {
+            (setParams as any)({ doorWidth: Math.round(maxAllowed * 10) / 10 });
+          }
+        },
+      },
+      doorHeight: {
+        value: isCatalog ? (initHall.type === "shed" ? (initHall.versions?.[0]?.H4 ? Math.min(initHall.versions[0].H4 - 0.15, 3.2) : 2.5) : (initHall.versions?.[0]?.H2 ? Math.min(initHall.versions[0].H2 - 0.15, 4.8) : Math.min(3.8, (initHall.versions?.[0]?.H ?? initHall.heights[0]) - 0.2))) : (initialUrlParams.doorHeight ?? DEFAULT_PARAMS.doorHeight),
+        min: 1.8,
+        max: 6.0,
+        step: 0.1,
+        label: "Brána V [m]",
+        onChange: (dh) => {
+          const curH = (params as any)?.clearHeight ?? DEFAULT_PARAMS.clearHeight;
+          const maxAllowed = Math.max(1.8, curH - 0.2);
+          if (Number(dh) > maxAllowed) {
+            (setParams as any)({ doorHeight: Math.round(maxAllowed * 10) / 10 });
+          }
+        },
+      },
       hasBackDoor: {
         value: isCatalog ? false : hasBackDoorState,
         label: "Zadná brána (prejazd)",
@@ -457,6 +522,9 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     notes,
     gateCount: (isCatalog ? 1 : gateCountState) as 1 | 2,
     gateType: (isCatalog ? "sectional" : gateTypeState) as any,
+    gateDecor: (isCatalog ? "none" : gateDecorState) as any,
+    gate2Decor: (isCatalog ? "none" : gate2DecorState) as any,
+    sectionalDoor2Color: (cleanParams as any).sectionalDoor2Color ?? DEFAULT_PARAMS.sectionalDoor2Color,
     hasBackDoor: isCatalog ? false : hasBackDoorState,
   };
 
@@ -489,6 +557,16 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     };
   }
 
+  // Fyzikálne limity: šírka a výška brány nesmú presiahnuť rozmery samotnej garáže
+  const maxSafeGateHeight = Math.max(1.8, (typedParams.clearHeight ?? 2.6) - 0.2);
+  const isDoubleGates = (typedParams.gateCount ?? 1) === 2;
+  const maxSafeGateWidth = isDoubleGates
+    ? Math.max(1.2, ((typedParams.width ?? 4) - 0.85) / 2)
+    : Math.max(1.5, (typedParams.width ?? 4) - 0.5);
+
+  typedParams.doorHeight = Math.min(typedParams.doorHeight, maxSafeGateHeight);
+  typedParams.doorWidth = Math.min(typedParams.doorWidth, maxSafeGateWidth);
+
   if (typeof window !== "undefined") {
     (window as any).__currentTypedParams = typedParams;
     (window as any).__exportRef = exportRef;
@@ -500,6 +578,29 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       [id]: !prev[id],
     }));
   };
+
+  // Automatické obmedzenie ovládacích prvkov brány na rozmery garáže
+  useEffect(() => {
+    const curW = Number((params as any)?.width) || DEFAULT_PARAMS.width;
+    const curH = Number((params as any)?.clearHeight) || DEFAULT_PARAMS.clearHeight;
+    const isDbl = ((params as any)?.gateCount ?? gateCountState) === 2;
+    const maxW = isDbl ? Math.max(1.2, (curW - 0.85) / 2) : Math.max(1.5, curW - 0.5);
+    const maxH = Math.max(1.8, curH - 0.2);
+
+    const curDW = Number((params as any)?.doorWidth);
+    const curDH = Number((params as any)?.doorHeight);
+
+    const updates: any = {};
+    if (Number.isFinite(curDW) && curDW > maxW + 0.001) {
+      updates.doorWidth = Math.round(maxW * 10) / 10;
+    }
+    if (Number.isFinite(curDH) && curDH > maxH + 0.001) {
+      updates.doorHeight = Math.round(maxH * 10) / 10;
+    }
+    if (Object.keys(updates).length > 0) {
+      (setParams as any)(updates);
+    }
+  }, [(params as any)?.width, (params as any)?.clearHeight, (params as any)?.doorWidth, (params as any)?.doorHeight, gateCountState]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

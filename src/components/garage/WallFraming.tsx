@@ -78,11 +78,18 @@ export function WallFraming({
   }
   const activeVer = currentHall?.versions?.find((v) => Math.abs(v.H - p.clearHeight) < 0.05) || currentHall?.versions?.[0];
   const halfW = p.width / 2;
-  const pillarD = activeVer?.D ?? (p.width - p.doorWidth) / 2;
+  const isDouble = Number(p.gateCount ?? 1) === 2;
+  const maxSafeDoorW = isDouble
+    ? Math.max(1.2, (p.width - 0.85) / 2)
+    : Math.max(1.5, p.width - 0.5);
+  const actualDW = Math.min(p.doorWidth, maxSafeDoorW);
+  const actualDH = Math.min(p.doorHeight, Math.max(1.8, Heave - 0.2));
+
+  const pillarD = activeVer?.D ?? (p.width - actualDW) / 2;
   const isShedHall = currentHall?.type === "shed";
   const hasThreeGablePosts = currentHall && (currentHall.name === "KD16" || currentHall.name === "KD18" || currentHall.name === "KD20");
-  const x_L_post = isShedHall ? -p.doorWidth / 2 : -halfW + pillarD;
-  const x_R_post = isShedHall ? p.doorWidth / 2 : halfW - pillarD;
+  const x_L_post = isShedHall ? -actualDW / 2 : -halfW + pillarD;
+  const x_R_post = isShedHall ? actualDW / 2 : halfW - pillarD;
 
   const leftCuts: Interval[] = [];
   const rightCuts: Interval[] = [];
@@ -95,9 +102,9 @@ export function WallFraming({
     // 1. FRONT WALL (z = -L/2) - Cut by main gate opening between gable pillars
     if (!isTubularBraced) {
       frontCuts.length = 0;
-      if (h < p.doorHeight) {
-        if ((p.gateCount ?? 1) === 2) {
-          const dLayout = getDoubleGateLayout(p.width, p.doorWidth);
+      if (h < actualDH) {
+        if (isDouble) {
+          const dLayout = getDoubleGateLayout(p.width, actualDW);
           const halfDoor = dLayout.actualDoorW / 2;
           frontCuts.push({ start: dLayout.leftCx - halfDoor, end: dLayout.leftCx + halfDoor });
           frontCuts.push({ start: dLayout.rightCx - halfDoor, end: dLayout.rightCx + halfDoor });
@@ -234,8 +241,7 @@ export function WallFraming({
     y_right_post = Heave + (x_R_post - hxL) * Math.tan(angleShed);
   }
 
-  const isDouble = Number(p.gateCount ?? 1) === 2;
-  const dLayout = isDouble ? getDoubleGateLayout(p.width, p.doorWidth) : null;
+  const dLayout = isDouble ? getDoubleGateLayout(p.width, actualDW) : null;
   const halfDoor = dLayout ? dLayout.actualDoorW / 2 : 0;
 
   const getPostY = (x: number) => {
@@ -302,7 +308,7 @@ export function WallFraming({
         />,
       );
     } else {
-      const doorTop = Math.min(p.doorHeight, y_left_post - 0.2);
+      const doorTop = Math.min(actualDH, y_left_post - 0.2);
       out.push(
         <SteelTube
           key="door-frame-top"

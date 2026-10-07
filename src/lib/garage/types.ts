@@ -17,9 +17,10 @@ export interface GarageParams {
   claddingColor: string;     // hex
   roofColor: string;         // hex
   doorColor: string;         // hex – personal door
-  sectionalDoorColor: string;// hex – garage door (gate)
+  sectionalDoorColor: string;// hex – garage door 1 (gate)
+  sectionalDoor2Color?: string;// hex – garage door 2 (gate 2)
   trimmingColor: string;     // hex – corner flashings, joint flashings, gutters
-  panelType: "trapezoid" | "sandwich" | "smooth";
+  panelType: "trapezoid" | "sandwich" | "smooth" | "wood_oak" | "wood_walnut";
   roofPanelType: "trapezoid" | "sandwich" | "smooth" | "tile";
   claddingOrientation: "vertical" | "horizontal";
   roofCladdingOrientation?: "vertical" | "horizontal";
@@ -41,6 +42,8 @@ export interface GarageParams {
   doorHeight: number;
   gateCount?: 1 | 2;
   gateType?: "sectional" | "upAndOver" | "doubleLeaf";
+  gateDecor?: "none" | "wood_oak" | "wood_walnut";
+  gate2Decor?: "none" | "wood_oak" | "wood_walnut";
   hasBackDoor?: boolean;
   hasPersonalDoor: boolean;
   personalDoorSide: "left" | "right" | "back";
@@ -73,10 +76,11 @@ export const DEFAULT_PARAMS: GarageParams = {
   profileSize: 0.1,
   profileThickness: 0.004,
   steelColor: "#6e7681",
-  claddingColor: "#f5f5f0",
+  claddingColor: "#ffffff",
   roofColor: "#2b2f36",
   doorColor: "#3a3f47",
   sectionalDoorColor: "#3a3f47",
+  sectionalDoor2Color: "#3a3f47",
   trimmingColor: "#030303",
   panelType: "smooth",
   roofPanelType: "trapezoid",
@@ -97,6 +101,8 @@ export const DEFAULT_PARAMS: GarageParams = {
   doorHeight: 2.2,
   gateCount: 1,
   gateType: "sectional",
+  gateDecor: "none",
+  gate2Decor: "none",
   hasBackDoor: false,
   hasPersonalDoor: true,
   personalDoorSide: "right",

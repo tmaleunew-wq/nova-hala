@@ -8,6 +8,9 @@ import {
   makeTileNormalTexture,
   makeTileRoughnessTexture,
   makeTileMetalnessTexture,
+  makeWoodTexture,
+  makeWoodNormalTexture,
+  makeWoodRoughnessTexture,
 } from "./textures";
 
 /**
@@ -95,6 +98,39 @@ export function createPBRTileMaterial(
     metalnessMap,
     roughness: 1.0,
     metalness: 1.0,
+    side: THREE.DoubleSide,
+  });
+}
+
+export function createPBRWoodMaterial(
+  type: "golden_oak" | "walnut" = "golden_oak",
+  orientation: "vertical" | "horizontal" = "horizontal",
+  grainRepeat = 8,
+): THREE.MeshStandardMaterial {
+  const map = makeWoodTexture(type, grainRepeat);
+  const normalMap = makeWoodNormalTexture(grainRepeat);
+  const roughnessMap = makeWoodRoughnessTexture();
+
+  const textures = [map, normalMap, roughnessMap];
+  for (const tex of textures) {
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    if (orientation === "horizontal") {
+      tex.rotation = Math.PI / 2;
+      tex.center.set(0.5, 0.5);
+    }
+  }
+
+  return new THREE.MeshStandardMaterial({
+    map,
+    normalMap,
+    normalScale: new THREE.Vector2(0.85, 0.85),
+    roughnessMap,
+    roughness: 0.55,
+    metalness: 0.05,
     side: THREE.DoubleSide,
   });
 }

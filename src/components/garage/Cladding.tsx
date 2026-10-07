@@ -4,7 +4,7 @@ import * as THREE from "three";
 import type { GarageParams } from "@/lib/garage/types";
 import { ridgeHeight, highEave, getFrameZ, getPersonalDoorZ, getWindowZs, getWindowCoords, getDoubleGateLayout } from "./Structure";
 import { makeTrapezoidTexture } from "@/lib/garage/textures";
-import { createPBRCladdingMaterial, createPBRSmoothMaterial, createPBRTileMaterial } from "@/lib/garage/pbrMaterialHelper";
+import { createPBRCladdingMaterial, createPBRSmoothMaterial, createPBRTileMaterial, createPBRWoodMaterial } from "@/lib/garage/pbrMaterialHelper";
 import { getCladdingConfig } from "@/lib/garage/configHelper";
 
 import { PurPanel, type Rect } from './PurPanel';
@@ -59,6 +59,12 @@ function PurGableTriangle({
     if (wireframe) return null;
     if (panelType === "smooth") {
       return createPBRSmoothMaterial(activeColorStr);
+    }
+    if (panelType === "wood_oak") {
+      return createPBRWoodMaterial("golden_oak", claddingOrientation);
+    }
+    if (panelType === "wood_walnut") {
+      return createPBRWoodMaterial("walnut", claddingOrientation);
     }
     const isHorizontal = claddingOrientation === "horizontal";
     const orient = isHorizontal ? "horizontal" : "vertical";
@@ -214,6 +220,12 @@ function PurShedTriangle({
     if (panelType === "smooth") {
       return createPBRSmoothMaterial(activeColorStr);
     }
+    if (panelType === "wood_oak") {
+      return createPBRWoodMaterial("golden_oak", claddingOrientation);
+    }
+    if (panelType === "wood_walnut") {
+      return createPBRWoodMaterial("walnut", claddingOrientation);
+    }
     const isHorizontal = claddingOrientation === "horizontal";
     const orient = isHorizontal ? "horizontal" : "vertical";
     const spacing = panelType === "sandwich" ? 1.0 : 0.25;
@@ -337,23 +349,28 @@ export function Cladding({
   const Hridge = ridgeHeight(p);
   const Hhi = highEave(p);
 
-  const wallThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+  const wallThickness = (p.panelType === "sandwich" || p.panelType === "smooth" || p.panelType === "wood_oak" || p.panelType === "wood_walnut") ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
   const roofThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.roofPanelThicknessMm / 1000) : 0.01;
   const panelThickness = wallThickness;
   const roofPanelThickness = roofThickness;
-  const isSand = p.panelType === "sandwich" || p.panelType === "smooth";
+  const isSand = p.panelType === "sandwich" || p.panelType === "smooth" || p.panelType === "wood_oak" || p.panelType === "wood_walnut";
   const isRoofSand = p.roofPanelType === "sandwich" || p.roofPanelType === "smooth";
   const sz = p.profileSize;
 
   // openings
   const isDoubleGate = Number(p.gateCount ?? 1) === 2;
-  const dLayout = getDoubleGateLayout(W, p.doorWidth);
+  const maxSafeDoorW = isDoubleGate
+    ? Math.max(1.2, (W - 0.85) / 2)
+    : Math.max(1.5, W - 0.5);
+  const actualDW = Math.min(p.doorWidth, maxSafeDoorW);
+  const actualDH = Math.min(p.doorHeight, Math.max(1.8, Heave - 0.2));
+  const dLayout = getDoubleGateLayout(W, actualDW);
   const frontDoorHoles: Rect[] = isDoubleGate
     ? [
-        { cx: dLayout.leftCx, cy: p.doorHeight / 2 + 0.02, w: dLayout.actualDoorW, h: p.doorHeight },
-        { cx: dLayout.rightCx, cy: p.doorHeight / 2 + 0.02, w: dLayout.actualDoorW, h: p.doorHeight },
+        { cx: dLayout.leftCx, cy: actualDH / 2 + 0.02, w: dLayout.actualDoorW, h: actualDH },
+        { cx: dLayout.rightCx, cy: actualDH / 2 + 0.02, w: dLayout.actualDoorW, h: actualDH },
       ]
-    : [{ cx: 0, cy: p.doorHeight / 2 + 0.02, w: p.doorWidth, h: p.doorHeight }];
+    : [{ cx: 0, cy: actualDH / 2 + 0.02, w: actualDW, h: actualDH }];
   const personalHole: Rect = { cx: getPersonalDoorZ(p), cy: 1.0, w: 0.9, h: 2.0 };
   const winSpread: Rect[] = [];
   if (p.hasWindows && p.windowCount > 0) {
@@ -398,7 +415,7 @@ export function Cladding({
       {(() => {
         const backHoles: Rect[] = [];
         if (p.hasBackDoor) {
-          backHoles.push({ cx: 0, cy: p.doorHeight / 2 + 0.02, w: p.doorWidth, h: p.doorHeight });
+          backHoles.push({ cx: 0, cy: actualDH / 2 + 0.02, w: actualDW, h: actualDH });
         }
         if (p.personalDoorSide === "back" && p.hasPersonalDoor) {
           backHoles.push({ cx: p.hasBackDoor ? W / 4 : 0, cy: 1.0, w: 0.9, h: 2.0 });
@@ -528,7 +545,7 @@ export function Cladding({
       {/* GABLE TRIANGLES on front/back */}
       {p.roofType === "gable" && (
         <>
-          <group position={[0, 0, -L / 2 - (sz / 2 + panelThickness / 2) + offFront]}>
+          <group position={[0, 0, -L / 2 - (sz / 2 + panelThickness / 2) + offFront]} rotation={[0, Math.PI, 0]}>
             <PurGableTriangle
               p={p}
               width={W + sz + panelThickness}

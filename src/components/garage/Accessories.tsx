@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { useMemo, useRef, useState } from "react";
 import type { GarageParams } from "@/lib/garage/types";
 import { ridgeHeight, highEave, getFrameZ, getPersonalDoorZ, getWindowZs, getWindowCoords, getDoubleGateLayout } from "./Structure";
-import { createPBRCladdingMaterial, createPBRSmoothMaterial } from "@/lib/garage/pbrMaterialHelper";
+import { createPBRCladdingMaterial, createPBRSmoothMaterial, createPBRWoodMaterial } from "@/lib/garage/pbrMaterialHelper";
 import { FlashingsAndGutters } from "./FlashingsAndGutters";
 
 /** Garage door supporting Sectional, Up & Over (Výklopná), and Double-leaf (Dvojkrídlová) types */
@@ -13,17 +13,29 @@ function GarageDoor({
   cz,
   rotY = 0,
   effectiveWidth,
+  doorColor,
+  doorDecor,
 }: {
   p: GarageParams;
   cx: number;
   cz: number;
   rotY?: number;
   effectiveWidth?: number;
+  doorColor?: string;
+  doorDecor?: "none" | "wood_oak" | "wood_walnut";
 }) {
-  const gateWidth = effectiveWidth ?? p.doorWidth;
+  const isDouble = (Number(p.gateCount) || 1) === 2;
+  const maxSafeDoorW = isDouble
+    ? Math.max(1.2, (p.width - 0.85) / 2)
+    : Math.max(1.5, p.width - 0.5);
+  const gateWidth = Math.min(effectiveWidth ?? p.doorWidth, maxSafeDoorW);
   const gateType = p.gateType || "sectional";
+  const activeColor = doorColor ?? p.sectionalDoorColor;
+  const activeDecor = doorDecor ?? p.gateDecor ?? "none";
+  const maxSafeDoorHeight = Math.max(1.8, p.clearHeight - 0.2);
+  const actualDoorHeight = Math.min(p.doorHeight, maxSafeDoorHeight);
   const panels = 4;
-  const panelH = p.doorHeight / panels;
+  const panelH = actualDoorHeight / panels;
 
   // Local state for smooth animation
   const progressRef = useRef(0);
@@ -43,9 +55,24 @@ function GarageDoor({
   });
 
   const R = 0.25;
-  const y_c = p.doorHeight - R;
+  const y_c = actualDoorHeight - R;
   const curveLength = (R * Math.PI) / 2;
-  const travelDistance = currentProgress * (p.doorHeight - 0.05);
+  const travelDistance = currentProgress * (actualDoorHeight - 0.05);
+
+  const gateMaterial = useMemo(() => {
+    if (activeDecor === "wood_oak") {
+      return createPBRWoodMaterial("golden_oak", "horizontal");
+    }
+    if (activeDecor === "wood_walnut") {
+      return createPBRWoodMaterial("walnut", "horizontal");
+    }
+    return new THREE.MeshStandardMaterial({
+      color: activeColor,
+      metalness: 0.7,
+      roughness: 0.4,
+      wireframe: p.wireframe,
+    });
+  }, [activeDecor, activeColor, p.wireframe]);
 
   return (
     <group position={[cx, 0, cz]} rotation={[0, rotY, 0]}>
@@ -71,7 +98,7 @@ function GarageDoor({
               rotX = -alpha;
             } else {
               const dHoriz = u - (y_c + curveLength);
-              panelY = p.doorHeight;
+              panelY = actualDoorHeight;
               panelZ = R + dHoriz;
               rotX = -Math.PI / 2;
             }
@@ -83,14 +110,9 @@ function GarageDoor({
                 rotation={[rotX, 0, 0]}
                 castShadow
                 receiveShadow
+                material={gateMaterial}
               >
                 <boxGeometry args={[gateWidth, panelH - 0.01, 0.04]} />
-                <meshStandardMaterial
-                  color={p.sectionalDoorColor}
-                  metalness={0.7}
-                  roughness={0.4}
-                  wireframe={p.wireframe}
-                />
               </mesh>
             );
           })}
@@ -98,12 +120,12 @@ function GarageDoor({
           {/* Tracks */}
           {[-1, 1].map((s) => (
             <group key={s}>
-              <mesh position={[(s * gateWidth) / 2, p.doorHeight / 2 + 0.02, 0.02]} castShadow>
-                <boxGeometry args={[0.04, p.doorHeight, 0.02]} />
+              <mesh position={[(s * gateWidth) / 2, actualDoorHeight / 2 + 0.02, 0.02]} castShadow>
+                <boxGeometry args={[0.04, actualDoorHeight, 0.02]} />
                 <meshStandardMaterial color="#3a3f47" metalness={0.8} roughness={0.4} wireframe={p.wireframe} />
               </mesh>
-              <mesh position={[(s * gateWidth) / 2, p.doorHeight + 0.02, p.doorHeight / 2 + 0.02]} castShadow>
-                <boxGeometry args={[0.02, 0.02, p.doorHeight]} />
+              <mesh position={[(s * gateWidth) / 2, actualDoorHeight + 0.02, actualDoorHeight / 2 + 0.02]} castShadow>
+                <boxGeometry args={[0.02, 0.02, actualDoorHeight]} />
                 <meshStandardMaterial color="#3a3f47" metalness={0.8} roughness={0.4} wireframe={p.wireframe} />
               </mesh>
             </group>
@@ -114,26 +136,20 @@ function GarageDoor({
       {/* 2. VÝKLOPNÁ BRÁNA (Up & Over) */}
       {gateType === "upAndOver" && (() => {
         const tiltAngle = -currentProgress * (Math.PI / 2.15);
-        const tiltY = 0.02 + p.doorHeight / 2 + currentProgress * (p.doorHeight / 2.2);
-        const tiltZ = currentProgress * (p.doorHeight * 0.65);
+        const tiltY = 0.02 + actualDoorHeight / 2 + currentProgress * (actualDoorHeight / 2.2);
+        const tiltZ = currentProgress * (actualDoorHeight * 0.65);
         return (
           <group position={[0, tiltY, tiltZ]} rotation={[tiltAngle, 0, 0]}>
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[gateWidth - 0.02, p.doorHeight - 0.02, 0.04]} />
-              <meshStandardMaterial
-                color={p.sectionalDoorColor}
-                metalness={0.7}
-                roughness={0.4}
-                wireframe={p.wireframe}
-              />
+            <mesh castShadow receiveShadow material={gateMaterial}>
+              <boxGeometry args={[gateWidth - 0.02, actualDoorHeight - 0.02, 0.04]} />
             </mesh>
             {/* Obvodový rám výklopnej brány */}
             <mesh position={[0, 0, 0.005]}>
-              <boxGeometry args={[gateWidth, p.doorHeight, 0.015]} />
+              <boxGeometry args={[gateWidth, actualDoorHeight, 0.015]} />
               <meshStandardMaterial color="#1a1c20" metalness={0.8} roughness={0.5} wireframe={p.wireframe} />
             </mesh>
             {/* Madlo a zámok v strede dole */}
-            <group position={[0, -p.doorHeight / 2 + 0.35, 0.035]}>
+            <group position={[0, -actualDoorHeight / 2 + 0.35, 0.035]}>
               <mesh castShadow>
                 <boxGeometry args={[0.16, 0.035, 0.03]} />
                 <meshStandardMaterial color="#111111" metalness={0.9} roughness={0.2} />
@@ -152,21 +168,15 @@ function GarageDoor({
         const leafW = (gateWidth - 0.02) / 2;
         const swingAngle = currentProgress * (Math.PI * 0.5);
         return (
-          <group position={[0, 0.02 + p.doorHeight / 2, 0]}>
+          <group position={[0, 0.02 + actualDoorHeight / 2, 0]}>
             {/* Ľavé krídlo */}
             <group position={[-gateWidth / 2, 0, 0]} rotation={[0, swingAngle, 0]}>
-              <mesh position={[leafW / 2, 0, 0]} castShadow receiveShadow>
-                <boxGeometry args={[leafW, p.doorHeight - 0.02, 0.04]} />
-                <meshStandardMaterial
-                  color={p.sectionalDoorColor}
-                  metalness={0.7}
-                  roughness={0.4}
-                  wireframe={p.wireframe}
-                />
+              <mesh position={[leafW / 2, 0, 0]} castShadow receiveShadow material={gateMaterial}>
+                <boxGeometry args={[leafW, actualDoorHeight - 0.02, 0.04]} />
               </mesh>
               {/* Pánty */}
               {[-0.4, 0.4].map((py, idx) => (
-                <mesh key={idx} position={[0.01, py * (p.doorHeight / 2), 0.025]}>
+                <mesh key={idx} position={[0.01, py * (actualDoorHeight / 2), 0.025]}>
                   <cylinderGeometry args={[0.015, 0.015, 0.08, 16]} />
                   <meshStandardMaterial color="#222" metalness={0.8} roughness={0.3} />
                 </mesh>
@@ -175,14 +185,8 @@ function GarageDoor({
 
             {/* Pravé krídlo s kľučkou */}
             <group position={[gateWidth / 2, 0, 0]} rotation={[0, -swingAngle, 0]}>
-              <mesh position={[-leafW / 2, 0, 0]} castShadow receiveShadow>
-                <boxGeometry args={[leafW, p.doorHeight - 0.02, 0.04]} />
-                <meshStandardMaterial
-                  color={p.sectionalDoorColor}
-                  metalness={0.7}
-                  roughness={0.4}
-                  wireframe={p.wireframe}
-                />
+              <mesh position={[-leafW / 2, 0, 0]} castShadow receiveShadow material={gateMaterial}>
+                <boxGeometry args={[leafW, actualDoorHeight - 0.02, 0.04]} />
               </mesh>
               {/* Kľučka na pravom krídle */}
               <group position={[-leafW + 0.1, -0.1, 0.035]}>
@@ -251,8 +255,14 @@ function PersonalDoor({ p, explodeY }: { p: GarageParams; explodeY: number }) {
 
   const pbrMaterial = useMemo(() => {
     if (p.wireframe) return null;
+    if (p.gateDecor === "wood_oak") {
+      return createPBRWoodMaterial("golden_oak", "vertical");
+    }
+    if (p.gateDecor === "wood_walnut") {
+      return createPBRWoodMaterial("walnut", "vertical");
+    }
     return createPBRSmoothMaterial(p.doorColor);
-  }, [p.doorColor, p.wireframe]);
+  }, [p.gateDecor, p.doorColor, p.wireframe]);
 
   return (
     <group position={position} rotation={rotation}>
@@ -418,22 +428,62 @@ export function Accessories({ p, explodeY }: { p: GarageParams; explodeY: number
   const isDouble = gateCount === 2;
   const W = p.width;
   const L = p.length;
+  const maxSafeDoorW = isDouble
+    ? Math.max(1.2, (W - 0.85) / 2)
+    : Math.max(1.5, W - 0.5);
+  const actualDW = Math.min(p.doorWidth, maxSafeDoorW);
   const zFront = -L / 2 - 0.025 + explodeY * -2.2;
   const zBack = L / 2 + 0.025 + explodeY * 2.2;
-  const dLayout = getDoubleGateLayout(W, p.doorWidth);
+  const dLayout = getDoubleGateLayout(W, actualDW);
 
   return (
     <group>
       {isDouble ? (
         <>
-          <GarageDoor key="gate-front-left" p={p} cx={dLayout.leftCx} cz={zFront} rotY={0} effectiveWidth={dLayout.actualDoorW} />
-          <GarageDoor key="gate-front-right" p={p} cx={dLayout.rightCx} cz={zFront} rotY={0} effectiveWidth={dLayout.actualDoorW} />
+          <GarageDoor
+            key="gate-front-left"
+            p={p}
+            cx={dLayout.leftCx}
+            cz={zFront}
+            rotY={0}
+            effectiveWidth={dLayout.actualDoorW}
+            doorColor={p.sectionalDoorColor}
+            doorDecor={p.gateDecor}
+          />
+          <GarageDoor
+            key="gate-front-right"
+            p={p}
+            cx={dLayout.rightCx}
+            cz={zFront}
+            rotY={0}
+            effectiveWidth={dLayout.actualDoorW}
+            doorColor={p.sectionalDoor2Color ?? p.sectionalDoorColor}
+            doorDecor={p.gate2Decor ?? p.gateDecor}
+          />
         </>
       ) : (
-        <GarageDoor key="gate-front-single" p={p} cx={0} cz={zFront} rotY={0} effectiveWidth={p.doorWidth} />
+        <GarageDoor
+          key="gate-front-single"
+          p={p}
+          cx={0}
+          cz={zFront}
+          rotY={0}
+          effectiveWidth={actualDW}
+          doorColor={p.sectionalDoorColor}
+          doorDecor={p.gateDecor}
+        />
       )}
       {p.hasBackDoor && (
-        <GarageDoor key="gate-back" p={p} cx={0} cz={zBack} rotY={Math.PI} effectiveWidth={p.doorWidth} />
+        <GarageDoor
+          key="gate-back"
+          p={p}
+          cx={0}
+          cz={zBack}
+          rotY={Math.PI}
+          effectiveWidth={actualDW}
+          doorColor={p.sectionalDoorColor}
+          doorDecor={p.gateDecor}
+        />
       )}
       <PersonalDoor p={p} explodeY={explodeY} />
       <Windows p={p} explodeY={explodeY} />

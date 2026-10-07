@@ -4,6 +4,7 @@ import {
   createPBRCladdingMaterial,
   createPBRSmoothMaterial,
   createPBRTileMaterial,
+  createPBRWoodMaterial,
 } from "@/lib/garage/pbrMaterialHelper";
 
 export interface Rect {
@@ -61,11 +62,17 @@ export function PurPanel({
     s.lineTo(-w2, height);
     s.lineTo(-w2, 0);
     for (const r of holes) {
+      const margin = 0.01;
+      const maxW = Math.max(0.1, width - margin * 2);
+      const holeW = Math.min(r.w, maxW);
+      const maxH = Math.max(0.1, height - margin * 2);
+      const holeH = Math.min(r.h, maxH);
+      const halfHW = holeW / 2;
+      const x0 = Math.max(-w2 + margin, Math.min(w2 - margin - holeW, r.cx - halfHW));
+      const x1 = x0 + holeW;
+      const y0 = Math.max(margin, Math.min(height - margin - holeH, r.cy - holeH / 2));
+      const y1 = y0 + holeH;
       const path = new THREE.Path();
-      const x0 = r.cx - r.w / 2;
-      const x1 = r.cx + r.w / 2;
-      const y0 = r.cy - r.h / 2;
-      const y1 = r.cy + r.h / 2;
       path.moveTo(x0, y0);
       path.lineTo(x0, y1);
       path.lineTo(x1, y1);
@@ -101,6 +108,12 @@ export function PurPanel({
     }
     if (panelType === "smooth") {
       return createPBRSmoothMaterial(activeColorStr);
+    }
+    if (panelType === "wood_oak") {
+      return createPBRWoodMaterial("golden_oak", claddingOrientation);
+    }
+    if (panelType === "wood_walnut") {
+      return createPBRWoodMaterial("walnut", claddingOrientation);
     }
     const isHorizontal = claddingOrientation === "horizontal";
     const orient = isHorizontal ? "horizontal" : "vertical";
