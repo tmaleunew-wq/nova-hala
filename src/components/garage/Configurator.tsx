@@ -63,10 +63,13 @@ function getParamsFromURL(): Partial<GarageParams> {
 
 export default function Configurator({ variant }: { variant?: string } = {}) {
   const exportRef = useRef<THREE.Group | null>(null);
+  const [initialUrlParams] = useState(() => getParamsFromURL());
   const [preset, setPreset] = useState<ViewPreset>("iso");
   const [removedPanels, setRemovedPanels] = useState<Record<string, boolean>>({});
   const [quoteRequestSignal, setQuoteRequestSignal] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [notes, setNotes] = useState(initialUrlParams.notes ?? "");
+  const [isSummaryOpen, setIsSummaryOpen] = useState(true);
   const [showControls, setShowControls] = useState(false);
   const [showHallSpecs, setShowHallSpecs] = useState(false);
 
@@ -81,7 +84,6 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const [initialUrlParams] = useState(() => getParamsFromURL());
   const hallsConfig = getHallsConfig();
   const urlVariant = typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("variant") || new URLSearchParams(window.location.search).get("client")) : null;
   const activeVariant = variant || (urlVariant === "2" ? "variant2" : urlVariant === "3" ? "variant3" : urlVariant) || "default";
@@ -306,11 +308,6 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       sealingSystem: { value: initialUrlParams.sealingSystem ?? DEFAULT_PARAMS.sealingSystem, label: "Tesnenia a tmely" },
       flashingMatchesPanels: { value: initialUrlParams.flashingMatchesPanels ?? DEFAULT_PARAMS.flashingMatchesPanels, label: "Systémové klampiarstvo" },
     }, { collapsed: true }),
-    "Export": folder({
-      "Dopytovať cenovú ponuku": button(() => {
-        setQuoteRequestSignal((v) => v + 1);
-      }),
-    }, { collapsed: true }),
   }), [selectedHall]);
 
   const applyHallType = (v: string, withCladding?: boolean) => {
@@ -416,7 +413,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     }
   }
 
-  let typedParams: GarageParams = { ...DEFAULT_PARAMS, ...cleanParams };
+  let typedParams: GarageParams = { ...DEFAULT_PARAMS, ...cleanParams, notes };
 
   if (selectedHall && selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
     const h = hallsConfig[selectedHall];
@@ -473,7 +470,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       const rawVal = typedParams[key];
       if (rawVal === undefined || rawVal === null || Number.isNaN(rawVal as any)) continue;
       let val = String(rawVal);
-      if (val === "undefined" || val === "NaN") continue;
+      if (val === "undefined" || val === "NaN" || (key === "notes" && !val.trim())) continue;
       if ((key === "claddingColor" || key === "roofColor" || key === "steelColor" || key === "doorColor" || key === "sectionalDoorColor" || key === "trimmingColor") && val.startsWith("#")) {
         val = val.substring(1);
       }
@@ -620,16 +617,86 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
             fonts: { mono: "ui-monospace, SFMono-Regular, Menlo, monospace" },
           }}
         />
+
+        {/* Súhrn konfigurácie */}
+        <div className="border-t border-white/10 bg-[#161b22]">
+          <button
+            type="button"
+            onClick={() => setIsSummaryOpen((v) => !v)}
+            className="flex w-full items-center justify-between px-3.5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-white/90 hover:bg-white/5 transition cursor-pointer select-none"
+          >
+            <span className="flex items-center gap-2">
+              <span className="text-[10px] text-emerald-400">{isSummaryOpen ? "▾" : "▸"}</span>
+              Súhrn konfigurácie
+            </span>
+            <span className="text-[10px] font-normal text-emerald-400 font-mono">
+              {(typedParams.width * typedParams.length).toFixed(1)} m²
+            </span>
+          </button>
+
+          {isSummaryOpen && (
+            <div className="p-3 pt-1 space-y-2.5 text-[11px] font-mono border-t border-white/5">
+              <div className="rounded bg-black/40 p-2.5 border border-white/5 space-y-1.5 text-white/80">
+                <div className="flex justify-between">
+                  <span className="text-white/50">Model:</span>
+                  <span className="font-bold text-emerald-400">{selectedHall !== "Vlastný" ? selectedHall : "Vlastná garáž"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">Rozmery:</span>
+                  <span className="text-white font-medium">{typedParams.width} × {typedParams.length} m</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">Svetlá výška:</span>
+                  <span className="text-white font-medium">{typedParams.clearHeight} m</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">Strecha:</span>
+                  <span className="text-white font-medium">{typedParams.roofType === "gable" ? "Sedlová" : "Pultová"} ({typedParams.roofPitchDeg}°)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">Opláštenie:</span>
+                  <span className="text-white font-medium">
+                    {typedParams.panelType === "sandwich" ? `Sendvič ${typedParams.wallPanelThicknessMm}mm` : "Trapéz"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">Brána:</span>
+                  <span className="text-white font-medium">{typedParams.doorWidth} × {typedParams.doorHeight} m</span>
+                </div>
+                {(typedParams.hasPersonalDoor || typedParams.windowCount > 0) && (
+                  <div className="flex justify-between">
+                    <span className="text-white/50">Výplne:</span>
+                    <span className="text-white font-medium">
+                      {typedParams.hasPersonalDoor ? "Dvere" : ""}{typedParams.hasPersonalDoor && typedParams.windowCount > 0 ? " + " : ""}{typedParams.windowCount > 0 ? `${typedParams.windowCount}x okno` : ""}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block mb-1 text-[10px] text-white/60 uppercase tracking-wider font-semibold">
+                  Poznámka:
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={2}
+                  className="w-full rounded border border-white/10 bg-black/50 px-2.5 py-1.5 text-white/90 focus:border-emerald-400 focus:outline-none resize-none text-[11px]"
+                  placeholder="Špecifikácia, požiadavky..."
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setQuoteRequestSignal((v) => v + 1)}
+                className="w-full h-11 rounded bg-emerald-400 text-center font-bold text-black transition hover:bg-emerald-300 active:scale-[0.99] shadow-lg shadow-emerald-500/20 text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                Dopytovať cenovú ponuku
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-      <style>{`
-        .quote-export-panel > div > div:last-child > div > div:last-child button {
-          height: 48px;
-          min-height: 48px;
-          font-size: 14px;
-          font-weight: 700;
-          padding: 0 16px;
-        }
-      `}</style>
 
       {/* Catalog 1:1 Reference Modal */}
       <HallCatalogModal

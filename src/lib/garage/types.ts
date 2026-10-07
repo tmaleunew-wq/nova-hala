@@ -56,6 +56,7 @@ export interface GarageParams {
   showAccessories: boolean;
   doorOpen: boolean;
   showCatalogDimensions?: boolean;
+  notes?: string;
 }
 
 export const DEFAULT_PARAMS: GarageParams = {
@@ -106,4 +107,5 @@ export const DEFAULT_PARAMS: GarageParams = {
   showFoundation: false,
   showAccessories: true,
   doorOpen: false,
+  notes: "",
 };

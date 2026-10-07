@@ -72,7 +72,17 @@ export function ProductPicker({
                   {selectedHall === "Vlastný" ? "✓ Aktívne" : "Na mieru"}
                 </span>
               </div>
-              <div className="mt-1 font-mono text-[10px] text-white/50">
+              <div className="mt-3 grid grid-cols-2 gap-2 font-mono">
+                <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">Šírka</div>
+                  <div className="text-sm font-bold text-white">Voliteľná</div>
+                </div>
+                <div className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1.5">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-cyan-400">Modul</div>
+                  <div className="text-sm font-bold text-white">Na mieru</div>
+                </div>
+              </div>
+              <div className="mt-2 font-mono text-[10px] text-white/50">
                 Štandard · voliteľné rozmery, opláštenie, brána, okná
               </div>
               <p className="mt-2 text-[11px] leading-relaxed text-white/70 min-h-[36px]">
@@ -119,8 +129,18 @@ export function ProductPicker({
                       {isSelected ? "✓ Aktívne" : (h.badge || (h.type === "shed" ? "Pultová" : "Sedlová"))}
                     </span>
                   </div>
-                  <div className="mt-1 font-mono text-[10px] text-white/50">
-                    Šírka {h.width} m · modul {h.moduleLength} m · {h.framework}
+                  <div className="mt-3 grid grid-cols-2 gap-2 font-mono">
+                    <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">Šírka</div>
+                      <div className="text-sm font-bold text-white">{h.width} m</div>
+                    </div>
+                    <div className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1.5">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-cyan-400">Modul</div>
+                      <div className="text-sm font-bold text-white">{h.moduleLength} m</div>
+                    </div>
+                  </div>
+                  <div className="mt-2 font-mono text-[10px] text-white/50">
+                    {h.framework}
                   </div>
                   <p className="mt-2 text-[11px] leading-relaxed text-white/70 min-h-[36px]">
                     {h.description}

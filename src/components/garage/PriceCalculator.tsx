@@ -37,8 +37,11 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
 
   useEffect(() => {
     if (!quoteRequestSignal || quoteRequestSignal <= 0) return;
+    if (p.notes) {
+      setMessage(p.notes);
+    }
     setShowForm(true);
-  }, [quoteRequestSignal]);
+  }, [quoteRequestSignal, p.notes]);
 
   // 1. Calculations matching Structure.tsx
   const W = p.width;
