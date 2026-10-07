@@ -48,7 +48,14 @@ export function ProductPicker({
                 : "border-emerald-500/30 bg-gradient-to-br from-emerald-500/15 to-[#0e1116]"
             }`}
           >
-            <div className="flex h-40 items-center justify-center text-6xl">🏠</div>
+            <div className="h-40 overflow-hidden bg-[#ececec] flex items-center justify-center">
+              <img
+                src="/catalog/vlastna_garaz.png"
+                alt="Vlastná garáž"
+                loading="lazy"
+                className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
+              />
+            </div>
             <div className="border-t border-white/10 p-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
