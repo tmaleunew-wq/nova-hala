@@ -2,6 +2,7 @@ import defaultConfig from "@/config/default.json";
 import premiumConfig from "@/config/premium.json";
 import variant2Config from "@/config/variant2.json";
 import variant3Config from "@/config/variant3.json";
+import variant4Config from "@/config/variant4.json";
 import hallsConfig from "@/config/halls.json";
 
 export interface HallVersion {
@@ -64,6 +65,7 @@ export interface CladdingConfig {
   trapezoidPricePerSqM: number;
   imageCatalog?: string;
   catalogWithCladding?: boolean;
+  pickerLayout?: "grid" | "binary";
 }
 
 export function getCladdingConfig(clientName?: string | null): CladdingConfig {
@@ -72,6 +74,7 @@ export function getCladdingConfig(clientName?: string | null): CladdingConfig {
     premium: premiumConfig as CladdingConfig,
     variant2: variant2Config as unknown as Partial<CladdingConfig>,
     variant3: variant3Config as unknown as Partial<CladdingConfig>,
+    variant4: variant4Config as unknown as Partial<CladdingConfig>,
   };
 
   const client = clientName || "default";
@@ -91,4 +94,9 @@ export function getImageCatalog(clientName?: string | null): string {
 export function getCatalogWithCladding(clientName?: string | null): boolean {
   const config = getCladdingConfig(clientName);
   return config.catalogWithCladding ?? false;
+}
+
+export function getPickerLayout(clientName?: string | null): "grid" | "binary" {
+  const config = getCladdingConfig(clientName);
+  return (config.pickerLayout as any) || "grid";
 }

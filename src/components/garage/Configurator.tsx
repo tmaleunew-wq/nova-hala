@@ -16,7 +16,7 @@ import { CatalogInfoCard } from "./CatalogInfoCard";
 import { TopNavigation } from "./TopNavigation";
 import { CustomGarageMenu } from "./CustomGarageMenu";
 import { StandardHallMenu } from "./StandardHallMenu";
-import { getHallsConfig, getImageCatalog, getCatalogWithCladding } from "@/lib/garage/configHelper";
+import { getHallsConfig, getImageCatalog, getCatalogWithCladding, getPickerLayout } from "@/lib/garage/configHelper";
 import { Scene, CameraRig, type ViewPreset } from "./GarageScene";
 
 function getParamsFromURL(): Partial<GarageParams> {
@@ -93,8 +93,9 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
 
   const hallsConfig = getHallsConfig();
   const urlVariant = typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("variant") || new URLSearchParams(window.location.search).get("client")) : null;
-  const activeVariant = variant || (urlVariant === "2" ? "variant2" : urlVariant === "3" ? "variant3" : urlVariant) || "default";
+  const activeVariant = variant || (urlVariant === "2" ? "variant2" : urlVariant === "3" ? "variant3" : urlVariant === "4" ? "variant4" : urlVariant) || "default";
   const imageCatalog = getImageCatalog(activeVariant);
+  const pickerLayout = getPickerLayout(activeVariant);
   const hallOptions = [CUSTOM_HALL, ...Object.keys(hallsConfig)];
   const [selectedHall, setSelectedHall] = useState(initialUrlParams.hallType ?? CUSTOM_HALL);
   const isCustom = selectedHall === CUSTOM_HALL || selectedHall === "vlastna_garaz";
@@ -200,7 +201,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
             const w = Number(wVal);
             if (w > 0) {
               const maxW = gateCountState === 2 ? Math.max(1.2, (w - 0.85) / 2) : Math.max(1.5, w - 0.6);
-              if (params.doorWidth && params.doorWidth > maxW) {
+              if ((params as any).doorWidth && (params as any).doorWidth > maxW) {
                 (setParams as any)({ doorWidth: Math.round(maxW * 10) / 10 });
               }
             }
@@ -238,7 +239,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
             const h = Number(hVal);
             if (h > 0) {
               const maxH = Math.max(1.8, h - 0.15);
-              if (params.doorHeight && params.doorHeight > maxH) {
+              if ((params as any).doorHeight && (params as any).doorHeight > maxH) {
                 (setParams as any)({ doorHeight: Math.round(maxH * 10) / 10 });
               }
             }
@@ -326,8 +327,8 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           const num = Number(val);
           setGateCountState(num);
           if (num === 2 && isCustom) {
-            const curW = params.width ?? 4;
-            const curDoorW = params.doorWidth ?? 2.5;
+            const curW = (params as any).width ?? 4;
+            const curDoorW = (params as any).doorWidth ?? 2.5;
             const requiredW = Math.max(6.0, curDoorW * 2 + 1.0);
             if (curW < requiredW) {
               (setParams as any)({
@@ -370,9 +371,9 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         step: 0.1,
         label: "Brána Š [m]",
         onChange: (val) => {
-          if (isCustom && params.width) {
+          if (isCustom && (params as any).width) {
             const num = Number(val);
-            const maxW = gateCountState === 2 ? Math.max(1.2, (params.width - 0.85) / 2) : Math.max(1.5, params.width - 0.6);
+            const maxW = gateCountState === 2 ? Math.max(1.2, ((params as any).width - 0.85) / 2) : Math.max(1.5, (params as any).width - 0.6);
             if (num > maxW) {
               (setParams as any)({ doorWidth: Math.round(maxW * 10) / 10 });
             }
@@ -386,9 +387,9 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         step: 0.1,
         label: "Brána V [m]",
         onChange: (val) => {
-          if (isCustom && params.clearHeight) {
+          if (isCustom && (params as any).clearHeight) {
             const num = Number(val);
-            const maxH = Math.max(1.8, params.clearHeight - 0.15);
+            const maxH = Math.max(1.8, (params as any).clearHeight - 0.15);
             if (num > maxH) {
               (setParams as any)({ doorHeight: Math.round(maxH * 10) / 10 });
             }
@@ -438,7 +439,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       flashingMatchesPanels: { value: initialUrlParams.flashingMatchesPanels ?? DEFAULT_PARAMS.flashingMatchesPanels, label: "Systémové klampiarstvo" },
     }, { collapsed: true }),
     "Modulárne prepojenie": folder({
-      hasExtension: { value: initialUrlParams.hasExtension ?? DEFAULT_PARAMS.hasExtension, label: "Pripojiť modul" },
+      hasExtension: { value: initialUrlParams.hasExtension ?? (DEFAULT_PARAMS.hasExtension ?? false), label: "Pripojiť modul" },
       extensionSide: { value: initialUrlParams.extensionSide ?? (DEFAULT_PARAMS.extensionSide ?? "right"), options: { "Vpravo": "right", "Vľavo": "left" }, label: "Strana pripojenia" },
       extensionWidth: { value: initialUrlParams.extensionWidth ?? (DEFAULT_PARAMS.extensionWidth ?? 3.5), min: 2.5, max: 6.0, step: 0.1, label: "Šírka modulu [m]" },
       extensionType: { value: initialUrlParams.extensionType ?? (DEFAULT_PARAMS.extensionType ?? "garage"), options: { "Druhá garáž s bránou": "garage", "Krytý prístrešok (Carport)": "carport", "Sklad / Dielňa": "storage" }, label: "Využitie modulu" },
@@ -586,7 +587,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     }
   }
   if (cleanParams.gateCount !== undefined) {
-    cleanParams.gateCount = Number(cleanParams.gateCount);
+    cleanParams.gateCount = Number(cleanParams.gateCount) as 1 | 2;
   }
 
   let typedParams: GarageParams = {
@@ -731,6 +732,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           halls={hallsConfig}
           selectedHall={selectedHall}
           imageCatalog={imageCatalog}
+          pickerLayout={pickerLayout}
           onSelect={(v) => {
             applyHallType(v);
             setShowPicker(false);
@@ -787,27 +789,29 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       </div>
 
       {/* Controls Toggle Button */}
-      <button
-        onClick={() => setShowControls(v => !v)}
-        className="absolute right-3 top-20 md:top-14 z-30 flex items-center gap-1.5 rounded-full bg-emerald-400 text-slate-900 px-3 py-2 text-xs font-mono font-bold shadow-lg hover:bg-emerald-300 transition-all active:scale-95 cursor-pointer"
-      >
-        {showControls ? (
-          <>
-            <X className="h-4 w-4" />
-            <span>Zavrieť</span>
-          </>
-        ) : (
-          <>
-            <SlidersHorizontal className="h-4 w-4" />
-            <span>Parametre</span>
-          </>
-        )}
-      </button>
+      {!showPicker && (
+        <button
+          onClick={() => setShowControls(v => !v)}
+          className="absolute right-3 top-20 md:top-14 z-30 flex items-center gap-1.5 rounded-full bg-emerald-400 text-slate-900 px-3 py-2 text-xs font-mono font-bold shadow-lg hover:bg-emerald-300 transition-all active:scale-95 cursor-pointer"
+        >
+          {showControls ? (
+            <>
+              <X className="h-4 w-4" />
+              <span>Zavrieť</span>
+            </>
+          ) : (
+            <>
+              <SlidersHorizontal className="h-4 w-4" />
+              <span>Parametre</span>
+            </>
+          )}
+        </button>
+      )}
 
       {/* Dynamic Main Menu / Sidebar based on selected product type */}
       {isCustom || selectedHall === "vlastna_garaz" ? (
         <CustomGarageMenu
-          showControls={showControls}
+          showControls={!showPicker && showControls}
           typedParams={typedParams}
           setParams={setParams as any}
           selectedHall={selectedHall}
@@ -819,7 +823,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         />
       ) : (
         <StandardHallMenu
-          showControls={showControls}
+          showControls={!showPicker && showControls}
           typedParams={typedParams}
           selectedHall={selectedHall}
           notes={notes}

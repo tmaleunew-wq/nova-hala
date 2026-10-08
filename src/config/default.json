@@ -15,6 +15,7 @@
   "trapezoidPricePerSqM": 16.80,
   "imageCatalog": "/catalog",
   "catalogWithCladding": false,
+  "pickerLayout": "grid",
   "defaultGarage": {
     "width": 4.0,
     "length": 6.0,

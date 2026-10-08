@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Leva } from "leva";
 import type { GarageParams } from "@/lib/garage/types";
 import {
   Ruler,
@@ -52,8 +53,10 @@ export function CustomGarageMenu({
   const area = (typedParams.width * typedParams.length).toFixed(1);
 
   return (
-    <div
-      className={`quote-export-panel absolute right-3 top-[132px] md:top-28 z-30 max-h-[calc(100vh-150px)] md:max-h-[76vh] flex flex-col rounded-xl bg-[#0b0e14]/95 shadow-2xl border border-emerald-500/30 backdrop-blur-md transition-all duration-300 ${
+    <>
+      <Leva hidden />
+      <div
+        className={`quote-export-panel absolute right-3 top-[132px] md:top-28 z-30 max-h-[calc(100vh-150px)] md:max-h-[76vh] flex flex-col rounded-xl bg-[#0b0e14]/95 shadow-2xl border border-emerald-500/30 backdrop-blur-md transition-all duration-300 ${
         showControls
           ? "opacity-100 translate-x-0 pointer-events-auto"
           : "opacity-0 translate-x-12 pointer-events-none"
@@ -883,5 +886,6 @@ export function CustomGarageMenu({
         )}
       </div>
     </div>
+    </>
   );
 }
