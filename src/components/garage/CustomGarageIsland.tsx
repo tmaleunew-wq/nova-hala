@@ -387,22 +387,6 @@ export function CustomGarageIsland({ p }: { p: GarageParams }) {
   const topY = -0.015; // flush right below garage base
   const baseY = topY - islandH;
 
-  // Front curved arc curb points (semi-elliptical arc spanning front of island)
-  const curbSegments = 32;
-  const curbPoints = useMemo(() => {
-    const pts: THREE.Vector3[] = [];
-    const zApex = -halfL - islandFrontExt;
-    const zBase = halfL + islandBackExt * 0.4;
-    for (let i = 0; i <= curbSegments; i++) {
-      const t = i / curbSegments; // 0 to 1
-      const angle = Math.PI * (1 - t); // from PI (left) to 0 (right)
-      const x = Math.cos(angle) * outerRx;
-      // Elliptical front curve merging smoothly into straight flanks
-      const z = Math.sin(angle) * (zApex - zBase) + zBase;
-      pts.push(new THREE.Vector3(x, topY, z));
-    }
-    return pts;
-  }, [outerRx, halfL, islandFrontExt, islandBackExt]);
 
   // Bush and lamp coordinates (3 bushes + 2 lamps per side)
   const leftX = -halfDriveW - stripW - gravelW * 0.55;
@@ -546,41 +530,46 @@ export function CustomGarageIsland({ p }: { p: GarageParams }) {
         </mesh>
       </group>
 
-      {/* 7. LOW CURVED CONCRETE CURB (Enclosing the front arc and island perimeter) */}
+      {/* 7. LOW CONCRETE CURB (Enclosing the island perimeter cleanly) */}
       <group position={[0, 0, 0]}>
-        {curbPoints.map((pt, i) => {
-          if (i === curbPoints.length - 1) return null;
-          const p1 = curbPoints[i];
-          const p2 = curbPoints[i + 1];
-          const dx = p2.x - p1.x;
-          const dz = p2.z - p1.z;
-          const segLen = Math.hypot(dx, dz);
-          const angle = Math.atan2(dx, dz);
-          const mx = (p1.x + p2.x) / 2;
-          const mz = (p1.z + p2.z) / 2;
-
-          return (
-            <mesh
-              key={`curb-${i}`}
-              position={[mx, topY - islandH / 2 + 0.01, mz]}
-              rotation={[0, angle, 0]}
-              castShadow
-              receiveShadow
-              material={curbMat}
-            >
-              <boxGeometry args={[0.16, islandH + 0.02, segLen + 0.01]} />
-            </mesh>
-          );
-        })}
-
-        {/* Back straight curb closing the back */}
+        {/* Predný rovný obrubník */}
         <mesh
-          position={[0, topY - islandH / 2 + 0.01, halfL + islandBackExt]}
+          position={[0, topY - islandH / 2 + 0.01, -halfL - islandFrontExt - 0.08]}
           castShadow
           receiveShadow
           material={curbMat}
         >
-          <boxGeometry args={[outerRx * 2, islandH + 0.02, 0.16]} />
+          <boxGeometry args={[outerRx * 2 + 0.32, islandH + 0.02, 0.16]} />
+        </mesh>
+
+        {/* Ľavý bočný obrubník */}
+        <mesh
+          position={[-outerRx - 0.08, topY - islandH / 2 + 0.01, islandZCenter]}
+          castShadow
+          receiveShadow
+          material={curbMat}
+        >
+          <boxGeometry args={[0.16, islandH + 0.02, totalLength + 0.32]} />
+        </mesh>
+
+        {/* Pravý bočný obrubník */}
+        <mesh
+          position={[outerRx + 0.08, topY - islandH / 2 + 0.01, islandZCenter]}
+          castShadow
+          receiveShadow
+          material={curbMat}
+        >
+          <boxGeometry args={[0.16, islandH + 0.02, totalLength + 0.32]} />
+        </mesh>
+
+        {/* Zadný rovný obrubník */}
+        <mesh
+          position={[0, topY - islandH / 2 + 0.01, halfL + islandBackExt + 0.08]}
+          castShadow
+          receiveShadow
+          material={curbMat}
+        >
+          <boxGeometry args={[outerRx * 2 + 0.32, islandH + 0.02, 0.16]} />
         </mesh>
       </group>
 
