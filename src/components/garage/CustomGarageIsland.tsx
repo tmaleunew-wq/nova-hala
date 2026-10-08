@@ -254,16 +254,16 @@ function PathwayBollard({ position }: { position: [number, number, number] }) {
   const lightRingMat = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: "#fffaed",
-        emissive: "#fffaed",
-        emissiveIntensity: 0.6,
+        color: "#fff8e7",
+        emissive: "#ffe29a",
+        emissiveIntensity: 1.8,
         roughness: 0.2,
       }),
     [],
   );
 
-  const h = 0.28;
-  const r = 0.045;
+  const h = 0.52;
+  const r = 0.05;
 
   return (
     <group position={position} raycast={noRaycast}>
@@ -272,13 +272,21 @@ function PathwayBollard({ position }: { position: [number, number, number] }) {
         <cylinderGeometry args={[r, r, h, 16]} />
       </mesh>
       {/* Glowing diffuser band */}
-      <mesh position={[0, h * 0.85, 0]} material={lightRingMat}>
-        <cylinderGeometry args={[r + 0.002, r + 0.002, 0.03, 16]} />
+      <mesh position={[0, h * 0.86, 0]} material={lightRingMat}>
+        <cylinderGeometry args={[r + 0.003, r + 0.003, 0.04, 16]} />
       </mesh>
       {/* Top cap */}
-      <mesh position={[0, h + 0.01, 0]} castShadow material={bodyMat}>
-        <cylinderGeometry args={[r + 0.005, r + 0.005, 0.02, 16]} />
+      <mesh position={[0, h + 0.015, 0]} castShadow material={bodyMat}>
+        <cylinderGeometry args={[r + 0.006, r + 0.006, 0.03, 16]} />
       </mesh>
+      {/* Warm ambient pool on gravel */}
+      <pointLight
+        position={[0, h * 0.86, 0]}
+        color="#ffe29a"
+        intensity={0.35}
+        distance={2.2}
+        decay={2}
+      />
     </group>
   );
 }
@@ -401,11 +409,19 @@ export function CustomGarageIsland({ p }: { p: GarageParams }) {
   }, [halfL, islandFrontExt, L]);
 
   const lampZPositions = useMemo(() => {
-    return [
-      -halfL - islandFrontExt * 0.44, // between bush 1 & 2
-      -halfL + L * 0.08,              // between bush 2 & 3
-    ];
-  }, [halfL, islandFrontExt, L]);
+    const positions: number[] = [];
+    // Predný príjazd
+    positions.push(-halfL - islandFrontExt * 0.75);
+    positions.push(-halfL - islandFrontExt * 0.28);
+    // Pozdĺž celej garáže
+    const sideCount = Math.max(2, Math.round(L / 2.6));
+    for (let i = 0; i < sideCount; i++) {
+      positions.push(-halfL + (L * (i + 0.5)) / sideCount);
+    }
+    // Zadná časť za garážou
+    positions.push(halfL + islandBackExt * 0.45);
+    return positions;
+  }, [halfL, islandFrontExt, L, islandBackExt]);
 
   const islandRef = useRef<THREE.Group>(null);
   useEffect(() => {

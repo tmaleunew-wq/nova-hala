@@ -35,7 +35,7 @@ function Index() {
         </div>
       }
     >
-      <Configurator variant="variant3" />
+      <Configurator variant="variant4" />
     </Suspense>
   );
 }

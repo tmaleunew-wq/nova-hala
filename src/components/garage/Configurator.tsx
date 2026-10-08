@@ -196,12 +196,13 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         step: 0.1,
         label: "Šírka X [m]",
         disabled: !isCustom,
+        transient: false,
         onChange: (wVal) => {
           if (isCustom) {
             const w = Number(wVal);
             if (w > 0) {
               const maxW = gateCountState === 2 ? Math.max(1.2, (w - 0.85) / 2) : Math.max(1.5, w - 0.6);
-              if ((params as any).doorWidth && (params as any).doorWidth > maxW) {
+              if ((params as any)?.doorWidth && (params as any).doorWidth > maxW) {
                 (setParams as any)({ doorWidth: Math.round(maxW * 10) / 10 });
               }
             }
@@ -209,19 +210,17 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         },
       },
       length: {
-        value: `${isCatalog ? (activeHall?.defaultLength ?? initLength) : (initialUrlParams.length ?? initLength)}m`,
-        options: hallLengthOptions,
+        value: isCatalog ? `${activeHall?.defaultLength ?? initLength}m` : (initialUrlParams.length ?? initLength),
+        ...(isCatalog ? { options: hallLengthOptions } : { min: 3, max: 20, step: 0.5 }),
         label: "Dĺžka Y",
         disabled: false,
+        transient: false,
         onChange: (val) => {
           const num = typeof val === "number" ? val : parseFloat(String(val).replace("m", ""));
           if (!Number.isNaN(num) && num > 0) {
             if (selectedHall !== CUSTOM_HALL && hallsConfig[selectedHall]) {
               const h = hallsConfig[selectedHall];
               const bays = Math.round(num / h.moduleLength);
-              (setParams as any)({ bayCount: bays });
-            } else {
-              const bays = Math.max(2, Math.round(num / 3));
               (setParams as any)({ bayCount: bays });
             }
           }
@@ -234,12 +233,13 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         step: 0.001,
         label: "Svetlá výška Z [m]",
         disabled: !isCustom,
+        transient: false,
         onChange: (hVal) => {
           if (isCustom) {
             const h = Number(hVal);
             if (h > 0) {
               const maxH = Math.max(1.8, h - 0.15);
-              if ((params as any).doorHeight && (params as any).doorHeight > maxH) {
+              if ((params as any)?.doorHeight && (params as any).doorHeight > maxH) {
                 (setParams as any)({ doorHeight: Math.round(maxH * 10) / 10 });
               }
             }
@@ -276,13 +276,12 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         max: isCatalog ? 15 : 10,
         step: 1,
         label: "Počet polí",
+        transient: false,
         onChange: (val) => {
           const b = Number(val);
           if (selectedHall !== CUSTOM_HALL && hallsConfig[selectedHall]) {
             const h = hallsConfig[selectedHall];
-            (setParams as any)({ length: val * h.moduleLength });
-          } else {
-            (setParams as any)({ length: `${b * 3}m` });
+            (setParams as any)({ length: isCatalog ? `${val * h.moduleLength}m` : val * h.moduleLength });
           }
         }
       },
@@ -370,8 +369,9 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         max: 6.0,
         step: 0.1,
         label: "Brána Š [m]",
+        transient: false,
         onChange: (val) => {
-          if (isCustom && (params as any).width) {
+          if (isCustom && (params as any)?.width) {
             const num = Number(val);
             const maxW = gateCountState === 2 ? Math.max(1.2, ((params as any).width - 0.85) / 2) : Math.max(1.5, (params as any).width - 0.6);
             if (num > maxW) {
@@ -386,8 +386,9 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         max: 6.0,
         step: 0.1,
         label: "Brána V [m]",
+        transient: false,
         onChange: (val) => {
-          if (isCustom && (params as any).clearHeight) {
+          if (isCustom && (params as any)?.clearHeight) {
             const num = Number(val);
             const maxH = Math.max(1.8, (params as any).clearHeight - 0.15);
             if (num > maxH) {
@@ -533,7 +534,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         showAccessories: true,
         showCatalogDimensions: false,
         width: DEFAULT_PARAMS.width,
-        length: `${DEFAULT_PARAMS.length}m`,
+        length: DEFAULT_PARAMS.length,
         clearHeight: DEFAULT_PARAMS.clearHeight,
         roofType: DEFAULT_PARAMS.roofType,
         roofPitchDeg: DEFAULT_PARAMS.roofPitchDeg,
