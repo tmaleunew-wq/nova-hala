@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { GarageParams } from "./types";
+import { ridgeHeight } from "@/components/garage/Structure";
 import { generateSnapPoints, type SnapPoint, type SnapPointsResult } from './snapPointsGenerator';
 export { generateSnapPoints, type SnapPoint, type SnapPointsResult };
 

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import type { GarageParams } from "@/lib/garage/types";
 
 const noRaycast = () => null;
@@ -9,7 +9,7 @@ const noRaycast = () => null;
  * with subtle surface variation and clean joints.
  */
 function makePaverTexture(): THREE.CanvasTexture {
-  if (typeof document === "undefined") return new THREE.CanvasTexture(document.createElement("canvas"));
+  if (typeof document === "undefined") return new THREE.CanvasTexture({} as HTMLCanvasElement);
   const size = 1024;
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -67,7 +67,7 @@ function makePaverTexture(): THREE.CanvasTexture {
  * Creates dark anthracite basalt paver texture
  */
 function makeAnthraciteTexture(): THREE.CanvasTexture {
-  if (typeof document === "undefined") return new THREE.CanvasTexture(document.createElement("canvas"));
+  if (typeof document === "undefined") return new THREE.CanvasTexture({} as HTMLCanvasElement);
   const size = 512;
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -110,7 +110,7 @@ function makeAnthraciteTexture(): THREE.CanvasTexture {
  * Creates natural river pebble / gravel texture
  */
 function makeGravelTexture(): THREE.CanvasTexture {
-  if (typeof document === "undefined") return new THREE.CanvasTexture(document.createElement("canvas"));
+  if (typeof document === "undefined") return new THREE.CanvasTexture({} as HTMLCanvasElement);
   const size = 512;
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -147,7 +147,7 @@ function makeGravelTexture(): THREE.CanvasTexture {
  * Creates manicured grass turf texture
  */
 function makeGrassTexture(): THREE.CanvasTexture {
-  if (typeof document === "undefined") return new THREE.CanvasTexture(document.createElement("canvas"));
+  if (typeof document === "undefined") return new THREE.CanvasTexture({} as HTMLCanvasElement);
   const size = 512;
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -302,7 +302,7 @@ export function CustomGarageIsland({ p }: { p: GarageParams }) {
   // Overall outer island radii for the front semi-circle
   const outerRx = halfDriveW + stripW + gravelW + grassW;
   const islandFrontExt = 4.2; // length of driveway in front of the gate
-  const islandBackExt = 1.2; // ground extending behind the garage
+  const islandBackExt = 2.4; // ground extending behind the garage
 
   const totalLength = L + islandFrontExt + islandBackExt;
   const islandZCenter = (islandBackExt - islandFrontExt) / 2;
@@ -407,10 +407,17 @@ export function CustomGarageIsland({ p }: { p: GarageParams }) {
     ];
   }, [halfL, islandFrontExt, L]);
 
+  const islandRef = useRef<THREE.Group>(null);
+  useEffect(() => {
+    islandRef.current?.traverse((child: any) => {
+      child.raycast = noRaycast;
+    });
+  });
+
   return (
-    <group name="custom-garage-island" raycast={noRaycast}>
+    <group ref={islandRef} name="custom-garage-island" raycast={noRaycast}>
       {/* 1. SEAMLESS STUDIO SHADOW CATCHER GROUND (soft gradient ground around island) */}
-      <mesh position={[0, baseY - 0.002, 0]} receiveShadow>
+      <mesh position={[0, baseY - 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={noRaycast}>
         <planeGeometry args={[120, 120]} />
         <meshStandardMaterial color="#f0f2f5" roughness={1} metalness={0} />
       </mesh>

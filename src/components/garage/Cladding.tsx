@@ -397,7 +397,7 @@ export function Cladding({
         <PurPanel
           id="front"
           width={W + sz + panelThickness}
-          height={Heave}
+          height={p.roofType === "cubic" ? Heave + (p.atticHeight ?? 0.35) : Heave}
           holes={frontDoorHoles}
           texture={wallTex}
           color={p.claddingColor}
@@ -430,7 +430,7 @@ export function Cladding({
             <PurPanel
               id="back"
               width={W + sz + panelThickness}
-              height={Heave}
+              height={p.roofType === "cubic" ? Heave + (p.atticHeight ?? 0.35) : Heave}
               holes={backHoles}
               texture={wallTex}
               color={p.claddingColor}
@@ -627,61 +627,28 @@ export function Cladding({
         const rimColor = p.trimmingColor || "#2b2f36";
         const rimThick = 0.04;
         const rimDepth = panelThickness + 0.05;
+        const capZDist = L / 2 + (sz / 2 + panelThickness / 2);
+        const capXDist = W / 2 + (sz / 2 + panelThickness / 2);
+        const capLenZ = L + (sz + panelThickness) * 2 + rimDepth;
+        const capLenX = W + (sz + panelThickness) * 2 + rimDepth;
         return (
           <>
-            {/* Front attic panel */}
-            <group position={[0, Heave, -L / 2 - (sz / 2 + panelThickness / 2) + offFront]}>
-              <PurPanel
-                id="attic-front"
-                width={panelW}
-                height={atticH}
-                holes={[]}
-                texture={wallTex}
-                color={p.claddingColor}
-                wireframe={p.wireframe}
-                visible={!removedPanels["attic-front"]}
-                onToggle={() => onTogglePanel?.("attic-front")}
-                thickness={panelThickness}
-                isSandwich={isSand}
-                claddingOrientation={p.claddingOrientation}
-                panelType={p.panelType}
-              />
-            </group>
-            {/* Back attic panel */}
-            <group position={[0, Heave, L / 2 + (sz / 2 + panelThickness / 2) + offBack]}>
-              <PurPanel
-                id="attic-back"
-                width={panelW}
-                height={atticH}
-                holes={[]}
-                texture={wallTex}
-                color={p.claddingColor}
-                wireframe={p.wireframe}
-                visible={!removedPanels["attic-back"]}
-                onToggle={() => onTogglePanel?.("attic-back")}
-                thickness={panelThickness}
-                isSandwich={isSand}
-                claddingOrientation={p.claddingOrientation}
-                panelType={p.panelType}
-              />
-            </group>
-
             {/* Capping flashing (obvodová krycia atiková lišta) */}
             <group position={[0, Heave + atticH + rimThick / 2, 0]}>
-              <mesh position={[0, 0, -L / 2 - sz / 2]}>
-                <boxGeometry args={[panelW + 0.08, rimThick, rimDepth]} />
+              <mesh position={[0, 0, -capZDist]}>
+                <boxGeometry args={[capLenX, rimThick, rimDepth]} />
                 <meshStandardMaterial color={rimColor} metalness={0.6} roughness={0.4} wireframe={p.wireframe} />
               </mesh>
-              <mesh position={[0, 0, L / 2 + sz / 2]}>
-                <boxGeometry args={[panelW + 0.08, rimThick, rimDepth]} />
+              <mesh position={[0, 0, capZDist]}>
+                <boxGeometry args={[capLenX, rimThick, rimDepth]} />
                 <meshStandardMaterial color={rimColor} metalness={0.6} roughness={0.4} wireframe={p.wireframe} />
               </mesh>
-              <mesh position={[-W / 2 - sz / 2, 0, 0]}>
-                <boxGeometry args={[rimDepth, rimThick, L + sz * 2]} />
+              <mesh position={[-capXDist, 0, 0]}>
+                <boxGeometry args={[rimDepth, rimThick, capLenZ]} />
                 <meshStandardMaterial color={rimColor} metalness={0.6} roughness={0.4} wireframe={p.wireframe} />
               </mesh>
-              <mesh position={[W / 2 + sz / 2, 0, 0]}>
-                <boxGeometry args={[rimDepth, rimThick, L + sz * 2]} />
+              <mesh position={[capXDist, 0, 0]}>
+                <boxGeometry args={[rimDepth, rimThick, capLenZ]} />
                 <meshStandardMaterial color={rimColor} metalness={0.6} roughness={0.4} wireframe={p.wireframe} />
               </mesh>
             </group>

@@ -207,6 +207,7 @@ export function PurPanel({
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
         onClick={(e) => {
+          if (e.delta && e.delta > 5) return;
           e.stopPropagation();
           onToggle?.();
         }}
@@ -227,6 +228,7 @@ export function PurPanel({
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
       onClick={(e) => {
+        if (e.delta && e.delta > 5) return;
         e.stopPropagation();
         onToggle?.();
       }}
