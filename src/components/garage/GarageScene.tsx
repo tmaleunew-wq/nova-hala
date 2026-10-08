@@ -73,7 +73,7 @@ export function Scene({
         {params.showAccessories && <Accessories p={params} explodeY={params.explode} />}
       </group>
 
-      {!hideDimensions && params.showCatalogDimensions !== false && params.hallType && params.hallType !== "Vlastný" && (
+      {!hideDimensions && !!params.showCatalogDimensions && (
         <CatalogDimensions p={params} />
       )}
 

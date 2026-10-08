@@ -1,4 +1,7 @@
+import defaultConfig from "@/config/default.json";
+
 export type RoofType = "gable" | "shed";
+export const CUSTOM_HALL = "Vlastný";
 
 export interface GarageParams {
   hallType?: string;    // napr. "KD10", "KJ6" - pre prepojenie s PDF modelmi
@@ -65,14 +68,16 @@ export interface GarageParams {
   notes?: string;
 }
 
+const defaultG = (defaultConfig as any)?.defaultGarage || {};
+
 export const DEFAULT_PARAMS: GarageParams = {
   showCatalogDimensions: false,
-  width: 4,
-  length: 6,
-  clearHeight: 2.6,
+  width: defaultG.width ?? 4,
+  length: defaultG.length ?? 6,
+  clearHeight: defaultG.clearHeight ?? 2.6,
   roofType: "gable",
   roofPitchDeg: 15,
-  bayCount: 4,
+  bayCount: defaultG.bayCount ?? 2,
   profileSize: 0.1,
   profileThickness: 0.004,
   steelColor: "#6e7681",
@@ -97,8 +102,8 @@ export const DEFAULT_PARAMS: GarageParams = {
   fastenerGrade: "A2",
   sealingSystem: true,
   flashingMatchesPanels: true,
-  doorWidth: 2.5,
-  doorHeight: 2.2,
+  doorWidth: defaultG.doorWidth ?? 2.5,
+  doorHeight: defaultG.doorHeight ?? 2.2,
   gateCount: 1,
   gateType: "sectional",
   gateDecor: "none",

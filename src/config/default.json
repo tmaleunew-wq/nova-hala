@@ -14,5 +14,13 @@
   "sandwichPricePerSqM": 32.50,
   "trapezoidPricePerSqM": 16.80,
   "imageCatalog": "/catalog",
-  "catalogWithCladding": false
+  "catalogWithCladding": false,
+  "defaultGarage": {
+    "width": 4.0,
+    "length": 6.0,
+    "clearHeight": 2.6,
+    "bayCount": 2,
+    "doorWidth": 2.5,
+    "doorHeight": 2.2
+  }
 }

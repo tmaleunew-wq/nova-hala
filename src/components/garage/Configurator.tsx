@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useControls, folder, button, Leva } from "leva";
 import { SlidersHorizontal, X } from "lucide-react";
 import * as THREE from "three";
-import { DEFAULT_PARAMS, type GarageParams } from "@/lib/garage/types";
+import { DEFAULT_PARAMS, CUSTOM_HALL, type GarageParams } from "@/lib/garage/types";
 import { PriceCalculator } from "./PriceCalculator";
 import { PremiumSpecPanel } from "./PremiumSpecPanel";
 import { ProductPicker } from "./ProductPicker";
@@ -35,7 +35,7 @@ function getParamsFromURL(): Partial<GarageParams> {
       parsed[key] = (val === "true") as any;
     } else {
       // Add # prefix back to hex color strings if they are raw hex
-      if ((key === "claddingColor" || key === "roofColor" || key === "steelColor" || key === "doorColor" || key === "sectionalDoorColor" || key === "trimmingColor") && !val.startsWith("#")) {
+      if ((key === "claddingColor" || key === "roofColor" || key === "steelColor" || key === "doorColor" || key === "sectionalDoorColor" || key === "sectionalDoor2Color" || key === "trimmingColor") && !val.startsWith("#")) {
         val = "#" + val;
       }
       parsed[key] = val as any;
@@ -93,9 +93,9 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   const urlVariant = typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("variant") || new URLSearchParams(window.location.search).get("client")) : null;
   const activeVariant = variant || (urlVariant === "2" ? "variant2" : urlVariant === "3" ? "variant3" : urlVariant) || "default";
   const imageCatalog = getImageCatalog(activeVariant);
-  const hallOptions = ["Vlastný", ...Object.keys(hallsConfig)];
-  const [selectedHall, setSelectedHall] = useState(initialUrlParams.hallType ?? "Vlastný");
-  const isCustom = selectedHall === "Vlastný";
+  const hallOptions = [CUSTOM_HALL, ...Object.keys(hallsConfig)];
+  const [selectedHall, setSelectedHall] = useState(initialUrlParams.hallType ?? CUSTOM_HALL);
+  const isCustom = selectedHall === CUSTOM_HALL;
   const [showCatalogModal, setShowCatalogModal] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [showEnvironment, setShowEnvironment] = useState(false);
@@ -111,13 +111,13 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     }
   }, [initialUrlParams.hallType]);
 
-  const initHall = initialUrlParams.hallType && initialUrlParams.hallType !== "Vlastný" ? hallsConfig[initialUrlParams.hallType] : null;
+  const initHall = initialUrlParams.hallType && initialUrlParams.hallType !== CUSTOM_HALL ? hallsConfig[initialUrlParams.hallType] : null;
   const isCatalog = !!initHall;
   const [selectedPoleHeight, setSelectedPoleHeight] = useState<string>(() => initHall?.versions?.[0] ? `${initHall.versions[0].poleHeight}m` : "4m");
   const initBays = initHall ? (initHall.defaultBays ?? 5) : DEFAULT_PARAMS.bayCount;
   const initLength = initHall ? (initHall.defaultLength ?? (initBays * initHall.moduleLength)) : DEFAULT_PARAMS.length;
   const [selectedLength, setSelectedLength] = useState<number>(() => initHall ? (initHall.defaultLength ?? (initBays * initHall.moduleLength)) : (initialUrlParams.length ?? DEFAULT_PARAMS.length));
-  const activeHall = selectedHall !== "Vlastný" ? hallsConfig[selectedHall] : initHall;
+  const activeHall = selectedHall !== CUSTOM_HALL ? hallsConfig[selectedHall] : initHall;
   const hallVersions = (activeHall?.versions ?? []) as Array<{ poleHeight: number }>;
   const hallHeightOptions = hallVersions.length > 0
     ? hallVersions.map((ver) => `${ver.poleHeight}m`)
@@ -130,8 +130,8 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       hallLengthOptions.push(`${b * activeHall.moduleLength}m`);
     }
   } else {
-    for (let l = 4; l <= 20; l += (l < 12 ? 1 : 2)) {
-      hallLengthOptions.push(`${l}m`);
+    for (let b = 2; b <= 10; b++) {
+      hallLengthOptions.push(`${b * 3}m`);
     }
   }
 
@@ -147,7 +147,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     }, { collapsed: true }),
     "Geometria": folder({
       hallType: {
-        value: initialUrlParams.hallType ?? "Vlastný",
+        value: initialUrlParams.hallType ?? CUSTOM_HALL,
         options: hallOptions,
         label: "Typ z PDF",
         onChange: (v) => {
@@ -164,7 +164,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         transient: false,
         onChange: (val) => {
           setSelectedPoleHeight(val);
-          if (selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
+          if (selectedHall !== CUSTOM_HALL && hallsConfig[selectedHall]) {
             const h = hallsConfig[selectedHall];
             const poleNum = parseInt(val, 10);
             let foundVer = h.versions?.find((ver) => ver.poleHeight === poleNum);
@@ -193,6 +193,17 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         step: 0.1,
         label: "Šírka X [m]",
         disabled: !isCustom,
+        onChange: (wVal) => {
+          if (isCustom) {
+            const w = Number(wVal);
+            if (w > 0) {
+              const maxW = gateCountState === 2 ? Math.max(1.2, (w - 0.85) / 2) : Math.max(1.5, w - 0.6);
+              if (params.doorWidth && params.doorWidth > maxW) {
+                (setParams as any)({ doorWidth: Math.round(maxW * 10) / 10 });
+              }
+            }
+          }
+        },
       },
       length: {
         value: `${isCatalog ? (activeHall?.defaultLength ?? initLength) : (initialUrlParams.length ?? initLength)}m`,
@@ -202,7 +213,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         onChange: (val) => {
           const num = typeof val === "number" ? val : parseFloat(String(val).replace("m", ""));
           if (!Number.isNaN(num) && num > 0) {
-            if (selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
+            if (selectedHall !== CUSTOM_HALL && hallsConfig[selectedHall]) {
               const h = hallsConfig[selectedHall];
               const bays = Math.round(num / h.moduleLength);
               (setParams as any)({ bayCount: bays });
@@ -220,6 +231,17 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         step: 0.001,
         label: "Svetlá výška Z [m]",
         disabled: !isCustom,
+        onChange: (hVal) => {
+          if (isCustom) {
+            const h = Number(hVal);
+            if (h > 0) {
+              const maxH = Math.max(1.8, h - 0.15);
+              if (params.doorHeight && params.doorHeight > maxH) {
+                (setParams as any)({ doorHeight: Math.round(maxH * 10) / 10 });
+              }
+            }
+          }
+        },
       },
       roofType: {
         value: isCatalog ? (initHall.type as any) : (initialUrlParams.roofType ?? DEFAULT_PARAMS.roofType),
@@ -240,13 +262,16 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       bayCount: {
         value: isCatalog ? initBays : (initialUrlParams.bayCount ?? initBays),
         min: isCatalog ? Math.round(initHall.minLength / initHall.moduleLength) : 2,
-        max: 15,
+        max: isCatalog ? 15 : 10,
         step: 1,
         label: "Počet polí",
         onChange: (val) => {
-          if (selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
+          const b = Number(val);
+          if (selectedHall !== CUSTOM_HALL && hallsConfig[selectedHall]) {
             const h = hallsConfig[selectedHall];
             (setParams as any)({ length: val * h.moduleLength });
+          } else {
+            (setParams as any)({ length: `${b * 3}m` });
           }
         }
       },
@@ -292,8 +317,13 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           setGateCountState(num);
           if (num === 2 && isCustom) {
             const curW = params.width ?? 4;
-            if (curW < 5.8) {
-              (setParams as any)({ width: 6.0, doorWidth: 2.5 });
+            const curDoorW = params.doorWidth ?? 2.5;
+            const requiredW = Math.max(6.0, curDoorW * 2 + 1.0);
+            if (curW < requiredW) {
+              (setParams as any)({
+                width: requiredW,
+                doorWidth: Math.min(curDoorW, Math.round(((requiredW - 1.0) / 2) * 10) / 10),
+              });
             }
           }
         },
@@ -329,6 +359,15 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         max: 6.0,
         step: 0.1,
         label: "Brána Š [m]",
+        onChange: (val) => {
+          if (isCustom && params.width) {
+            const num = Number(val);
+            const maxW = gateCountState === 2 ? Math.max(1.2, (params.width - 0.85) / 2) : Math.max(1.5, params.width - 0.6);
+            if (num > maxW) {
+              (setParams as any)({ doorWidth: Math.round(maxW * 10) / 10 });
+            }
+          }
+        }
       },
       doorHeight: {
         value: isCatalog ? (initHall.type === "shed" ? (initHall.versions?.[0]?.H4 ? Math.min(initHall.versions[0].H4 - 0.15, 3.2) : 2.5) : (initHall.versions?.[0]?.H2 ? Math.min(initHall.versions[0].H2 - 0.15, 4.8) : Math.min(3.8, (initHall.versions?.[0]?.H ?? initHall.heights[0]) - 0.2))) : (initialUrlParams.doorHeight ?? DEFAULT_PARAMS.doorHeight),
@@ -336,6 +375,15 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         max: 6.0,
         step: 0.1,
         label: "Brána V [m]",
+        onChange: (val) => {
+          if (isCustom && params.clearHeight) {
+            const num = Number(val);
+            const maxH = Math.max(1.8, params.clearHeight - 0.15);
+            if (num > maxH) {
+              (setParams as any)({ doorHeight: Math.round(maxH * 10) / 10 });
+            }
+          }
+        }
       },
       hasBackDoor: {
         value: isCatalog ? false : hasBackDoorState,
@@ -444,15 +492,20 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         steelColor: "#9aa1ab",
         ...(h.claddingVersion === "ZU" ? { claddingOrientation: "vertical" } : {})
       });
-    } else if (v === "Vlastný") {
+    } else if (v === CUSTOM_HALL) {
+      setGateCountState(DEFAULT_PARAMS.gateCount ?? 1);
+      setGateTypeState(DEFAULT_PARAMS.gateType ?? "sectional");
+      setGateDecorState(DEFAULT_PARAMS.gateDecor ?? "none");
+      setGate2DecorState(DEFAULT_PARAMS.gate2Decor ?? "none");
+      setHasBackDoorState(DEFAULT_PARAMS.hasBackDoor ?? false);
       (setParams as any)({
-        hallType: "Vlastný",
+        hallType: CUSTOM_HALL,
         showStructure: true,
         showCladding: true,
         showAccessories: true,
         showCatalogDimensions: false,
         width: DEFAULT_PARAMS.width,
-        length: DEFAULT_PARAMS.length,
+        length: `${DEFAULT_PARAMS.length}m`,
         clearHeight: DEFAULT_PARAMS.clearHeight,
         roofType: DEFAULT_PARAMS.roofType,
         roofPitchDeg: DEFAULT_PARAMS.roofPitchDeg,
@@ -460,9 +513,25 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         profileSize: DEFAULT_PARAMS.profileSize,
         profileThickness: DEFAULT_PARAMS.profileThickness,
         steelColor: DEFAULT_PARAMS.steelColor,
+        claddingColor: DEFAULT_PARAMS.claddingColor,
+        roofColor: DEFAULT_PARAMS.roofColor,
+        panelType: DEFAULT_PARAMS.panelType,
+        roofPanelType: DEFAULT_PARAMS.roofPanelType,
+        sectionalDoorColor: DEFAULT_PARAMS.sectionalDoorColor,
+        sectionalDoor2Color: DEFAULT_PARAMS.sectionalDoor2Color,
+        doorColor: DEFAULT_PARAMS.doorColor,
+        trimmingColor: DEFAULT_PARAMS.trimmingColor,
+        gateCount: DEFAULT_PARAMS.gateCount ?? 1,
+        gateType: DEFAULT_PARAMS.gateType ?? "sectional",
+        gateDecor: DEFAULT_PARAMS.gateDecor ?? "none",
+        gate2Decor: DEFAULT_PARAMS.gate2Decor ?? "none",
         doorWidth: DEFAULT_PARAMS.doorWidth,
         doorHeight: DEFAULT_PARAMS.doorHeight,
+        doorOpen: false,
+        hasBackDoor: DEFAULT_PARAMS.hasBackDoor ?? false,
         hasPersonalDoor: DEFAULT_PARAMS.hasPersonalDoor,
+        hasWindows: DEFAULT_PARAMS.hasWindows,
+        hasSkylights: DEFAULT_PARAMS.hasSkylights,
       });
     }
   } finally {
@@ -503,9 +572,11 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   typedParams.length = Number.isFinite(numL) && numL > 0 ? numL : DEFAULT_PARAMS.length;
   typedParams.width = Number(typedParams.width) || DEFAULT_PARAMS.width;
   typedParams.clearHeight = Number(typedParams.clearHeight) || DEFAULT_PARAMS.clearHeight;
-  typedParams.bayCount = Math.max(2, Math.round(cleanParams.bayCount || (typedParams.length / 3)));
+  typedParams.bayCount = isCustom
+    ? Math.max(2, Math.round(typedParams.length / 3))
+    : Math.max(2, Math.round(cleanParams.bayCount || (typedParams.length / 3)));
 
-  if (selectedHall && selectedHall !== "Vlastný" && hallsConfig[selectedHall]) {
+  if (selectedHall && selectedHall !== CUSTOM_HALL && hallsConfig[selectedHall]) {
     const h = hallsConfig[selectedHall];
     const poleNum = parseInt(selectedPoleHeight, 10);
     const activeVer =
@@ -535,11 +606,11 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   }
 
   // Fyzikálne limity: šírka a výška brány nesmú presiahnuť rozmery samotnej garáže
-  const maxSafeGateHeight = Math.max(1.8, (typedParams.clearHeight ?? 2.6) - 0.2);
+  const maxSafeGateHeight = Math.max(1.8, (typedParams.clearHeight ?? 2.6) - 0.15);
   const isDoubleGates = (typedParams.gateCount ?? 1) === 2;
   const maxSafeGateWidth = isDoubleGates
     ? Math.max(1.2, ((typedParams.width ?? 4) - 0.85) / 2)
-    : Math.max(1.5, (typedParams.width ?? 4) - 0.5);
+    : Math.max(1.5, (typedParams.width ?? 4) - 0.6);
 
   typedParams.doorHeight = Math.min(typedParams.doorHeight, maxSafeGateHeight);
   typedParams.doorWidth = Math.min(typedParams.doorWidth, maxSafeGateWidth);
@@ -562,7 +633,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     const client = currentParams.get("client");
 
     const searchParams = new URLSearchParams();
-    if (selectedHall && selectedHall !== "Vlastný") {
+    if (selectedHall) {
       searchParams.set("hallType", selectedHall);
     }
     const keys = Object.keys(DEFAULT_PARAMS) as (keyof GarageParams)[];
@@ -571,7 +642,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       if (rawVal === undefined || rawVal === null || Number.isNaN(rawVal as any)) continue;
       let val = String(rawVal);
       if (val === "undefined" || val === "NaN" || (key === "notes" && !val.trim())) continue;
-      if ((key === "claddingColor" || key === "roofColor" || key === "steelColor" || key === "doorColor" || key === "sectionalDoorColor" || key === "trimmingColor") && val.startsWith("#")) {
+      if ((key === "claddingColor" || key === "roofColor" || key === "steelColor" || key === "doorColor" || key === "sectionalDoorColor" || key === "sectionalDoor2Color" || key === "trimmingColor") && val.startsWith("#")) {
         val = val.substring(1);
       }
       searchParams.set(key, val);
