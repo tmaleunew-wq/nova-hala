@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, Grid, GizmoHelper, GizmoViewport } from "@react-three/drei";
 import { toast } from "sonner";
-import { useControls, folder, button, Leva } from "leva";
+import { useControls, folder, button } from "leva";
 import { SlidersHorizontal, X } from "lucide-react";
 import * as THREE from "three";
 import { DEFAULT_PARAMS, CUSTOM_HALL, type GarageParams } from "@/lib/garage/types";
@@ -14,6 +14,8 @@ import { ArModal } from "./ArModal";
 import { HallCatalogModal } from "./HallCatalogModal";
 import { CatalogInfoCard } from "./CatalogInfoCard";
 import { TopNavigation } from "./TopNavigation";
+import { CustomGarageMenu } from "./CustomGarageMenu";
+import { StandardHallMenu } from "./StandardHallMenu";
 import { getHallsConfig, getImageCatalog, getCatalogWithCladding } from "@/lib/garage/configHelper";
 import { Scene, CameraRig, type ViewPreset } from "./GarageScene";
 
@@ -41,7 +43,7 @@ function getParamsFromURL(): Partial<GarageParams> {
       parsed[key] = val as any;
     }
   }
-  if (parsed.hallType && parsed.hallType !== "Vlastný") {
+  if (parsed.hallType && parsed.hallType !== "Vlastný" && parsed.hallType !== "vlastna_garaz") {
     const halls = getHallsConfig();
     const h = halls[parsed.hallType];
     if (h) {
@@ -75,7 +77,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   const [gateDecorState, setGateDecorState] = useState<string>(() => initialUrlParams.gateDecor ?? "none");
   const [gate2DecorState, setGate2DecorState] = useState<string>(() => initialUrlParams.gate2Decor ?? "none");
   const [isSummaryOpen, setIsSummaryOpen] = useState(true);
-  const [showControls, setShowControls] = useState(false);
+  const [showControls, setShowControls] = useState(() => (typeof window !== "undefined" ? window.innerWidth >= 768 : true));
   const [showHallSpecs, setShowHallSpecs] = useState(false);
 
   useEffect(() => {
@@ -95,7 +97,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   const imageCatalog = getImageCatalog(activeVariant);
   const hallOptions = [CUSTOM_HALL, ...Object.keys(hallsConfig)];
   const [selectedHall, setSelectedHall] = useState(initialUrlParams.hallType ?? CUSTOM_HALL);
-  const isCustom = selectedHall === CUSTOM_HALL;
+  const isCustom = selectedHall === CUSTOM_HALL || selectedHall === "vlastna_garaz";
   const [showCatalogModal, setShowCatalogModal] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [showEnvironment, setShowEnvironment] = useState(true);
@@ -453,7 +455,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     setSelectedHall(v);
     if (useCladding) setShowPicker(false);
     try {
-      if (v !== "Vlastný" && hallsConfig[v]) {
+      if (v !== "Vlastný" && v !== "vlastna_garaz" && hallsConfig[v]) {
       const h = hallsConfig[v];
       let profSize = 0.10;
       let profThick = 0.004;
@@ -517,7 +519,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           atticHeight: 0.35,
         } : {})
       });
-    } else if (v === CUSTOM_HALL) {
+    } else if (v === CUSTOM_HALL || v === "vlastna_garaz") {
       setGateCountState(DEFAULT_PARAMS.gateCount ?? 1);
       setGateTypeState(DEFAULT_PARAMS.gateType ?? "sectional");
       setGateDecorState(DEFAULT_PARAMS.gateDecor ?? "none");
@@ -802,115 +804,31 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         )}
       </button>
 
-      {/* Leva Controls container */}
-      <div className={`quote-export-panel absolute right-3 top-[132px] md:top-28 z-30 max-h-[calc(100vh-150px)] md:max-h-[72vh] overflow-y-auto rounded-lg bg-[#0e1116]/95 shadow-2xl border border-white/10 transition-all duration-300 ${
-        showControls ? "opacity-100 translate-x-0 pointer-events-auto" : "opacity-0 translate-x-12 pointer-events-none"
-      } md:w-[320px] w-[calc(100vw-32px)] max-w-[360px]`}>
-        <Leva
-          fill
-          flat
-          titleBar={{ title: "Parametre", drag: false, filter: false }}
-          theme={{
-            colors: {
-              elevation1: "#0e1116",
-              elevation2: "#161b22",
-              elevation3: "#1f2630",
-              accent1: "#34d399",
-              accent2: "#10b981",
-              accent3: "#059669",
-              highlight1: "#9ca3af",
-              highlight2: "#e5e7eb",
-              highlight3: "#ffffff",
-            },
-            sizes: { rootWidth: "100%", controlWidth: "45%" },
-            fonts: { mono: "ui-monospace, SFMono-Regular, Menlo, monospace" },
-          }}
+      {/* Dynamic Main Menu / Sidebar based on selected product type */}
+      {isCustom || selectedHall === "vlastna_garaz" ? (
+        <CustomGarageMenu
+          showControls={showControls}
+          typedParams={typedParams}
+          setParams={setParams as any}
+          selectedHall={selectedHall}
+          notes={notes}
+          setNotes={setNotes}
+          isSummaryOpen={isSummaryOpen}
+          setIsSummaryOpen={setIsSummaryOpen}
+          setQuoteRequestSignal={setQuoteRequestSignal}
         />
-
-        {/* Súhrn konfigurácie */}
-        <div className="border-t border-white/10 bg-[#161b22]">
-          <button
-            type="button"
-            onClick={() => setIsSummaryOpen((v) => !v)}
-            className="flex w-full items-center justify-between px-3.5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-white/90 hover:bg-white/5 transition cursor-pointer select-none"
-          >
-            <span className="flex items-center gap-2">
-              <span className="text-[10px] text-emerald-400">{isSummaryOpen ? "▾" : "▸"}</span>
-              Súhrn konfigurácie
-            </span>
-            <span className="text-[10px] font-normal text-emerald-400 font-mono">
-              {(typedParams.width * typedParams.length).toFixed(1)} m²
-            </span>
-          </button>
-
-          {isSummaryOpen && (
-            <div className="p-3 pt-1 space-y-2.5 text-[11px] font-mono border-t border-white/5">
-              <div className="rounded bg-black/40 p-2.5 border border-white/5 space-y-1.5 text-white/80">
-                <div className="flex justify-between">
-                  <span className="text-white/50">Model:</span>
-                  <span className="font-bold text-emerald-400">{selectedHall !== "Vlastný" ? selectedHall : "Vlastná garáž"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">Rozmery:</span>
-                  <span className="text-white font-medium">{typedParams.width} × {typedParams.length} m</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">Svetlá výška:</span>
-                  <span className="text-white font-medium">{typedParams.clearHeight} m</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">Strecha:</span>
-                  <span className="text-white font-medium">{typedParams.roofType === "gable" ? "Sedlová" : "Pultová"} ({typedParams.roofPitchDeg}°)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">Opláštenie:</span>
-                  <span className="text-white font-medium">
-                    {typedParams.panelType === "sandwich" ? `Sendvič ${typedParams.wallPanelThicknessMm}mm` : "Trapéz"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">Brána:</span>
-                  <span className="text-white font-medium">
-                    {typedParams.gateCount === 2 ? "2x " : "1x "}
-                    {typedParams.doorWidth} × {typedParams.doorHeight} m
-                    {typedParams.gateType === "upAndOver" ? " (výklopná)" : typedParams.gateType === "doubleLeaf" ? " (dvojkrídlová)" : " (sekčná)"}
-                    {typedParams.hasBackDoor ? " + zadná" : ""}
-                  </span>
-                </div>
-                {(typedParams.hasPersonalDoor || typedParams.windowCount > 0) && (
-                  <div className="flex justify-between">
-                    <span className="text-white/50">Výplne:</span>
-                    <span className="text-white font-medium">
-                      {typedParams.hasPersonalDoor ? "Dvere" : ""}{typedParams.hasPersonalDoor && typedParams.windowCount > 0 ? " + " : ""}{typedParams.windowCount > 0 ? `${typedParams.windowCount}x okno` : ""}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block mb-1 text-[10px] text-white/60 uppercase tracking-wider font-semibold">
-                  Poznámka:
-                </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={2}
-                  className="w-full rounded border border-white/10 bg-black/50 px-2.5 py-1.5 text-white/90 focus:border-emerald-400 focus:outline-none resize-none text-[11px]"
-                  placeholder="Špecifikácia, požiadavky..."
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setQuoteRequestSignal((v) => v + 1)}
-                className="w-full h-11 rounded bg-emerald-400 text-center font-bold text-black transition hover:bg-emerald-300 active:scale-[0.99] shadow-lg shadow-emerald-500/20 text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                Dopytovať cenovú ponuku
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+      ) : (
+        <StandardHallMenu
+          showControls={showControls}
+          typedParams={typedParams}
+          selectedHall={selectedHall}
+          notes={notes}
+          setNotes={setNotes}
+          isSummaryOpen={isSummaryOpen}
+          setIsSummaryOpen={setIsSummaryOpen}
+          setQuoteRequestSignal={setQuoteRequestSignal}
+        />
+      )}
 
       {/* Catalog 1:1 Reference Modal */}
       <HallCatalogModal
