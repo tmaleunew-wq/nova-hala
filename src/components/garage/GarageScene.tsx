@@ -10,6 +10,8 @@ import { Foundation } from "./Foundation";
 import { setupProceduralEnvMap } from "@/lib/garage/pbrMaterialHelper";
 import { CatalogDimensions } from "./CatalogDimensions";
 import { Environment } from "./Environment";
+import { CustomGarageIsland } from "./CustomGarageIsland";
+import { ModularExtension } from "./ModularExtension";
 
 export type ViewPreset = "iso" | "plan" | "front" | "side";
 
@@ -20,6 +22,7 @@ interface SceneProps {
   onTogglePanel: (id: string) => void;
   hideDimensions?: boolean;
   showEnvironment?: boolean;
+  isCustom?: boolean;
 }
 
 export function Scene({
@@ -29,6 +32,7 @@ export function Scene({
   onTogglePanel,
   hideDimensions,
   showEnvironment,
+  isCustom,
 }: SceneProps) {
   const { gl, scene } = useThree();
 
@@ -44,10 +48,10 @@ export function Scene({
 
   return (
     <>
-      <ambientLight intensity={0.55} />
+      <ambientLight intensity={0.65} />
       <directionalLight
-        position={[8, 12, 6]}
-        intensity={1.4}
+        position={[7, 14, -8]}
+        intensity={1.6}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -55,9 +59,10 @@ export function Scene({
         shadow-camera-right={15}
         shadow-camera-top={15}
         shadow-camera-bottom={-15}
+        shadow-bias={-0.0001}
       />
-      <directionalLight position={[-6, 8, -4]} intensity={0.35} />
-      <hemisphereLight args={["#ffffff", "#9ca3af", 0.55]} />
+      <directionalLight position={[-6, 8, 6]} intensity={0.4} />
+      <hemisphereLight args={["#ffffff", "#888e99", 0.6]} />
 
       <group ref={exportRef}>
         {params.showFoundation && <Foundation p={params} />}
@@ -71,13 +76,16 @@ export function Scene({
           />
         )}
         {params.showAccessories && <Accessories p={params} explodeY={params.explode} />}
+        <ModularExtension p={params} />
       </group>
 
       {!hideDimensions && !!params.showCatalogDimensions && (
         <CatalogDimensions p={params} />
       )}
 
-      {showEnvironment && <Environment p={params} />}
+      {showEnvironment && (
+        isCustom ? <CustomGarageIsland p={params} /> : <Environment p={params} />
+      )}
 
       {!showEnvironment && (
         <Grid

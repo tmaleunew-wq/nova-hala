@@ -6,6 +6,7 @@ import { ridgeHeight, highEave, getFrameZ } from "./Structure";
 const isThickWall = (type?: string) => type === "sandwich" || type === "smooth" || type === "wood_oak" || type === "wood_walnut";
 
 export function Gutters({ p, explodeY }: { p: GarageParams; explodeY: number }) {
+  if (p.roofType === "cubic") return null;
   const L = p.length;
   const W = p.width;
   const Heave = p.clearHeight;
@@ -134,12 +135,13 @@ export function CornerFlashings({ p, explodeY }: { p: GarageParams; explodeY: nu
     roughness: 0.5,
   }), [color]);
 
+  const cubicH = Heave + (p.atticHeight ?? 0.35);
   // Corner definitions: xSign, zSign
   const config = [
-    { xSign: -1, zSign: -1, h: Heave }, // left-front
-    { xSign: 1, zSign: -1, h: p.roofType === "shed" ? Hhi : Heave },  // right-front
-    { xSign: -1, zSign: 1, h: Heave },  // left-back
-    { xSign: 1, zSign: 1, h: p.roofType === "shed" ? Hhi : Heave },   // right-back
+    { xSign: -1, zSign: -1, h: p.roofType === "cubic" ? cubicH : Heave }, // left-front
+    { xSign: 1, zSign: -1, h: p.roofType === "cubic" ? cubicH : p.roofType === "shed" ? Hhi : Heave },  // right-front
+    { xSign: -1, zSign: 1, h: p.roofType === "cubic" ? cubicH : Heave },  // left-back
+    { xSign: 1, zSign: 1, h: p.roofType === "cubic" ? cubicH : p.roofType === "shed" ? Hhi : Heave },   // right-back
   ];
 
   return (
@@ -217,6 +219,7 @@ export function JointFlashings({ p, explodeY }: { p: GarageParams; explodeY: num
 }
 
 export function Bargeboards({ p, explodeY }: { p: GarageParams; explodeY: number }) {
+  if (p.roofType === "cubic") return null;
   const W = p.width;
   const L = p.length;
   const Heave = p.clearHeight;
@@ -333,6 +336,7 @@ export function Bargeboards({ p, explodeY }: { p: GarageParams; explodeY: number
 }
 
 export function EaveFlashings({ p, explodeY }: { p: GarageParams; explodeY: number }) {
+  if (p.roofType === "cubic") return null;
   const W = p.width;
   const L = p.length;
   const Heave = p.clearHeight;

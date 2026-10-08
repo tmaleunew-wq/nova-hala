@@ -1,6 +1,6 @@
 import defaultConfig from "@/config/default.json";
 
-export type RoofType = "gable" | "shed";
+export type RoofType = "gable" | "shed" | "cubic";
 export const CUSTOM_HALL = "Vlastný";
 
 export interface GarageParams {
@@ -66,6 +66,14 @@ export interface GarageParams {
   doorOpen: boolean;
   showCatalogDimensions?: boolean;
   notes?: string;
+  // cubic attic & modular extension
+  hasAttic?: boolean;
+  atticHeight?: number;
+  hasExtension?: boolean;
+  extensionSide?: "left" | "right";
+  extensionWidth?: number;
+  extensionType?: "garage" | "carport" | "storage";
+  extensionGateOpen?: boolean;
 }
 
 const defaultG = (defaultConfig as any)?.defaultGarage || {};
@@ -125,4 +133,11 @@ export const DEFAULT_PARAMS: GarageParams = {
   showAccessories: true,
   doorOpen: false,
   notes: "",
+  hasAttic: false,
+  atticHeight: 0.35,
+  hasExtension: false,
+  extensionSide: "right",
+  extensionWidth: 3.5,
+  extensionType: "garage",
+  extensionGateOpen: false,
 };

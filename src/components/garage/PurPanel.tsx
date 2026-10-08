@@ -239,7 +239,7 @@ export function PurPanel({
       {isSandwichActual && coreGeom && (
         <mesh geometry={coreGeom} castShadow receiveShadow>
           <meshStandardMaterial
-            color={hovered ? "#faf3cc" : "#e6dfb3"}
+            color={hovered ? "#4a4e54" : "#363a40"}
             metalness={0.05}
             roughness={0.9}
             side={THREE.DoubleSide}

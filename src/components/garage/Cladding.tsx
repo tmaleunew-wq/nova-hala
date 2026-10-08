@@ -477,7 +477,7 @@ export function Cladding({
               <PurPanel
                 id={id}
                 width={w}
-                height={Heave}
+                height={p.roofType === "cubic" ? Heave + (p.atticHeight ?? 0.35) : Heave}
                 holes={bayHoles}
                 texture={wallTex}
                 color={p.claddingColor}
@@ -525,7 +525,7 @@ export function Cladding({
               <PurPanel
                 id={id}
                 width={w}
-                height={p.roofType === "shed" ? Hhi : Heave}
+                height={p.roofType === "cubic" ? Heave + (p.atticHeight ?? 0.35) : (p.roofType === "shed" ? Hhi : Heave)}
                 holes={bayHoles}
                 texture={wallTex}
                 color={p.claddingColor}
@@ -620,6 +620,75 @@ export function Cladding({
         </>
       )}
 
+      {/* CUBIC ATTIC on front/back & Capping Flashings */}
+      {p.roofType === "cubic" && (() => {
+        const atticH = p.atticHeight ?? 0.35;
+        const panelW = W + sz + panelThickness;
+        const rimColor = p.trimmingColor || "#2b2f36";
+        const rimThick = 0.04;
+        const rimDepth = panelThickness + 0.05;
+        return (
+          <>
+            {/* Front attic panel */}
+            <group position={[0, Heave, -L / 2 - (sz / 2 + panelThickness / 2) + offFront]}>
+              <PurPanel
+                id="attic-front"
+                width={panelW}
+                height={atticH}
+                holes={[]}
+                texture={wallTex}
+                color={p.claddingColor}
+                wireframe={p.wireframe}
+                visible={!removedPanels["attic-front"]}
+                onToggle={() => onTogglePanel?.("attic-front")}
+                thickness={panelThickness}
+                isSandwich={isSand}
+                claddingOrientation={p.claddingOrientation}
+                panelType={p.panelType}
+              />
+            </group>
+            {/* Back attic panel */}
+            <group position={[0, Heave, L / 2 + (sz / 2 + panelThickness / 2) + offBack]}>
+              <PurPanel
+                id="attic-back"
+                width={panelW}
+                height={atticH}
+                holes={[]}
+                texture={wallTex}
+                color={p.claddingColor}
+                wireframe={p.wireframe}
+                visible={!removedPanels["attic-back"]}
+                onToggle={() => onTogglePanel?.("attic-back")}
+                thickness={panelThickness}
+                isSandwich={isSand}
+                claddingOrientation={p.claddingOrientation}
+                panelType={p.panelType}
+              />
+            </group>
+
+            {/* Capping flashing (obvodová krycia atiková lišta) */}
+            <group position={[0, Heave + atticH + rimThick / 2, 0]}>
+              <mesh position={[0, 0, -L / 2 - sz / 2]}>
+                <boxGeometry args={[panelW + 0.08, rimThick, rimDepth]} />
+                <meshStandardMaterial color={rimColor} metalness={0.6} roughness={0.4} wireframe={p.wireframe} />
+              </mesh>
+              <mesh position={[0, 0, L / 2 + sz / 2]}>
+                <boxGeometry args={[panelW + 0.08, rimThick, rimDepth]} />
+                <meshStandardMaterial color={rimColor} metalness={0.6} roughness={0.4} wireframe={p.wireframe} />
+              </mesh>
+              <mesh position={[-W / 2 - sz / 2, 0, 0]}>
+                <boxGeometry args={[rimDepth, rimThick, L + sz * 2]} />
+                <meshStandardMaterial color={rimColor} metalness={0.6} roughness={0.4} wireframe={p.wireframe} />
+              </mesh>
+              <mesh position={[W / 2 + sz / 2, 0, 0]}>
+                <boxGeometry args={[rimDepth, rimThick, L + sz * 2]} />
+                <meshStandardMaterial color={rimColor} metalness={0.6} roughness={0.4} wireframe={p.wireframe} />
+              </mesh>
+            </group>
+          </>
+        );
+      })()}
+
       {/* ROOF */}
       {p.roofType === "gable" ? (
         <>
@@ -673,6 +742,42 @@ export function Cladding({
             });
           })()}
         </>
+      ) : p.roofType === "cubic" ? (
+        (() => {
+          return (
+            <group position={[0, Heave - 0.01 + offRoof, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              {zs.map((z, i) => {
+                if (i === zs.length - 1) return null;
+                const zStart = zs[i];
+                const zEnd = zs[i + 1];
+                const actualStart = i === 0 ? zStart - sz / 2 : zStart;
+                const actualEnd = i === zs.length - 2 ? zEnd + sz / 2 : zEnd;
+                const w = actualEnd - actualStart;
+                const zCenter = (actualStart + actualEnd) / 2;
+                const id = `roof-cubic-${i}`;
+                return (
+                  <group key={id} position={[0, actualStart, sz / 2 + roofPanelThickness / 2]}>
+                    <PurPanel
+                      id={id}
+                      width={W + sz}
+                      height={w}
+                      holes={[]}
+                      texture={roofTex}
+                      color={p.roofColor}
+                      wireframe={p.wireframe}
+                      visible={!removedPanels[id]}
+                      onToggle={() => onTogglePanel?.(id)}
+                      thickness={roofPanelThickness}
+                      isSandwich={isRoofSand}
+                      claddingOrientation={p.roofCladdingOrientation}
+                      panelType={p.roofPanelType}
+                    />
+                  </group>
+                );
+              })}
+            </group>
+          );
+        })()
       ) : (
         (() => {
           const gapWidth = sz / 2 + panelThickness;

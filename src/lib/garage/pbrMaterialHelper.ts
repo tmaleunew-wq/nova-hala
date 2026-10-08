@@ -65,8 +65,8 @@ export function createPBRSmoothMaterial(
 ): THREE.MeshStandardMaterial {
   return new THREE.MeshStandardMaterial({
     color: new THREE.Color(color),
-    roughness: 0.5,  // Smooth satin facade finish for clean white appearance
-    metalness: 0.15, // Coated sheet metal
+    roughness: 0.72,  // Fine-grain architectural facade stucco/matte finish
+    metalness: 0.08,
     side: THREE.DoubleSide,
   });
 }

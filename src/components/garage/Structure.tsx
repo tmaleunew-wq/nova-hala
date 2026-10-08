@@ -9,11 +9,15 @@ function ridgeHeight(p: GarageParams): number {
   if (p.roofType === "gable") {
     return p.clearHeight + (p.width / 2) * Math.tan((p.roofPitchDeg * Math.PI) / 180);
   }
+  if (p.roofType === "cubic") {
+    return p.clearHeight + 0.08;
+  }
   return p.clearHeight + p.width * Math.tan((p.roofPitchDeg * Math.PI) / 180);
 }
 
 // Eave height on +X side (high side) for shed roof; equal H for gable
 function highEave(p: GarageParams): number {
+  if (p.roofType === "cubic") return p.clearHeight;
   return p.roofType === "shed" ? ridgeHeight(p) : p.clearHeight;
 }
 
@@ -266,6 +270,38 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
             </group>
           );
         }
+        if (p.roofType === "cubic") {
+          const atticH = p.atticHeight ?? 0.35;
+          return (
+            <group key={`raf-${i}`}>
+              <SteelTube
+                from={[hxL, Heave, z]}
+                to={[hxR, Heave, z]}
+                size={sz}
+                thickness={th}
+                color={col}
+                wireframe={wf}
+              />
+              {/* Attic parapet supports */}
+              <SteelTube
+                from={[hxL, Heave, z]}
+                to={[hxL, Heave + atticH, z]}
+                size={sz * 0.8}
+                thickness={th}
+                color={col}
+                wireframe={wf}
+              />
+              <SteelTube
+                from={[hxR, Heave, z]}
+                to={[hxR, Heave + atticH, z]}
+                size={sz * 0.8}
+                thickness={th}
+                color={col}
+                wireframe={wf}
+              />
+            </group>
+          );
+        }
         // shed
         return (
           <SteelTube
@@ -306,6 +342,32 @@ export function Structure({ p, explodeY }: { p: GarageParams; explodeY: number }
               );
             }
           }
+        } else if (p.roofType === "cubic") {
+          const atticH = p.atticHeight ?? 0.35;
+          const topY = Heave + atticH;
+          const purlinCount = Math.max(3, Math.round(p.width / 0.8));
+          for (let i = 0; i <= purlinCount; i++) {
+            const t = i / purlinCount;
+            const x = hxL + t * p.width;
+            purlins.push(
+              <SteelTube
+                key={`pr-cubic-${i}`}
+                from={[x, Heave, -p.length / 2]}
+                to={[x, Heave, p.length / 2]}
+                size={psz}
+                thickness={th}
+                color={col}
+                wireframe={wf}
+              />,
+            );
+          }
+          // Obvodové horné nosníky atiky
+          purlins.push(
+            <SteelTube key="attic-top-L" from={[hxL, topY, -p.length / 2]} to={[hxL, topY, p.length / 2]} size={psz} thickness={th} color={col} wireframe={wf} />,
+            <SteelTube key="attic-top-R" from={[hxR, topY, -p.length / 2]} to={[hxR, topY, p.length / 2]} size={psz} thickness={th} color={col} wireframe={wf} />,
+            <SteelTube key="attic-top-front" from={[hxL, topY, -p.length / 2]} to={[hxR, topY, -p.length / 2]} size={psz} thickness={th} color={col} wireframe={wf} />,
+            <SteelTube key="attic-top-back" from={[hxL, topY, p.length / 2]} to={[hxR, topY, p.length / 2]} size={psz} thickness={th} color={col} wireframe={wf} />,
+          );
         } else {
           const slopeLen = Math.hypot(p.width, Hhi - HloShed);
           const purlinCount = Math.max(3, Math.round(slopeLen / 0.8));

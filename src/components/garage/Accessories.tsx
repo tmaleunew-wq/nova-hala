@@ -34,7 +34,7 @@ function GarageDoor({
   const activeDecor = doorDecor ?? p.gateDecor ?? "none";
   const maxSafeDoorHeight = Math.max(1.8, p.clearHeight - 0.2);
   const actualDoorHeight = Math.min(p.doorHeight, maxSafeDoorHeight);
-  const panels = 4;
+  const panels = Math.max(6, Math.min(8, Math.round(actualDoorHeight / 0.32)));
   const panelH = actualDoorHeight / panels;
 
   // Local state for smooth animation
@@ -55,9 +55,9 @@ function GarageDoor({
   });
 
   const R = 0.25;
-  const y_c = actualDoorHeight - R;
   const curveLength = (R * Math.PI) / 2;
-  const travelDistance = currentProgress * (actualDoorHeight - 0.05);
+  const hCurveStart = actualDoorHeight - 0.02;
+  const travelDistance = currentProgress * actualDoorHeight;
 
   const gateMaterial = useMemo(() => {
     if (activeDecor === "wood_oak") {
@@ -68,14 +68,33 @@ function GarageDoor({
     }
     return new THREE.MeshStandardMaterial({
       color: activeColor,
-      metalness: 0.7,
-      roughness: 0.4,
+      metalness: 0.6,
+      roughness: 0.35,
       wireframe: p.wireframe,
     });
   }, [activeDecor, activeColor, p.wireframe]);
 
   return (
     <group position={[cx, 0, cz]} rotation={[0, rotY, 0]}>
+      {/* 0. PORTÁLOVÝ KRYCÍ RÁM OTVORU (Jambs & Header Portal Frame) */}
+      <group>
+        {/* Ľavé ostenie */}
+        <mesh position={[-gateWidth / 2 - 0.03, actualDoorHeight / 2 + 0.01, 0.005]} castShadow receiveShadow>
+          <boxGeometry args={[0.07, actualDoorHeight + 0.04, 0.12]} />
+          <meshStandardMaterial color="#3a3f42" metalness={0.7} roughness={0.35} wireframe={p.wireframe} />
+        </mesh>
+        {/* Pravé ostenie */}
+        <mesh position={[gateWidth / 2 + 0.03, actualDoorHeight / 2 + 0.01, 0.005]} castShadow receiveShadow>
+          <boxGeometry args={[0.07, actualDoorHeight + 0.04, 0.12]} />
+          <meshStandardMaterial color="#3a3f42" metalness={0.7} roughness={0.35} wireframe={p.wireframe} />
+        </mesh>
+        {/* Horné nadpražie */}
+        <mesh position={[0, actualDoorHeight + 0.04, 0.005]} castShadow receiveShadow>
+          <boxGeometry args={[gateWidth + 0.13, 0.07, 0.12]} />
+          <meshStandardMaterial color="#3a3f42" metalness={0.7} roughness={0.35} wireframe={p.wireframe} />
+        </mesh>
+      </group>
+
       {/* 1. SEKČNÁ BRÁNA */}
       {gateType === "sectional" && (
         <>
@@ -87,33 +106,57 @@ function GarageDoor({
             let panelZ = 0;
             let rotX = 0;
 
-            if (u < y_c) {
+            if (currentProgress === 0 || u <= hCurveStart) {
               panelY = u;
               panelZ = 0;
               rotX = 0;
-            } else if (u < y_c + curveLength) {
-              const alpha = (u - y_c) / R;
-              panelY = y_c + R * Math.sin(alpha);
+            } else if (u <= hCurveStart + curveLength) {
+              const alpha = (u - hCurveStart) / R;
+              panelY = hCurveStart + R * Math.sin(alpha);
               panelZ = R - R * Math.cos(alpha);
               rotX = -alpha;
             } else {
-              const dHoriz = u - (y_c + curveLength);
-              panelY = actualDoorHeight;
+              const dHoriz = u - (hCurveStart + curveLength);
+              panelY = hCurveStart + R;
               panelZ = R + dHoriz;
               rotX = -Math.PI / 2;
             }
 
             return (
-              <mesh
-                key={i}
-                position={[0, panelY, panelZ]}
-                rotation={[rotX, 0, 0]}
-                castShadow
-                receiveShadow
-                material={gateMaterial}
-              >
-                <boxGeometry args={[gateWidth, panelH - 0.01, 0.04]} />
-              </mesh>
+              <group key={i} position={[0, panelY, panelZ]} rotation={[rotX, 0, 0]}>
+                {/* Hlavné teleso lamely */}
+                <mesh castShadow receiveShadow material={gateMaterial}>
+                  <boxGeometry args={[gateWidth - 0.01, panelH - 0.004, 0.04]} />
+                </mesh>
+
+                {/* Tmavá tesniaca drážka medzi lamelami */}
+                {i > 0 && (
+                  <mesh position={[0, -panelH / 2 + 0.002, 0.021]}>
+                    <boxGeometry args={[gateWidth - 0.01, 0.005, 0.003]} />
+                    <meshStandardMaterial color="#1c1f24" roughness={0.9} />
+                  </mesh>
+                )}
+
+                {/* Spodné gumové tesnenie a kľučka na spodnom paneli */}
+                {i === 0 && (
+                  <>
+                    <mesh position={[0, -panelH / 2 + 0.01, 0.01]}>
+                      <boxGeometry args={[gateWidth - 0.01, 0.02, 0.045]} />
+                      <meshStandardMaterial color="#16181b" roughness={0.95} />
+                    </mesh>
+                    <group position={[gateWidth * 0.2, -panelH / 2 + 0.14, 0.025]}>
+                      <mesh castShadow>
+                        <boxGeometry args={[0.14, 0.028, 0.018]} />
+                        <meshStandardMaterial color="#1a1c1e" metalness={0.8} roughness={0.3} />
+                      </mesh>
+                      <mesh position={[0, 0.032, 0]}>
+                        <cylinderGeometry args={[0.009, 0.009, 0.008, 16]} />
+                        <meshStandardMaterial color="#a0a5ab" metalness={0.9} roughness={0.2} />
+                      </mesh>
+                    </group>
+                  </>
+                )}
+              </group>
             );
           })}
 
@@ -432,8 +475,13 @@ export function Accessories({ p, explodeY }: { p: GarageParams; explodeY: number
     ? Math.max(1.2, (W - 0.85) / 2)
     : Math.max(1.5, W - 0.5);
   const actualDW = Math.min(p.doorWidth, maxSafeDoorW);
-  const zFront = -L / 2 - 0.025 + explodeY * -2.2;
-  const zBack = L / 2 + 0.025 + explodeY * 2.2;
+  const wallThickness = (p.panelType === "sandwich" || p.panelType === "smooth" || p.panelType === "wood_oak" || p.panelType === "wood_walnut")
+    ? Math.max(0.04, p.wallPanelThicknessMm / 1000)
+    : 0.01;
+  const sz = p.profileSize;
+  const offsetWall = sz / 2 + wallThickness / 2;
+  const zFront = -L / 2 - offsetWall + explodeY * -1.5;
+  const zBack = L / 2 + offsetWall + explodeY * 1.5;
   const dLayout = getDoubleGateLayout(W, actualDW);
 
   return (

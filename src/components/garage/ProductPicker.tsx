@@ -110,7 +110,7 @@ export function ProductPicker({
                     src={`${imageCatalog}/${name}_render.png?v=3`}
                     alt={`Katalóg ${name}`}
                     loading="lazy"
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
                   />
                 </div>
                 <div className="border-t border-white/10 p-4">

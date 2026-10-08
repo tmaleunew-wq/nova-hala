@@ -98,7 +98,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   const isCustom = selectedHall === CUSTOM_HALL;
   const [showCatalogModal, setShowCatalogModal] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
-  const [showEnvironment, setShowEnvironment] = useState(false);
+  const [showEnvironment, setShowEnvironment] = useState(true);
   const [showArModal, setShowArModal] = useState(false);
   const configWithCladding = getCatalogWithCladding(activeVariant);
   const [catalogWithCladding, setCatalogWithCladding] = useState(() => initialUrlParams.showCladding ?? configWithCladding);
@@ -245,7 +245,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       },
       roofType: {
         value: isCatalog ? (initHall.type as any) : (initialUrlParams.roofType ?? DEFAULT_PARAMS.roofType),
-        options: { "Sedlová": "gable", "Pultová": "shed" },
+        options: { "Sedlová": "gable", "Pultová": "shed", "Kubická s atikou": "cubic" },
         label: "Strecha",
         disabled: !isCustom,
       },
@@ -255,6 +255,14 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         max: 35,
         step: 1,
         label: "Spád strechy [°]",
+        disabled: !isCustom,
+      },
+      atticHeight: {
+        value: initialUrlParams.atticHeight ?? (DEFAULT_PARAMS.atticHeight ?? 0.35),
+        min: 0.2,
+        max: 0.8,
+        step: 0.05,
+        label: "Výška atiky [m]",
         disabled: !isCustom,
       },
     }, { collapsed: false }),
@@ -427,6 +435,13 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       sealingSystem: { value: initialUrlParams.sealingSystem ?? DEFAULT_PARAMS.sealingSystem, label: "Tesnenia a tmely" },
       flashingMatchesPanels: { value: initialUrlParams.flashingMatchesPanels ?? DEFAULT_PARAMS.flashingMatchesPanels, label: "Systémové klampiarstvo" },
     }, { collapsed: true }),
+    "Modulárne prepojenie": folder({
+      hasExtension: { value: initialUrlParams.hasExtension ?? DEFAULT_PARAMS.hasExtension, label: "Pripojiť modul" },
+      extensionSide: { value: initialUrlParams.extensionSide ?? (DEFAULT_PARAMS.extensionSide ?? "right"), options: { "Vpravo": "right", "Vľavo": "left" }, label: "Strana pripojenia" },
+      extensionWidth: { value: initialUrlParams.extensionWidth ?? (DEFAULT_PARAMS.extensionWidth ?? 3.5), min: 2.5, max: 6.0, step: 0.1, label: "Šírka modulu [m]" },
+      extensionType: { value: initialUrlParams.extensionType ?? (DEFAULT_PARAMS.extensionType ?? "garage"), options: { "Druhá garáž s bránou": "garage", "Krytý prístrešok (Carport)": "carport", "Sklad / Dielňa": "storage" }, label: "Využitie modulu" },
+      atticHeight: { value: initialUrlParams.atticHeight ?? (DEFAULT_PARAMS.atticHeight ?? 0.35), min: 0.2, max: 0.8, step: 0.05, label: "Výška atiky [m]" },
+    }, { collapsed: true }),
   }), [selectedHall]);
 
   const applyHallType = (v: string, withCladding?: boolean) => {
@@ -464,10 +479,11 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       setSelectedPoleHeight(defaultPole);
       setSelectedLength(defaultLen);
       const isShed = h.type === "shed";
-      const gateW = isShed ? Math.min(3.0, h.width * 0.5) : (defaultVer?.E ?? 4.8);
-      const gateH = isShed
+      const isCubic = h.type === "cubic";
+      const gateW = isCubic ? Math.min(2.5, h.width - 0.8) : (isShed ? Math.min(3.0, h.width * 0.5) : (defaultVer?.E ?? 4.8));
+      const gateH = isCubic ? Math.min(2.2, defaultH - 0.15) : (isShed
         ? (defaultVer?.H4 ? defaultVer.H4 - 0.15 : 2.5)
-        : (defaultVer?.H2 ?? Math.min(3.8, defaultH - 0.2));
+        : (defaultVer?.H2 ?? Math.min(3.8, defaultH - 0.2)));
 
       (setParams as any)({
         hallType: v,
@@ -490,7 +506,16 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         doorHeight: gateH,
         doorOpen: false,
         steelColor: "#9aa1ab",
-        ...(h.claddingVersion === "ZU" ? { claddingOrientation: "vertical" } : {})
+        ...(h.claddingVersion === "ZU" ? { claddingOrientation: "vertical" } : {}),
+        ...(isCubic ? {
+          panelType: "smooth",
+          claddingColor: "#f4f5f7",
+          sectionalDoorColor: "#2b2f36",
+          trimmingColor: "#2b2f36",
+          roofColor: "#2b2f36",
+          hasAttic: true,
+          atticHeight: 0.35,
+        } : {})
       });
     } else if (v === CUSTOM_HALL) {
       setGateCountState(DEFAULT_PARAMS.gateCount ?? 1);
@@ -532,6 +557,12 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         hasPersonalDoor: DEFAULT_PARAMS.hasPersonalDoor,
         hasWindows: DEFAULT_PARAMS.hasWindows,
         hasSkylights: DEFAULT_PARAMS.hasSkylights,
+        hasAttic: DEFAULT_PARAMS.hasAttic ?? false,
+        atticHeight: DEFAULT_PARAMS.atticHeight ?? 0.35,
+        hasExtension: DEFAULT_PARAMS.hasExtension ?? false,
+        extensionSide: DEFAULT_PARAMS.extensionSide ?? "right",
+        extensionWidth: DEFAULT_PARAMS.extensionWidth ?? 3.5,
+        extensionType: DEFAULT_PARAMS.extensionType ?? "garage",
       });
     }
   } finally {
@@ -676,8 +707,15 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           onTogglePanel={togglePanel}
           hideDimensions={showCatalogModal || showPicker}
           showEnvironment={showEnvironment}
+          isCustom={isCustom}
         />
-        <OrbitControls makeDefault enableDamping dampingFactor={0.08} target={[0, typedParams.clearHeight / 2, 0]} />
+        <OrbitControls
+          makeDefault
+          enableDamping
+          dampingFactor={0.08}
+          target={[0, typedParams.clearHeight / 2, 0]}
+          maxPolarAngle={Math.PI / 2 - 0.02}
+        />
         <CameraRig preset={preset} params={typedParams} />
         {!isMobile && (
           <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
