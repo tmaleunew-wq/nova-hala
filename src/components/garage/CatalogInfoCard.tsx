@@ -32,18 +32,18 @@ export function CatalogInfoCard({
     curHall.versions?.[0];
 
   return (
-    <div className="pointer-events-auto w-full rounded border border-emerald-500/30 bg-[#0e1116]/85 p-2.5 font-mono text-[10px] text-white/90 backdrop-blur shadow-xl">
+    <div className="pointer-events-auto w-full rounded border border-cyan-500/40 bg-[#0e1116]/85 p-2.5 font-mono text-[10px] text-white/90 backdrop-blur shadow-xl">
       <div
         onClick={() => setShowHallSpecs((v) => !v)}
         className="flex items-center justify-between border-b border-white/10 pb-1 mb-1.5 cursor-pointer select-none"
       >
-        <span className="font-bold text-emerald-400">
+        <span className="font-bold text-cyan-400">
           KATALÓG GTG: {selectedHall}
           {curHall.subtitle ? ` · ${curHall.subtitle}` : ""}
         </span>
         <span className="text-white/50 text-[9px] flex items-center gap-1">
           <span>{curHall.framework || "EN 1090"}</span>
-          <span className="text-emerald-400 font-bold">{showHallSpecs ? "▴" : "▾"}</span>
+          <span className="text-cyan-400 font-bold">{showHallSpecs ? "▴" : "▾"}</span>
         </span>
       </div>
 
@@ -68,7 +68,7 @@ export function CatalogInfoCard({
                       }}
                       className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
                         isSel
-                          ? "bg-emerald-500 text-black shadow"
+                          ? "bg-cyan-400 text-slate-950 shadow"
                           : "bg-white/10 text-white/80 hover:bg-white/20"
                       }`}
                     >
@@ -84,7 +84,7 @@ export function CatalogInfoCard({
           <div className="flex items-center justify-between bg-white/5 px-2 py-1 rounded border border-white/10 mb-1.5">
             <div className="flex items-center gap-1.5">
               <span className="text-white/60">Dĺžka B:</span>
-              <span className="text-emerald-400 font-bold text-[11px]">{selectedLength} m</span>
+              <span className="text-cyan-400 font-bold text-[11px]">{selectedLength} m</span>
               <span className="text-white/40 text-[9px]">
                 ({Math.round(selectedLength / curHall.moduleLength)} × {curHall.moduleLength}m)
               </span>
@@ -98,7 +98,7 @@ export function CatalogInfoCard({
                   onSetParams({ length: `${newL}m`, bayCount: Math.round(newL / curHall.moduleLength) });
                 }}
                 disabled={selectedLength <= (curHall.minLength ?? curHall.moduleLength * 2)}
-                className="px-2 py-0.5 rounded bg-white/10 hover:bg-emerald-500/30 text-white font-bold cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                className="px-2 py-0.5 rounded bg-white/10 hover:bg-cyan-500/30 text-white font-bold cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 title={`Odobrať modul -${curHall.moduleLength}m`}
               >
                 − {curHall.moduleLength}m
@@ -109,7 +109,7 @@ export function CatalogInfoCard({
                   setSelectedLength(newL);
                   onSetParams({ length: `${newL}m`, bayCount: Math.round(newL / curHall.moduleLength) });
                 }}
-                className="px-2 py-0.5 rounded bg-white/10 hover:bg-emerald-500/30 text-white font-bold cursor-pointer"
+                className="px-2 py-0.5 rounded bg-white/10 hover:bg-cyan-500/30 text-white font-bold cursor-pointer"
                 title={`Pridať modul +${curHall.moduleLength}m`}
               >
                 + {curHall.moduleLength}m
@@ -118,7 +118,7 @@ export function CatalogInfoCard({
           </div>
 
           {activeVer && (
-            <div className="text-[9px] text-emerald-300 font-semibold mb-1 truncate">
+            <div className="text-[9px] text-cyan-300 font-semibold mb-1 truncate">
               {activeVer.label}
             </div>
           )}
@@ -188,7 +188,7 @@ export function CatalogInfoCard({
 
           <button
             onClick={onOpenCatalogModal}
-            className="mt-2 w-full flex items-center justify-center gap-1.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 py-1 text-[10px] font-bold cursor-pointer transition-colors"
+            className="mt-2 w-full flex items-center justify-center gap-1.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 py-1 text-[10px] font-bold cursor-pointer transition-colors"
           >
             <span>📋 3D Predloha & Technický list ({selectedHall})</span>
           </button>

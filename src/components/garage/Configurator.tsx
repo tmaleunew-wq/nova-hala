@@ -23,8 +23,15 @@ function getParamsFromURL(): Partial<GarageParams> {
   if (typeof window === "undefined") return {};
   const searchParams = new URLSearchParams(window.location.search);
   const parsed: Partial<GarageParams> = {};
-  const hallType = searchParams.get("hallType");
-  if (hallType) parsed.hallType = hallType;
+  let hallType = searchParams.get("hallType") || searchParams.get("type") || searchParams.get("product") || searchParams.get("hall") || searchParams.get("model");
+  if (hallType) {
+    if (hallType === "hala" || hallType === "ocelova_hala" || hallType === "ocelove_haly" || hallType === "haly") {
+      hallType = "KD10";
+    } else if (hallType === "garaz" || hallType === "vlastna_garaz" || hallType === "vlastna") {
+      hallType = "Vlastný";
+    }
+    parsed.hallType = hallType;
+  }
 
   const keys = Object.keys(DEFAULT_PARAMS) as (keyof GarageParams)[];
   for (const key of keys) {
@@ -45,8 +52,9 @@ function getParamsFromURL(): Partial<GarageParams> {
   }
   if (parsed.hallType && parsed.hallType !== "Vlastný" && parsed.hallType !== "vlastna_garaz") {
     const halls = getHallsConfig();
-    const h = halls[parsed.hallType];
+    const h = halls[parsed.hallType] || halls["KD10"];
     if (h) {
+      parsed.hallType = h.name || parsed.hallType;
       parsed.width = h.width;
       const bCount = h.defaultBays ?? 5;
       parsed.bayCount = bCount;
@@ -99,6 +107,11 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   const hallOptions = [CUSTOM_HALL, ...Object.keys(hallsConfig)];
   const [selectedHall, setSelectedHall] = useState(initialUrlParams.hallType ?? CUSTOM_HALL);
   const isCustom = selectedHall === CUSTOM_HALL || selectedHall === "vlastna_garaz";
+  const [customParams, setCustomParams] = useState<Partial<GarageParams>>({});
+  const handleCustomSetParams = (newP: Partial<GarageParams>) => {
+    setCustomParams((prev) => ({ ...prev, ...newP }));
+    (setParams as any)(newP);
+  };
   const [showCatalogModal, setShowCatalogModal] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [showEnvironment, setShowEnvironment] = useState(true);
@@ -521,7 +534,49 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           atticHeight: 0.35,
         } : {})
       });
+      setCustomParams({});
     } else if (v === CUSTOM_HALL || v === "vlastna_garaz") {
+      setCustomParams({
+        width: DEFAULT_PARAMS.width,
+        length: DEFAULT_PARAMS.length,
+        clearHeight: DEFAULT_PARAMS.clearHeight,
+        roofType: DEFAULT_PARAMS.roofType,
+        roofPitchDeg: DEFAULT_PARAMS.roofPitchDeg,
+        bayCount: DEFAULT_PARAMS.bayCount,
+        profileSize: DEFAULT_PARAMS.profileSize,
+        profileThickness: DEFAULT_PARAMS.profileThickness,
+        steelColor: DEFAULT_PARAMS.steelColor,
+        claddingColor: DEFAULT_PARAMS.claddingColor,
+        roofColor: DEFAULT_PARAMS.roofColor,
+        panelType: DEFAULT_PARAMS.panelType,
+        roofPanelType: DEFAULT_PARAMS.roofPanelType,
+        sectionalDoorColor: DEFAULT_PARAMS.sectionalDoorColor,
+        sectionalDoor2Color: DEFAULT_PARAMS.sectionalDoor2Color,
+        doorColor: DEFAULT_PARAMS.doorColor,
+        trimmingColor: DEFAULT_PARAMS.trimmingColor,
+        gateCount: DEFAULT_PARAMS.gateCount ?? 1,
+        gateType: DEFAULT_PARAMS.gateType ?? "sectional",
+        gateDecor: DEFAULT_PARAMS.gateDecor ?? "none",
+        gate2Decor: DEFAULT_PARAMS.gate2Decor ?? "none",
+        doorWidth: DEFAULT_PARAMS.doorWidth,
+        doorHeight: DEFAULT_PARAMS.doorHeight,
+        doorOpen: false,
+        hasBackDoor: DEFAULT_PARAMS.hasBackDoor ?? false,
+        hasPersonalDoor: DEFAULT_PARAMS.hasPersonalDoor,
+        hasWindows: DEFAULT_PARAMS.hasWindows,
+        hasSkylights: DEFAULT_PARAMS.hasSkylights,
+        hasAttic: DEFAULT_PARAMS.hasAttic ?? false,
+        atticHeight: DEFAULT_PARAMS.atticHeight ?? 0.35,
+        hasExtension: DEFAULT_PARAMS.hasExtension ?? false,
+        extensionSide: DEFAULT_PARAMS.extensionSide ?? "right",
+        extensionWidth: DEFAULT_PARAMS.extensionWidth ?? 3.5,
+        extensionType: DEFAULT_PARAMS.extensionType ?? "garage",
+        showStructure: true,
+        showCladding: true,
+        showAccessories: true,
+        showCatalogDimensions: false,
+      });
+      setSelectedLength(DEFAULT_PARAMS.length);
       setGateCountState(DEFAULT_PARAMS.gateCount ?? 1);
       setGateTypeState(DEFAULT_PARAMS.gateType ?? "sectional");
       setGateDecorState(DEFAULT_PARAMS.gateDecor ?? "none");
@@ -591,17 +646,36 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     cleanParams.gateCount = Number(cleanParams.gateCount) as 1 | 2;
   }
 
+  const isCurrentCatalog = selectedHall !== CUSTOM_HALL && selectedHall !== "vlastna_garaz" && !!hallsConfig[selectedHall];
+
   let typedParams: GarageParams = {
     ...DEFAULT_PARAMS,
     ...cleanParams,
     notes,
-    gateCount: (isCatalog ? 1 : gateCountState) as 1 | 2,
-    gateType: (isCatalog ? "sectional" : gateTypeState) as any,
-    gateDecor: (isCatalog ? "none" : gateDecorState) as any,
-    gate2Decor: (isCatalog ? "none" : gate2DecorState) as any,
+    gateCount: (isCurrentCatalog ? 1 : gateCountState) as 1 | 2,
+    gateType: (isCurrentCatalog ? "sectional" : gateTypeState) as any,
+    gateDecor: (isCurrentCatalog ? "none" : gateDecorState) as any,
+    gate2Decor: (isCurrentCatalog ? "none" : gate2DecorState) as any,
     sectionalDoor2Color: (cleanParams as any).sectionalDoor2Color ?? DEFAULT_PARAMS.sectionalDoor2Color,
-    hasBackDoor: isCatalog ? false : hasBackDoorState,
+    hasBackDoor: isCurrentCatalog ? false : hasBackDoorState,
   };
+
+  if (isCustom) {
+    typedParams = {
+      ...typedParams,
+      ...customParams,
+      hallType: CUSTOM_HALL,
+      showCatalogDimensions: false,
+      showCladding: customParams.showCladding ?? (cleanParams.showCladding !== undefined ? cleanParams.showCladding : true),
+      showAccessories: customParams.showAccessories ?? (cleanParams.showAccessories !== undefined ? cleanParams.showAccessories : true),
+      showStructure: customParams.showStructure ?? (cleanParams.showStructure !== undefined ? cleanParams.showStructure : true),
+      gateCount: gateCountState as 1 | 2,
+      gateType: gateTypeState as any,
+      gateDecor: gateDecorState as any,
+      gate2Decor: gate2DecorState as any,
+      hasBackDoor: hasBackDoorState,
+    };
+  }
 
   const numL = typeof typedParams.length === "number" ? typedParams.length : parseFloat(String(typedParams.length).replace("m", ""));
   typedParams.length = Number.isFinite(numL) && numL > 0 ? numL : DEFAULT_PARAMS.length;
@@ -762,11 +836,6 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
 
       {/* Left stacked panels container (prevents any overlapping) */}
       <div className="pointer-events-none absolute left-3.5 top-20 md:top-14 z-20 flex flex-col gap-2 w-[calc(100vw-140px)] max-w-[340px] md:w-[340px]">
-        <PremiumSpecPanel
-          p={typedParams}
-          className="pointer-events-auto w-full rounded border border-white/10 bg-black/70 font-mono text-[11px] text-white/80 backdrop-blur shadow-lg"
-        />
-
         {/* Hall PDF specs badge if selected */}
         {selectedHall !== "Vlastný" && hallsConfig[selectedHall] && (
           <CatalogInfoCard
@@ -793,7 +862,11 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       {!showPicker && (
         <button
           onClick={() => setShowControls(v => !v)}
-          className="absolute right-3 top-20 md:top-14 z-30 flex items-center gap-1.5 rounded-full bg-emerald-400 text-slate-900 px-3 py-2 text-xs font-mono font-bold shadow-lg hover:bg-emerald-300 transition-all active:scale-95 cursor-pointer"
+          className={`absolute right-3 top-20 md:top-14 z-30 flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-mono font-bold shadow-lg transition-all active:scale-95 cursor-pointer ${
+            isCustom
+              ? "bg-emerald-400 text-slate-900 hover:bg-emerald-300 shadow-emerald-500/20"
+              : "bg-cyan-400 text-slate-950 hover:bg-cyan-300 shadow-cyan-500/20"
+          }`}
         >
           {showControls ? (
             <>
@@ -814,7 +887,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         <CustomGarageMenu
           showControls={!showPicker && showControls}
           typedParams={typedParams}
-          setParams={setParams as any}
+          setParams={handleCustomSetParams}
           selectedHall={selectedHall}
           notes={notes}
           setNotes={setNotes}

@@ -18,9 +18,9 @@ const levaTheme = {
     elevation1: "#0e1116",
     elevation2: "#161b22",
     elevation3: "#1f2630",
-    accent1: "#34d399",
-    accent2: "#10b981",
-    accent3: "#059669",
+    accent1: "#22d3ee",
+    accent2: "#06b6d4",
+    accent3: "#0891b2",
     highlight1: "#9ca3af",
     highlight2: "#e5e7eb",
     highlight3: "#ffffff",
@@ -41,7 +41,7 @@ export function StandardHallMenu({
 }: StandardHallMenuProps) {
   return (
     <div
-      className={`quote-export-panel absolute right-3 top-[132px] md:top-28 z-30 max-h-[calc(100vh-140px)] md:max-h-[80vh] overflow-y-auto rounded-2xl bg-[#0e1116]/95 shadow-2xl border border-white/10 transition-all duration-300 ${
+      className={`quote-export-panel absolute right-3 top-[132px] md:top-28 z-30 max-h-[calc(100vh-140px)] md:max-h-[80vh] overflow-y-auto rounded-2xl bg-[#0e1116]/95 shadow-2xl border border-cyan-500/40 shadow-cyan-950/40 transition-all duration-300 ${
         showControls
           ? "opacity-100 translate-x-0 pointer-events-auto"
           : "opacity-0 translate-x-12 pointer-events-none"
@@ -81,12 +81,12 @@ export function StandardHallMenu({
           className="flex w-full items-center justify-between px-3.5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-white/90 hover:bg-white/5 transition cursor-pointer select-none"
         >
           <span className="flex items-center gap-2">
-            <span className="text-[10px] text-emerald-400">
+            <span className="text-[10px] text-cyan-400">
               {isSummaryOpen ? "▾" : "▸"}
             </span>
             Súhrn konfigurácie
           </span>
-          <span className="text-[10px] font-normal text-emerald-400 font-mono">
+          <span className="text-[10px] font-normal text-cyan-400 font-mono">
             {(typedParams.width * typedParams.length).toFixed(1)} m²
           </span>
         </button>
@@ -96,7 +96,7 @@ export function StandardHallMenu({
             <div className="rounded bg-black/40 p-2.5 border border-white/5 space-y-1.5 text-white/80">
               <div className="flex justify-between">
                 <span className="text-white/50">Model:</span>
-                <span className="font-bold text-emerald-400">
+                <span className="font-bold text-cyan-400">
                   {selectedHall}
                 </span>
               </div>
@@ -164,7 +164,7 @@ export function StandardHallMenu({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
-                className="w-full rounded border border-white/10 bg-black/50 px-2.5 py-1.5 text-white/90 focus:border-emerald-400 focus:outline-none resize-none text-[11px]"
+                className="w-full rounded border border-white/10 bg-black/50 px-2.5 py-1.5 text-white/90 focus:border-cyan-400 focus:outline-none resize-none text-[11px]"
                 placeholder="Špecifikácia, požiadavky..."
               />
             </div>
@@ -172,7 +172,7 @@ export function StandardHallMenu({
             <button
               type="button"
               onClick={() => setQuoteRequestSignal((v) => v + 1)}
-              className="w-full h-11 rounded bg-emerald-400 text-center font-bold text-black transition hover:bg-emerald-300 active:scale-[0.99] shadow-lg shadow-emerald-500/20 text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+              className="w-full h-11 rounded-xl bg-cyan-400 text-center font-extrabold text-slate-950 transition hover:bg-cyan-300 active:scale-[0.99] shadow-lg shadow-cyan-500/25 text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
             >
               Dopytovať cenovú ponuku
             </button>

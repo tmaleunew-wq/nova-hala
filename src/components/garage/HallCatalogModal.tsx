@@ -39,7 +39,7 @@ export function HallCatalogModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
           <div>
-            <h3 className="text-base md:text-lg font-bold text-emerald-400">
+            <h3 className="text-base md:text-lg font-bold text-cyan-400">
               Katalógová predloha GTG 2025: {selectedHall}
               {curHall.subtitle ? ` — ${curHall.subtitle}` : ""}
             </h3>
@@ -63,7 +63,7 @@ export function HallCatalogModal({
             onClick={() => setActiveTab("all")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-colors cursor-pointer ${
               activeTab === "all"
-                ? "bg-emerald-500 text-black shadow"
+                ? "bg-cyan-400 text-slate-950 shadow"
                 : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
@@ -74,7 +74,7 @@ export function HallCatalogModal({
             onClick={() => setActiveTab("render")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-colors cursor-pointer ${
               activeTab === "render"
-                ? "bg-emerald-500 text-black shadow"
+                ? "bg-cyan-400 text-slate-950 shadow"
                 : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
@@ -85,7 +85,7 @@ export function HallCatalogModal({
             onClick={() => setActiveTab("cad")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-colors cursor-pointer ${
               activeTab === "cad"
-                ? "bg-emerald-500 text-black shadow"
+                ? "bg-cyan-400 text-slate-950 shadow"
                 : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
@@ -96,7 +96,7 @@ export function HallCatalogModal({
             onClick={() => setActiveTab("spec")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-colors cursor-pointer ${
               activeTab === "spec"
-                ? "bg-emerald-500 text-black shadow"
+                ? "bg-cyan-400 text-slate-950 shadow"
                 : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
@@ -384,7 +384,7 @@ export function HallCatalogModal({
                       }}
                       className={`rounded px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
                         isCur
-                          ? "bg-emerald-400 text-slate-900 shadow-md ring-2 ring-emerald-300"
+                          ? "bg-cyan-400 text-slate-950 shadow-md ring-2 ring-cyan-300"
                           : "bg-white/10 text-white hover:bg-white/20 border border-white/10"
                       }`}
                     >
@@ -404,7 +404,7 @@ export function HallCatalogModal({
               href={pageSpecUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 rounded border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20 transition"
+              className="flex items-center gap-1.5 rounded border border-cyan-500/40 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 transition"
             >
               <FileText className="h-3.5 w-3.5" />
               <span>Stiahnuť / Zobraziť Technický list</span>
@@ -421,7 +421,7 @@ export function HallCatalogModal({
           </div>
           <button
             onClick={onClose}
-            className="rounded bg-emerald-500 px-4 py-2 text-xs font-bold text-slate-900 hover:bg-emerald-400 transition-colors cursor-pointer"
+            className="rounded bg-cyan-400 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-cyan-300 transition-colors cursor-pointer"
           >
             Hotovo, pokračovať v konfigurácii
           </button>
