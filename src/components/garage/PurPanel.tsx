@@ -106,7 +106,7 @@ export function PurPanel({
       const repeatsY = Math.max(2, Math.round(height / 0.2));
       return createPBRTileMaterial(activeColorStr, repeatsX, repeatsY);
     }
-    if (panelType === "smooth") {
+    if (panelType === "smooth" || panelType === "sandwich") {
       return createPBRSmoothMaterial(activeColorStr);
     }
     if (panelType === "wood_oak") {

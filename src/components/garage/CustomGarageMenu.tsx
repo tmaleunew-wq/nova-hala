@@ -8,6 +8,7 @@ import {
   Palette,
   PlusSquare,
   Eye,
+  FileText,
   Check,
   ChevronDown,
   ChevronUp,
@@ -25,7 +26,7 @@ export interface CustomGarageMenuProps {
   setQuoteRequestSignal: React.Dispatch<React.SetStateAction<number>>;
 }
 
-type TabType = "dimensions" | "roof" | "doors" | "colors" | "extension" | "view";
+type TabType = "dimensions" | "roof" | "doors" | "colors" | "extension" | "view" | "summary";
 
 const RAL_PALETTE = [
   { name: "RAL 7016 Antracit", hex: "#2b2f36" },
@@ -97,7 +98,7 @@ export function CustomGarageMenu({
       </div>
 
       {/* 2. SUB-NAVIGATION TABS */}
-      <div className="shrink-0 grid grid-cols-6 border-b border-white/10 bg-[#0e131d] text-[11px] font-mono">
+      <div className="shrink-0 grid grid-cols-7 border-b border-white/10 bg-[#0e131d] text-[10px] md:text-[11px] font-mono">
         <button
           type="button"
           onClick={() => setActiveTab("dimensions")}
@@ -167,7 +168,7 @@ export function CustomGarageMenu({
           type="button"
           onClick={() => setActiveTab("view")}
           title="Zobrazenie CAD"
-          className={`flex flex-col items-center justify-center py-2.5 transition cursor-pointer ${
+          className={`flex flex-col items-center justify-center py-2.5 border-r border-white/5 transition cursor-pointer ${
             activeTab === "view"
               ? "bg-emerald-500/25 text-emerald-300 border-b-2 border-b-emerald-400 font-bold shadow-inner"
               : "text-white/70 hover:bg-white/10 hover:text-white"
@@ -175,6 +176,19 @@ export function CustomGarageMenu({
         >
           <Eye className="h-4 w-4 mb-1" />
           <span>CAD</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("summary")}
+          title="Súhrn konfigurácie"
+          className={`flex flex-col items-center justify-center py-2.5 transition cursor-pointer ${
+            activeTab === "summary"
+              ? "bg-emerald-500/25 text-emerald-300 border-b-2 border-b-emerald-400 font-bold shadow-inner"
+              : "text-white/70 hover:bg-white/10 hover:text-white"
+          }`}
+        >
+          <FileText className="h-4 w-4 mb-1" />
+          <span>Súhrn</span>
         </button>
       </div>
 
@@ -683,54 +697,40 @@ export function CustomGarageMenu({
           <div className="space-y-4">
             {/* Typ opláštenia */}
             <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
-              <label className="text-xs font-semibold text-slate-200 block">Opláštenie stien:</label>
-              <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setParams({ panelType: "sandwich" })}
-                  className={`py-2.5 px-3 rounded-xl border text-center transition cursor-pointer ${
-                    typedParams.panelType === "sandwich"
-                      ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-2 ring-emerald-400/30 shadow-md shadow-emerald-500/10"
-                      : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80 hover:text-white"
-                  }`}
-                >
-                  <div className="text-xs font-bold">Sendvičový panel</div>
-                  <div className="text-[10px] text-white/70 mt-0.5">Zateplená (PUR)</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setParams({ panelType: "trapezoid" })}
-                  className={`py-2.5 px-3 rounded-xl border text-center transition cursor-pointer ${
-                    typedParams.panelType === "trapezoid"
-                      ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-2 ring-emerald-400/30 shadow-md shadow-emerald-500/10"
-                      : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80 hover:text-white"
-                  }`}
-                >
-                  <div className="text-xs font-bold">Trapézový plech</div>
-                  <div className="text-[10px] text-white/70 mt-0.5">Nezateplená</div>
-                </button>
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-semibold text-slate-200">Typ opláštenia:</label>
+                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">
+                  Sendvičový panel
+                </span>
               </div>
-              {typedParams.panelType === "sandwich" && (
-                <div className="pt-2.5 border-t border-white/10 flex items-center justify-between text-xs">
-                  <span className="text-slate-200 font-medium">Hrúbka PUR jadra:</span>
-                  <div className="flex gap-1.5">
-                    {[40, 60, 80, 100].map((th) => (
-                      <button
-                        key={th}
-                        type="button"
-                        onClick={() => setParams({ wallPanelThicknessMm: th })}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-mono transition cursor-pointer ${
-                          typedParams.wallPanelThicknessMm === th
-                            ? "bg-emerald-400 text-slate-950 font-bold border border-emerald-300 shadow-sm"
-                            : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
-                        }`}
-                      >
-                        {th}mm
-                      </button>
-                    ))}
-                  </div>
+              <div className="p-2.5 rounded-xl border border-emerald-400/40 bg-emerald-500/15 flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-white">Sendvičový panel</div>
+                  <div className="text-[10px] text-emerald-300/80 mt-0.5">Tepelnoizolačné PUR / PIR jadro</div>
                 </div>
-              )}
+                <span className="text-[11px] font-mono font-bold text-emerald-300">
+                  {typedParams.wallPanelThicknessMm ?? 100} mm
+                </span>
+              </div>
+              <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+                <span className="text-slate-200 font-medium">Hrúbka jadra:</span>
+                <div className="flex gap-1.5">
+                  {[40, 60, 80, 100].map((th) => (
+                    <button
+                      key={th}
+                      type="button"
+                      onClick={() => setParams({ panelType: "sandwich", wallPanelThicknessMm: th })}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-mono transition cursor-pointer ${
+                        (typedParams.wallPanelThicknessMm ?? 100) === th
+                          ? "bg-emerald-400 text-slate-950 font-bold border border-emerald-300 shadow-sm"
+                          : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
+                      }`}
+                    >
+                      {th}mm
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Farba stien */}
@@ -958,79 +958,86 @@ export function CustomGarageMenu({
             ))}
           </div>
         )}
-      </div>
 
-      {/* 4. BOTTOM ACCORDION SUMMARY & CTA */}
-      <div className="shrink-0 border-t border-white/10 bg-[#111723]">
-        <button
-          type="button"
-          onClick={() => setIsSummaryOpen((v) => !v)}
-          className="flex w-full items-center justify-between px-4 py-3 text-xs font-mono font-bold uppercase tracking-wider text-white hover:bg-white/5 transition cursor-pointer select-none"
-        >
-          <span className="flex items-center gap-2">
-            <span className="text-emerald-400">
-              {isSummaryOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-            </span>
-            Súhrn konfigurácie
-          </span>
-          <span className="text-xs font-extrabold text-emerald-400 font-mono">
-            {area} m²
-          </span>
-        </button>
+        {/* --- TAB 7: SÚHRN KONFIGURÁCIE --- */}
+        {activeTab === "summary" && (
+          <div className="space-y-4">
+            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-2.5 shadow-md">
+              <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                <span className="text-xs font-bold text-slate-100 uppercase tracking-wide">
+                  Súhrn parametrov
+                </span>
+                <span className="text-xs font-extrabold text-emerald-400 font-mono">
+                  {area} m²
+                </span>
+              </div>
 
-        {isSummaryOpen && (
-          <div className="p-4 pt-1 space-y-3 text-xs font-mono border-t border-white/5">
-            <div className="rounded-xl bg-black/60 p-3 border border-white/10 space-y-1.5 text-slate-200">
-              <div className="flex justify-between">
-                <span className="text-white/50">Model:</span>
-                <span className="font-bold text-emerald-400">Vlastná garáž</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white/50">Rozmery:</span>
-                <span className="text-white font-medium">{typedParams.width} × {typedParams.length} m</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white/50">Strecha:</span>
-                <span className="text-white font-medium">
-                  {typedParams.roofType === "cubic" || typedParams.hasAttic
-                    ? "Atika (Kubická)"
-                    : typedParams.roofType === "gable"
-                    ? "Sedlová"
-                    : "Pultová"}{" "}
-                  ({typedParams.roofPitchDeg}°)
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white/50">Opláštenie:</span>
-                <span className="text-white font-medium">
-                  {typedParams.panelType === "sandwich" ? `Sendvič ${typedParams.wallPanelThicknessMm}mm` : "Trapéz"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white/50">Brána:</span>
-                <span className="text-white font-medium">
-                  {typedParams.gateCount === 2 ? "2x " : "1x "}
-                  {typedParams.doorWidth} × {typedParams.doorHeight}m ({typedParams.gateType ?? "sekčná"})
-                </span>
-              </div>
-              {typedParams.hasExtension && (
+              <div className="rounded-lg bg-black/60 p-3 border border-white/5 space-y-1.5 text-xs text-slate-200">
                 <div className="flex justify-between">
-                  <span className="text-white/50">Prístrešok:</span>
-                  <span className="text-emerald-400 font-medium">
-                    {typedParams.extensionType ?? "Carport"} ({typedParams.extensionWidth}m)
+                  <span className="text-white/50">Model:</span>
+                  <span className="font-bold text-emerald-400">Vlastná garáž</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">Typ garáže:</span>
+                  <span className="text-white font-medium">
+                    {currentGarageType === "single"
+                      ? "Samostatná garáž"
+                      : currentGarageType === "double"
+                      ? "Dvojgaráž"
+                      : "Veľkopriestorová garáž"}
                   </span>
                 </div>
-              )}
+                <div className="flex justify-between">
+                  <span className="text-white/50">Rozmery:</span>
+                  <span className="text-white font-medium">{typedParams.width} × {typedParams.length} m</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">Svetlá výška:</span>
+                  <span className="text-white font-medium">{typedParams.clearHeight ?? 2.6} m</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">Strecha:</span>
+                  <span className="text-white font-medium">
+                    {typedParams.roofType === "cubic" || typedParams.hasAttic
+                      ? "Atika (Kubická)"
+                      : typedParams.roofType === "gable"
+                      ? "Sedlová"
+                      : "Pultová"}{" "}
+                    ({typedParams.roofPitchDeg}°)
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">Opláštenie:</span>
+                  <span className="text-white font-medium">
+                    Sendvičový panel {typedParams.wallPanelThicknessMm ?? 100}mm
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">Brána:</span>
+                  <span className="text-white font-medium">
+                    {typedParams.gateCount === 2 ? "2x " : "1x "}
+                    {typedParams.doorWidth} × {typedParams.doorHeight}m ({typedParams.gateType ?? "sekčná"})
+                  </span>
+                </div>
+                {typedParams.hasExtension && (
+                  <div className="flex justify-between">
+                    <span className="text-white/50">Prístrešok:</span>
+                    <span className="text-emerald-400 font-medium">
+                      {typedParams.extensionType ?? "Carport"} ({typedParams.extensionWidth}m)
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div>
-              <label className="block mb-1 text-[11px] text-white/70 uppercase tracking-wider font-semibold">
+            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-2 shadow-md">
+              <label className="block text-[11px] text-white/70 uppercase tracking-wider font-semibold">
                 Poznámka k dopytu:
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                rows={2}
+                rows={3}
                 className="w-full rounded-xl border border-white/15 bg-black/70 px-3 py-2 text-white/90 focus:border-emerald-400 focus:outline-none resize-none text-xs"
                 placeholder="Lokalita stavby, špecifické požiadavky..."
               />
