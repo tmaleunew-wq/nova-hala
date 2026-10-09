@@ -117,14 +117,18 @@ export function CameraRig({ preset, params }: { preset: ViewPreset; params: Gara
     const W = params.width;
     const L = params.length;
     const H = params.clearHeight;
-    const center = new THREE.Vector3(0, H / 2, 0);
 
     const isMobileViewport = typeof window !== "undefined" && window.innerWidth < 768;
     const aspect = typeof window !== "undefined" && window.innerHeight > 0 ? window.innerWidth / window.innerHeight : 1;
 
-    // Calculate bounding dimensions
-    const diag = Math.hypot(W, L);
+    const isCustom = params.hallType === "Vlastný" || params.hallType === "vlastna_garaz" || !params.hallType;
+
+    // Calculate bounding dimensions - bring custom garage closer to the viewer
+    const islandW = isCustom ? W + 3.2 : W;
+    const islandL = isCustom ? L + 2.8 : L;
+    const diag = Math.hypot(islandW, islandL);
     const maxDimension = Math.max(diag, H * 1.5);
+    const center = new THREE.Vector3(0, isCustom ? H * 0.42 : H / 2, isCustom ? -0.4 : 0);
 
     // Three.js perspective camera uses vertical FOV (35 deg)
     const vFovRad = ((camera.fov || 35) * Math.PI) / 180;
@@ -133,9 +137,22 @@ export function CameraRig({ preset, params }: { preset: ViewPreset; params: Gara
     const horizFactor = vertFactor * Math.max(0.3, aspect);
     const effectiveFactor = aspect < 1 ? horizFactor : vertFactor;
 
-    // Comfortable margin: 1.30 on mobile, 1.18 on desktop
-    const margin = isMobileViewport ? 1.30 : 1.18;
+    // Comfortable margin: enlarge view on the garage
+    const margin = isMobileViewport ? 1.30 : (isCustom ? 0.88 : 1.18);
     const dist = (maxDimension / effectiveFactor) * margin;
+
+    // ZAPF perspective: frontal 22° 3/4 angle on the gate with eye-level elevation
+    const isoDir = new THREE.Vector3(
+      isCustom ? -0.52 : -1.15,
+      isCustom ? 0.36 : 0.70,
+      isCustom ? -1.18 : -1.0
+    ).normalize();
+    // Shifting camera target to the right (+X) shifts the garage to the left on screen
+    const target = new THREE.Vector3(
+      isCustom && !isMobileViewport && preset === "iso" ? 1.30 : 0,
+      isCustom ? H * 0.42 : H / 2,
+      isCustom ? -0.4 : 0
+    );
 
     let pos: THREE.Vector3;
     switch (preset) {
@@ -150,17 +167,16 @@ export function CameraRig({ preset, params }: { preset: ViewPreset; params: Gara
         break;
       case "iso":
       default: {
-        const isoDir = new THREE.Vector3(-1.15, 0.70, -1.0).normalize();
-        pos = center.clone().add(isoDir.multiplyScalar(dist));
+        pos = target.clone().add(isoDir.multiplyScalar(dist));
         break;
       }
     }
 
     camera.position.copy(pos);
-    camera.lookAt(center);
+    camera.lookAt(target);
     camera.updateProjectionMatrix();
     if (controls) {
-      controls.target.copy(center);
+      controls.target.copy(target);
       controls.update();
     }
   }, [preset, params.width, params.length, params.clearHeight, params.hallType, camera, controls]);

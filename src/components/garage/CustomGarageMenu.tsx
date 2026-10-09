@@ -51,6 +51,12 @@ export function CustomGarageMenu({
   const [activeTab, setActiveTab] = useState<TabType>("dimensions");
 
   const area = (typedParams.width * typedParams.length).toFixed(1);
+  const currentGarageType: "single" | "double" | "wide" =
+    typedParams.gateCount === 2
+      ? "double"
+      : (typedParams.doorWidth ?? 2.5) >= 3.8
+      ? "wide"
+      : "single";
 
   return (
     <>
@@ -177,6 +183,138 @@ export function CustomGarageMenu({
         {/* --- TAB 1: ROZMERY --- */}
         {activeTab === "dimensions" && (
           <div className="space-y-4">
+            {/* Typ garáže (Garagentyp) */}
+            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-2.5 shadow-md">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-semibold text-slate-200 tracking-wide">Typ garáže:</span>
+                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">
+                  {currentGarageType === "single"
+                    ? "Samostatná"
+                    : currentGarageType === "double"
+                    ? "Dvojgaráž"
+                    : "Veľkopriestorová"}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                {/* 1. Samostatná */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setParams({
+                      gateCount: 1,
+                      doorWidth: Math.min(typedParams.doorWidth ?? 2.5, 2.8),
+                      width: typedParams.width > 4.5 ? 3.5 : typedParams.width,
+                    });
+                  }}
+                  className={`flex flex-col items-center justify-between p-2 rounded-xl transition cursor-pointer text-center group ${
+                    currentGarageType === "single"
+                      ? "border-2 border-emerald-400 bg-emerald-500/20 ring-1 ring-emerald-400/40 shadow-[0_0_12px_rgba(52,211,153,0.2)]"
+                      : "border border-white/10 bg-[#0e131d]/90 hover:bg-[#161f2e] hover:border-white/20"
+                  }`}
+                >
+                  <div className="w-full flex items-center justify-center py-1">
+                    <svg viewBox="0 0 100 62" className="w-full h-11 object-contain drop-shadow-sm">
+                      <ellipse cx="50" cy="55" rx="34" ry="4" fill="#000000" opacity="0.3" />
+                      <polygon points="68,23 85,16 85,45 68,52" fill="#94a3b8" stroke="#64748b" strokeWidth="0.5" />
+                      <polygon points="26,23 43,16 85,16 68,23" fill="#f8fafc" stroke="#94a3b8" strokeWidth="0.5" />
+                      <polygon points="26,23 68,23 68,26 26,26" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="0.5" />
+                      <polygon points="68,23 85,16 85,18 68,26" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="0.5" />
+                      <polygon points="26,26 31,26 31,52 26,52" fill="#f1f5f9" />
+                      <polygon points="63,26 68,26 68,52 63,52" fill="#e2e8f0" />
+                      <polygon points="31,26 63,26 63,30 31,30" fill="#f1f5f9" />
+                      <polygon points="31,52 42,47 52,47 63,52" fill="#334155" />
+                      <polygon points="42,32 52,32 52,47 42,47" fill="#1e293b" />
+                      <polygon points="31,30 42,32 42,47 31,52" fill="#475569" />
+                      <polygon points="63,30 52,32 52,47 63,52" fill="#334155" />
+                    </svg>
+                  </div>
+                  <div className="text-[11px] font-bold text-slate-100 mt-1 leading-tight">
+                    Samostatná
+                  </div>
+                </button>
+
+                {/* 2. Dvojgaráž */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setParams({
+                      gateCount: 2,
+                      doorWidth: 2.5,
+                      width: typedParams.width < 5.5 ? 6.0 : typedParams.width,
+                    });
+                  }}
+                  className={`flex flex-col items-center justify-between p-2 rounded-xl transition cursor-pointer text-center group ${
+                    currentGarageType === "double"
+                      ? "border-2 border-emerald-400 bg-emerald-500/20 ring-1 ring-emerald-400/40 shadow-[0_0_12px_rgba(52,211,153,0.2)]"
+                      : "border border-white/10 bg-[#0e131d]/90 hover:bg-[#161f2e] hover:border-white/20"
+                  }`}
+                >
+                  <div className="w-full flex items-center justify-center py-1">
+                    <svg viewBox="0 0 120 62" className="w-full h-11 object-contain drop-shadow-sm">
+                      <ellipse cx="60" cy="55" rx="50" ry="4" fill="#000000" opacity="0.3" />
+                      <polygon points="94,23 108,16 108,45 94,52" fill="#94a3b8" stroke="#64748b" strokeWidth="0.5" />
+                      <polygon points="12,23 26,16 108,16 94,23" fill="#f8fafc" stroke="#94a3b8" strokeWidth="0.5" />
+                      <polygon points="12,23 94,23 94,26 12,26" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="0.5" />
+                      <polygon points="94,23 108,16 108,18 94,26" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="0.5" />
+                      <polygon points="12,26 16,26 16,52 12,52" fill="#f1f5f9" />
+                      <polygon points="90,26 94,26 94,52 90,52" fill="#e2e8f0" />
+                      <polygon points="51,26 55,26 55,52 51,52" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="0.5" />
+                      <polygon points="16,26 90,26 90,30 16,30" fill="#f1f5f9" />
+                      <polygon points="16,52 24,47 43,47 51,52" fill="#334155" />
+                      <polygon points="24,32 43,32 43,47 24,47" fill="#1e293b" />
+                      <polygon points="16,30 24,32 24,47 16,52" fill="#475569" />
+                      <polygon points="51,30 43,32 43,47 51,52" fill="#334155" />
+                      <polygon points="55,52 63,47 82,47 90,52" fill="#334155" />
+                      <polygon points="63,32 82,32 82,47 63,47" fill="#1e293b" />
+                      <polygon points="55,30 63,32 63,47 55,52" fill="#475569" />
+                      <polygon points="90,30 82,32 82,47 90,52" fill="#334155" />
+                    </svg>
+                  </div>
+                  <div className="text-[11px] font-bold text-slate-100 mt-1 leading-tight">
+                    Dvojgaráž
+                  </div>
+                </button>
+
+                {/* 3. Veľkopriestorová */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setParams({
+                      gateCount: 1,
+                      doorWidth: 5.0,
+                      width: typedParams.width < 5.5 ? 6.0 : typedParams.width,
+                    });
+                  }}
+                  className={`flex flex-col items-center justify-between p-2 rounded-xl transition cursor-pointer text-center group ${
+                    currentGarageType === "wide"
+                      ? "border-2 border-emerald-400 bg-emerald-500/20 ring-1 ring-emerald-400/40 shadow-[0_0_12px_rgba(52,211,153,0.2)]"
+                      : "border border-white/10 bg-[#0e131d]/90 hover:bg-[#161f2e] hover:border-white/20"
+                  }`}
+                >
+                  <div className="w-full flex items-center justify-center py-1">
+                    <svg viewBox="0 0 120 62" className="w-full h-11 object-contain drop-shadow-sm">
+                      <ellipse cx="60" cy="55" rx="50" ry="4" fill="#000000" opacity="0.3" />
+                      <polygon points="94,23 108,16 108,45 94,52" fill="#94a3b8" stroke="#64748b" strokeWidth="0.5" />
+                      <polygon points="12,23 26,16 108,16 94,23" fill="#f8fafc" stroke="#94a3b8" strokeWidth="0.5" />
+                      <polygon points="12,23 94,23 94,26 12,26" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="0.5" />
+                      <polygon points="94,23 108,16 108,18 94,26" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="0.5" />
+                      <polygon points="12,26 16,26 16,52 12,52" fill="#f1f5f9" />
+                      <polygon points="90,26 94,26 94,52 90,52" fill="#e2e8f0" />
+                      <polygon points="16,26 90,26 90,30 16,30" fill="#f1f5f9" />
+                      <polygon points="16,52 26,47 80,47 90,52" fill="#334155" />
+                      <polygon points="26,32 80,32 80,47 26,47" fill="#1e293b" />
+                      <polygon points="16,30 26,32 26,47 16,52" fill="#475569" />
+                      <polygon points="90,30 80,32 80,47 90,52" fill="#334155" />
+                    </svg>
+                  </div>
+                  <div className="text-[11px] font-bold text-slate-100 mt-1 leading-tight">
+                    Veľkopriestorová
+                  </div>
+                </button>
+              </div>
+            </div>
+
             {/* Šírka */}
             <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
               <div className="flex justify-between items-center">
@@ -289,30 +427,42 @@ export function CustomGarageMenu({
           <div className="space-y-4">
             <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
               <label className="text-xs font-semibold text-slate-200 block">Typ strechy:</label>
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={() => setParams({ roofType: "gable" })}
-                  className={`py-2.5 px-3 rounded-xl border text-center transition cursor-pointer ${
-                    typedParams.roofType === "gable"
+                  onClick={() => setParams({ roofType: "gable", hasAttic: false })}
+                  className={`py-2 px-1.5 rounded-xl border text-center transition cursor-pointer ${
+                    typedParams.roofType === "gable" && !typedParams.hasAttic
                       ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-2 ring-emerald-400/30 shadow-md shadow-emerald-500/10"
                       : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80 hover:text-white"
                   }`}
                 >
-                  <div className="text-sm font-bold">🏠 Sedlová</div>
-                  <div className="text-[10px] text-white/70 mt-0.5">Obojstranný spád</div>
+                  <div className="text-xs sm:text-sm font-bold">🏠 Sedlová</div>
+                  <div className="text-[10px] text-white/70 mt-0.5">Obojstranný</div>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setParams({ roofType: "shed" })}
-                  className={`py-2.5 px-3 rounded-xl border text-center transition cursor-pointer ${
-                    typedParams.roofType === "shed"
+                  onClick={() => setParams({ roofType: "shed", hasAttic: false })}
+                  className={`py-2 px-1.5 rounded-xl border text-center transition cursor-pointer ${
+                    typedParams.roofType === "shed" && !typedParams.hasAttic
                       ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-2 ring-emerald-400/30 shadow-md shadow-emerald-500/10"
                       : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80 hover:text-white"
                   }`}
                 >
-                  <div className="text-sm font-bold">📐 Pultová</div>
-                  <div className="text-[10px] text-white/70 mt-0.5">Jednostranný spád</div>
+                  <div className="text-xs sm:text-sm font-bold">📐 Pultová</div>
+                  <div className="text-[10px] text-white/70 mt-0.5">Jednostranný</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setParams({ roofType: "cubic", hasAttic: true, atticHeight: typedParams.atticHeight || 0.35 })}
+                  className={`py-2 px-1.5 rounded-xl border text-center transition cursor-pointer ${
+                    typedParams.roofType === "cubic" || typedParams.hasAttic
+                      ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-2 ring-emerald-400/30 shadow-md shadow-emerald-500/10"
+                      : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80 hover:text-white"
+                  }`}
+                >
+                  <div className="text-xs sm:text-sm font-bold">🏢 Atika</div>
+                  <div className="text-[10px] text-white/70 mt-0.5">Kubický štýl</div>
                 </button>
               </div>
             </div>
@@ -350,19 +500,25 @@ export function CustomGarageMenu({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setParams({ hasAttic: !typedParams.hasAttic })}
+                  onClick={() => {
+                    const isCurrentlyAttic = typedParams.roofType === "cubic" || !!typedParams.hasAttic;
+                    setParams({
+                      hasAttic: !isCurrentlyAttic,
+                      roofType: !isCurrentlyAttic ? "cubic" : "shed"
+                    });
+                  }}
                   className={`w-12 h-6 flex items-center rounded-full p-1 transition cursor-pointer border border-white/20 ${
-                    typedParams.hasAttic ? "bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" : "bg-slate-700"
+                    typedParams.roofType === "cubic" || typedParams.hasAttic ? "bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" : "bg-slate-700"
                   }`}
                 >
                   <div
                     className={`bg-slate-950 w-4 h-4 rounded-full shadow-md transform transition ${
-                      typedParams.hasAttic ? "translate-x-6" : "translate-x-0"
+                      typedParams.roofType === "cubic" || typedParams.hasAttic ? "translate-x-6" : "translate-x-0"
                     }`}
                   />
                 </button>
               </div>
-              {typedParams.hasAttic && (
+              {(typedParams.roofType === "cubic" || typedParams.hasAttic) && (
                 <div className="pt-2.5 border-t border-white/10 space-y-2">
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-200 font-medium">Výška atiky:</span>
@@ -836,7 +992,12 @@ export function CustomGarageMenu({
               <div className="flex justify-between">
                 <span className="text-white/50">Strecha:</span>
                 <span className="text-white font-medium">
-                  {typedParams.roofType === "gable" ? "Sedlová" : "Pultová"} ({typedParams.roofPitchDeg}°)
+                  {typedParams.roofType === "cubic" || typedParams.hasAttic
+                    ? "Atika (Kubická)"
+                    : typedParams.roofType === "gable"
+                    ? "Sedlová"
+                    : "Pultová"}{" "}
+                  ({typedParams.roofPitchDeg}°)
                 </span>
               </div>
               <div className="flex justify-between">

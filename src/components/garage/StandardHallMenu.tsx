@@ -11,6 +11,7 @@ export interface StandardHallMenuProps {
   isSummaryOpen: boolean;
   setIsSummaryOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setQuoteRequestSignal: React.Dispatch<React.SetStateAction<number>>;
+  onToggleCladding?: () => void;
 }
 
 const levaTheme = {
@@ -38,6 +39,7 @@ export function StandardHallMenu({
   isSummaryOpen,
   setIsSummaryOpen,
   setQuoteRequestSignal,
+  onToggleCladding,
 }: StandardHallMenuProps) {
   return (
     <div
@@ -64,6 +66,24 @@ export function StandardHallMenu({
         <span className="font-mono text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
           {selectedHall}
         </span>
+      </div>
+
+      {/* Rýchly prepínač Opláštenia */}
+      <div className="px-3.5 py-2.5 bg-[#141a24] border-b border-white/10 flex items-center justify-between">
+        <span className="text-xs font-mono font-semibold text-slate-200">
+          Opláštenie haly:
+        </span>
+        <button
+          type="button"
+          onClick={onToggleCladding}
+          className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition border cursor-pointer ${
+            typedParams.showCladding
+              ? "bg-cyan-500/25 border-cyan-400 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]"
+              : "bg-slate-800 border-white/15 text-slate-400 hover:text-white"
+          }`}
+        >
+          {typedParams.showCladding ? "✓ Zapnuté" : "✕ Vypnuté (Iba konštrukcia)"}
+        </button>
       </div>
 
       <Leva

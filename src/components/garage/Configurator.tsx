@@ -110,6 +110,12 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   const [customParams, setCustomParams] = useState<Partial<GarageParams>>({});
   const handleCustomSetParams = (newP: Partial<GarageParams>) => {
     setCustomParams((prev) => ({ ...prev, ...newP }));
+    if (newP.gateCount !== undefined) {
+      setGateCountState(Number(newP.gateCount) as 1 | 2);
+    }
+    if (newP.gateType !== undefined) {
+      setGateTypeState(newP.gateType);
+    }
     (setParams as any)(newP);
   };
   const [showCatalogModal, setShowCatalogModal] = useState(false);
@@ -160,7 +166,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       showCatalogDimensions: { value: initialUrlParams.showCatalogDimensions ?? (isCatalog ? !configWithCladding : false), label: "Kóty A-B-C" },
       wireframe: { value: initialUrlParams.wireframe ?? DEFAULT_PARAMS.wireframe, label: "Wireframe" },
       explode: { value: initialUrlParams.explode ?? DEFAULT_PARAMS.explode, min: 0, max: 1, step: 0.01, label: "Exploded view" },
-    }, { collapsed: true }),
+    }, { collapsed: false }),
     "Geometria": folder({
       hallType: {
         value: initialUrlParams.hallType ?? CUSTOM_HALL,
@@ -905,6 +911,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           isSummaryOpen={isSummaryOpen}
           setIsSummaryOpen={setIsSummaryOpen}
           setQuoteRequestSignal={setQuoteRequestSignal}
+          onToggleCladding={() => (setParams as any)({ showCladding: !typedParams.showCladding })}
         />
       )}
 
