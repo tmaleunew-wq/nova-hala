@@ -41,6 +41,7 @@ export interface HallConfig {
   description?: string;
   subtitle?: string;
   badge?: string;
+  imageKey?: string;
   versions?: HallVersion[];
 }
 

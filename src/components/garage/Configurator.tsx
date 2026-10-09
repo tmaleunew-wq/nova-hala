@@ -25,8 +25,8 @@ function getParamsFromURL(): Partial<GarageParams> {
   const parsed: Partial<GarageParams> = {};
   let hallType = searchParams.get("hallType") || searchParams.get("type") || searchParams.get("product") || searchParams.get("hall") || searchParams.get("model");
   if (hallType) {
-    if (hallType === "hala" || hallType === "ocelova_hala" || hallType === "ocelove_haly" || hallType === "haly") {
-      hallType = "KD10";
+    if (hallType === "hala" || hallType === "ocelova_hala" || hallType === "ocelove_haly" || hallType === "haly" || hallType === "KD10") {
+      hallType = "Hala S-10";
     } else if (hallType === "garaz" || hallType === "vlastna_garaz" || hallType === "vlastna") {
       hallType = "Vlastný";
     }
@@ -52,7 +52,7 @@ function getParamsFromURL(): Partial<GarageParams> {
   }
   if (parsed.hallType && parsed.hallType !== "Vlastný" && parsed.hallType !== "vlastna_garaz") {
     const halls = getHallsConfig();
-    const h = halls[parsed.hallType] || halls["KD10"];
+    const h = halls[parsed.hallType] || halls["Hala S-10"] || Object.values(halls)[0];
     if (h) {
       parsed.hallType = h.name || parsed.hallType;
       parsed.width = h.width;

@@ -1,6 +1,7 @@
 {
-  "KD8": {
-    "name": "KD8",
+  "Hala S-8": {
+    "name": "Hala S-8",
+    "imageKey": "KD8",
     "type": "gable",
     "width": 8.0,
     "minLength": 8.0,
@@ -23,7 +24,7 @@
     "defaultLength": 20.0,
     "versions": [
       {
-        "label": "KD8/X/4/R4 (Výška 4m)",
+        "label": "Výška stĺpa 4 m",
         "poleHeight": 4,
         "H": 4.026,
         "H1": 4.724,
@@ -32,7 +33,7 @@
         "E": 4.8
       },
       {
-        "label": "KD8/X/5/R4 (Výška 5m)",
+        "label": "Výška stĺpa 5 m",
         "poleHeight": 5,
         "H": 5.026,
         "H1": 5.724,
@@ -45,8 +46,9 @@
     "subtitle": "Dvojgaráž & Remeselná dielňa",
     "badge": "Dvojgaráž & Dielňa"
   },
-  "KD10": {
-    "name": "KD10",
+  "Hala S-10": {
+    "name": "Hala S-10",
+    "imageKey": "KD10",
     "type": "gable",
     "width": 10.0,
     "minLength": 12.0,
@@ -69,7 +71,7 @@
     "defaultLength": 20.0,
     "versions": [
       {
-        "label": "KD10/X/4/R4 (Výška 4m)",
+        "label": "Výška stĺpa 4 m",
         "poleHeight": 4,
         "H": 4.026,
         "H1": 4.9,
@@ -78,7 +80,7 @@
         "E": 4.8
       },
       {
-        "label": "KD10/X/5/R4 (Výška 5m)",
+        "label": "Výška stĺpa 5 m",
         "poleHeight": 5,
         "H": 5.026,
         "H1": 5.9,
@@ -91,8 +93,9 @@
     "subtitle": "Trojgaráž & Menší autoservis",
     "badge": "Trojgaráž & Autoservis"
   },
-  "KD12": {
-    "name": "KD12",
+  "Hala S-12": {
+    "name": "Hala S-12",
+    "imageKey": "KD12",
     "type": "gable",
     "width": 12.0,
     "minLength": 12.0,
@@ -115,7 +118,7 @@
     "defaultLength": 20.0,
     "versions": [
       {
-        "label": "KD12/X/4/R4 (Výška 4m)",
+        "label": "Výška stĺpa 4 m",
         "poleHeight": 4,
         "H": 4.026,
         "H1": 5.076,
@@ -124,7 +127,7 @@
         "E": 4.588
       },
       {
-        "label": "KD12/X/5/R4 (Výška 5m)",
+        "label": "Výška stĺpa 5 m",
         "poleHeight": 5,
         "H": 5.026,
         "H1": 6.076,
@@ -137,8 +140,9 @@
     "subtitle": "Garáž pre nákladné autá & Sklad",
     "badge": "Nákladné autá & Sklad"
   },
-  "KD14": {
-    "name": "KD14",
+  "Hala S-14": {
+    "name": "Hala S-14",
+    "imageKey": "KD14",
     "type": "gable",
     "width": 14.0,
     "minLength": 15.0,
@@ -161,7 +165,7 @@
     "defaultLength": 20.0,
     "versions": [
       {
-        "label": "KD14/X/4/R5 (Výška 4m)",
+        "label": "Výška stĺpa 4 m",
         "poleHeight": 4,
         "H": 4.026,
         "H1": 5.25,
@@ -170,7 +174,7 @@
         "E": 4.588
       },
       {
-        "label": "KD14/X/5/R5 (Výška 5m)",
+        "label": "Výška stĺpa 5 m",
         "poleHeight": 5,
         "H": 5.026,
         "H1": 6.25,
@@ -183,8 +187,9 @@
     "subtitle": "Logistický sklad & Servis mechanizácie",
     "badge": "Logistika & Mechanizácia"
   },
-  "KD16": {
-    "name": "KD16",
+  "Hala S-16": {
+    "name": "Hala S-16",
+    "imageKey": "KD16",
     "type": "gable",
     "width": 16.0,
     "minLength": 15.0,
@@ -208,7 +213,7 @@
     "defaultLength": 20.0,
     "versions": [
       {
-        "label": "KD16/X/5/R5 (Výška 5m)",
+        "label": "Výška stĺpa 5 m",
         "poleHeight": 5,
         "H": 5.03,
         "H1": 6.416,
@@ -219,7 +224,7 @@
         "Ep": 3.88
       },
       {
-        "label": "KD16/X/6/R5 (Výška 6m)",
+        "label": "Výška stĺpa 6 m",
         "poleHeight": 6,
         "H": 6.03,
         "H1": 7.416,
@@ -230,7 +235,7 @@
         "Ep": 3.88
       },
       {
-        "label": "KD16/X/7/R5 (Výška 7m)",
+        "label": "Výška stĺpa 7 m",
         "poleHeight": 7,
         "H": 7.03,
         "H1": 8.416,
@@ -245,8 +250,9 @@
     "subtitle": "Priemyselná hala & Poľnohospodársky hangár",
     "badge": "Priemysel & Agro hangár"
   },
-  "KD18": {
-    "name": "KD18",
+  "Hala S-18": {
+    "name": "Hala S-18",
+    "imageKey": "KD18",
     "type": "gable",
     "width": 18.0,
     "minLength": 15.0,
@@ -270,7 +276,7 @@
     "defaultLength": 20.0,
     "versions": [
       {
-        "label": "KD18/X/5/R5 (Výška 5m)",
+        "label": "Výška stĺpa 5 m",
         "poleHeight": 5,
         "H": 5.03,
         "H1": 6.58,
@@ -281,7 +287,7 @@
         "Ep": 4.36
       },
       {
-        "label": "KD18/X/6/R5 (Výška 6m)",
+        "label": "Výška stĺpa 6 m",
         "poleHeight": 6,
         "H": 6.03,
         "H1": 7.58,
@@ -292,7 +298,7 @@
         "Ep": 4.36
       },
       {
-        "label": "KD18/X/7/R5 (Výška 7m)",
+        "label": "Výška stĺpa 7 m",
         "poleHeight": 7,
         "H": 7.03,
         "H1": 8.58,
@@ -307,8 +313,9 @@
     "subtitle": "Výrobná hala & Distribučné centrum",
     "badge": "Výroba & Distribúcia"
   },
-  "KD20": {
-    "name": "KD20",
+  "Hala S-20": {
+    "name": "Hala S-20",
+    "imageKey": "KD20",
     "type": "gable",
     "width": 20.0,
     "minLength": 15.0,
@@ -332,7 +339,7 @@
     "defaultLength": 20.0,
     "versions": [
       {
-        "label": "KD20/X/5/R5 (Výška 5m)",
+        "label": "Výška stĺpa 5 m",
         "poleHeight": 5,
         "H": 5.035,
         "H1": 6.779,
@@ -343,7 +350,7 @@
         "Ep": 4.86
       },
       {
-        "label": "KD20/X/6/R5 (Výška 6m)",
+        "label": "Výška stĺpa 6 m",
         "poleHeight": 6,
         "H": 6.035,
         "H1": 7.779,
@@ -354,7 +361,7 @@
         "Ep": 4.86
       },
       {
-        "label": "KD20/X/7/R5 (Výška 7m)",
+        "label": "Výška stĺpa 7 m",
         "poleHeight": 7,
         "H": 7.035,
         "H1": 8.779,
@@ -369,8 +376,9 @@
     "subtitle": "Veľkokapacitný logistický hangár",
     "badge": "Mega hangár & Logistika"
   },
-  "KJ6": {
-    "name": "KJ6",
+  "Hala P-6": {
+    "name": "Hala P-6",
+    "imageKey": "KJ6",
     "type": "shed",
     "width": 6.0,
     "minLength": 8.0,
@@ -392,7 +400,7 @@
     "defaultLength": 20.0,
     "versions": [
       {
-        "label": "KJ/6/X/4(3)/R4 (Výška 4m)",
+        "label": "Výška stĺpa 4 m",
         "poleHeight": 4,
         "H": 4.0,
         "H1": 4.176,
@@ -403,7 +411,7 @@
         "E": 0.977
       },
       {
-        "label": "KJ/6/X/5(4)/R4 (Výška 5m)",
+        "label": "Výška stĺpa 5 m",
         "poleHeight": 5,
         "H": 5.0,
         "H1": 5.015,
@@ -418,8 +426,9 @@
     "subtitle": "Viacgarážové státie & Kompaktná garáž",
     "badge": "Viacgarážové státie"
   },
-  "KJ7": {
-    "name": "KJ7",
+  "Hala P-7": {
+    "name": "Hala P-7",
+    "imageKey": "KJ7",
     "type": "shed",
     "width": 6.95,
     "minLength": 8.0,
@@ -441,7 +450,7 @@
     "defaultLength": 20.0,
     "versions": [
       {
-        "label": "KJ/7/X/4(3)/R4 (Výška 4m)",
+        "label": "Výška stĺpa 4 m",
         "poleHeight": 4,
         "H": 4.0,
         "H1": 4.176,
@@ -452,7 +461,7 @@
         "E": 1.134
       },
       {
-        "label": "KJ/7/X/5(4)/R4 (Výška 5m)",
+        "label": "Výška stĺpa 5 m",
         "poleHeight": 5,
         "H": 5.0,
         "H1": 5.015,

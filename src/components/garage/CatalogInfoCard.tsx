@@ -38,7 +38,7 @@ export function CatalogInfoCard({
         className="flex items-center justify-between border-b border-white/10 pb-1 mb-1.5 cursor-pointer select-none"
       >
         <span className="font-bold text-cyan-400">
-          KATALÓG GTG: {selectedHall}
+          TYPOVÝ MODEL: {selectedHall}
           {curHall.subtitle ? ` · ${curHall.subtitle}` : ""}
         </span>
         <span className="text-white/50 text-[9px] flex items-center gap-1">
@@ -190,7 +190,7 @@ export function CatalogInfoCard({
             onClick={onOpenCatalogModal}
             className="mt-2 w-full flex items-center justify-center gap-1.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 py-1 text-[10px] font-bold cursor-pointer transition-colors"
           >
-            <span>📋 3D Predloha & Technický list ({selectedHall})</span>
+            <span>📋 Technické kóty a rez rámu ({selectedHall})</span>
           </button>
         </>
       )}

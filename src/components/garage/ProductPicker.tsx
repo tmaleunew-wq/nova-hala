@@ -94,18 +94,18 @@ export function ProductPicker({
             {/* 2. Hala */}
             <button
               id="pick-hala"
-              onClick={() => onSelect(names.find((n) => n.includes("10")) || names[0] || "KD10")}
+              onClick={() => onSelect(names.find((n) => n.includes("10")) || names[0] || "Hala S-10")}
               className={`group cursor-pointer overflow-hidden rounded-2xl border text-left transition duration-300 hover:-translate-y-2 hover:border-cyan-300 hover:shadow-[0_0_45px_rgba(34,211,238,0.45)] border-cyan-400 bg-gradient-to-br from-cyan-500/20 to-[#0e1116] ring-2 ring-cyan-400/50 shadow-[0_0_30px_rgba(34,211,238,0.25)]`}
             >
               <div className="h-72 md:h-96 overflow-hidden bg-[#ececec] flex items-center justify-center relative">
                 <img
-                  src={`${imageCatalog}/${names.find((n) => n.includes("10")) || names[0] || "KD10"}_render.png?v=3`}
+                  src={`${imageCatalog}/${halls[names.find((n) => n.includes("10")) || names[0]]?.imageKey || names.find((n) => n.includes("10")) || names[0] || "Hala S-10"}_render.png?v=3`}
                   alt="Oceľová hala"
                   loading="lazy"
                   className="h-full w-full object-contain p-4 transition duration-500 group-hover:scale-105"
                 />
                 <span className="absolute top-4 right-4 rounded-full bg-cyan-400 text-slate-950 font-mono text-xs font-bold px-3.5 py-1.5 shadow-lg">
-                  Katalóg GTG
+                  Typová hala
                 </span>
               </div>
               <div className="border-t border-white/10 p-6 md:p-8 space-y-4">
@@ -129,7 +129,7 @@ export function ProductPicker({
                   </div>
                 </div>
                 <p className="text-xs md:text-sm text-white/70 leading-relaxed">
-                  Vyberte si z certifikovaných katalógových oceľových hál GTG s overenou statikou, modulovou dĺžkou a možnosťou opláštenia či kót A-B-C.
+                  Vyberte si z certifikovaných typových oceľových hál s overenou statikou, modulovou dĺžkou a možnosťou opláštenia či kót A-B-C.
                 </p>
                 <div className="pt-2">
                   <div className="w-full py-3.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-mono text-xs md:text-sm font-bold text-center transition shadow-lg shadow-cyan-500/20">
@@ -208,8 +208,8 @@ export function ProductPicker({
                 >
                   <div className="h-40 overflow-hidden bg-[#161b22]">
                     <img
-                      src={`${imageCatalog}/${name}_render.png?v=3`}
-                      alt={`Katalóg ${name}`}
+                      src={`${imageCatalog}/${h.imageKey || name}_render.png?v=3`}
+                      alt={h.name || name}
                       loading="lazy"
                       className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
                     />
@@ -218,7 +218,7 @@ export function ProductPicker({
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <span className="font-mono text-sm font-bold text-emerald-400">
-                          {name} <span className="text-white/40 text-xs font-normal">(Katalóg)</span>
+                          {name}
                         </span>
                         {h.subtitle && (
                           <div className="text-xs font-semibold text-white/90 mt-0.5">

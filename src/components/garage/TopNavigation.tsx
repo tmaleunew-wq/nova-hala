@@ -70,10 +70,10 @@ export function TopNavigation({
             }`}
           >
             <option value="Vlastný">Vlastná garáž</option>
-            <optgroup label="Oceľové haly GTG">
+            <optgroup label="Typové oceľové haly">
               {Object.keys(hallsConfig).map((name) => (
                 <option key={name} value={name}>
-                  {name} (Katalóg)
+                  {name}
                 </option>
               ))}
             </optgroup>
@@ -85,10 +85,10 @@ export function TopNavigation({
                 ? "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/40"
                 : "bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border-cyan-500/40"
             }`}
-            title="Otvoriť vizuálny výber produktov z katalógu"
+            title="Otvoriť výber modelov"
           >
             <span>⊞</span>
-            <span className="hidden sm:inline">Katalóg</span>
+            <span className="hidden sm:inline">Modely</span>
           </button>
         </div>
       </div>
