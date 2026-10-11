@@ -414,17 +414,17 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
                   )}
                 </div>
 
-                {/* Orientačná cena */}
+                {/* Cenová ponuka na vyžiadanie */}
                 <div className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3">
                   <div className="flex items-baseline justify-between">
-                    <span className="text-[11px] text-emerald-200/70 uppercase tracking-wider">Orientačný odhad:</span>
+                    <span className="text-[11px] text-emerald-200/70 uppercase tracking-wider">Cena:</span>
                     <div className="text-right">
-                      <div className="text-base font-bold text-emerald-400">{fmt(totalWithVat)}</div>
-                      <div className="text-[10px] text-white/50">{fmt(totalCost)} bez DPH</div>
+                      <div className="text-sm font-bold text-emerald-400">Na vypracovanie</div>
+                      <div className="text-[10px] text-white/50">Cenová ponuka na mieru</div>
                     </div>
                   </div>
-                  <p className="mt-2 text-[9px] text-white/40 leading-tight">
-                    * Uvedená cena je nezáväzný odhad. Konečnú kalkuláciu s montážou a dopravou vám zašleme po preverení.
+                  <p className="mt-2 text-[10px] text-emerald-200/80 leading-relaxed">
+                    * Presnú kalkuláciu vrátane dopravy a montáže vám bezplatne zašleme na základe tohto dopytu.
                   </p>
                 </div>
               </div>
