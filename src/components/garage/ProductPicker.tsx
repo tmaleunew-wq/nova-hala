@@ -31,7 +31,14 @@ export function ProductPicker({
             ✕
           </button>
         )}
-        <div className="mb-8 text-center">
+        <div className="mb-8 text-center flex flex-col items-center">
+          <div className="mb-4 inline-flex items-center justify-center rounded-2xl bg-white/95 px-5 py-2.5 shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+            <img
+              src="/logo.png"
+              alt="VB BAU"
+              className="h-10 md:h-12 w-auto object-contain"
+            />
+          </div>
           <div className="mx-auto mb-3 h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
           <h2 className="font-mono text-lg md:text-2xl tracking-widest text-white">
             VÝBER PRODUKTU

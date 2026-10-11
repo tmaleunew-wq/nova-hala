@@ -35,7 +35,14 @@ function Index() {
         </div>
       }
     >
-      <Configurator variant="variant4" />
+      <Configurator
+        variant={
+          new URLSearchParams(window.location.search).get("variant") ||
+          new URLSearchParams(window.location.search).get("client")
+            ? undefined
+            : "variant4"
+        }
+      />
     </Suspense>
   );
 }

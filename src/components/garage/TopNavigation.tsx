@@ -38,7 +38,10 @@ export function TopNavigation({
   return (
     <div className="absolute left-0 right-0 top-0 z-20 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 border-b border-white/10 bg-black/40 px-3 md:px-6 py-2 md:py-3 backdrop-blur-md">
       <div className="flex items-center justify-between w-full md:w-auto gap-2 md:gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          <div className="inline-flex items-center justify-center rounded-lg bg-white/95 px-2 py-1 shadow-sm">
+            <img src="/logo.png" alt="VB BAU" className="h-4 md:h-5 w-auto object-contain" />
+          </div>
           <div
             className={`h-2 w-2 rounded-full ${
               isCustom
@@ -47,7 +50,7 @@ export function TopNavigation({
             }`}
           />
           <h1 className="font-mono text-xs md:text-sm tracking-widest text-white/90 font-bold whitespace-nowrap">
-            {isMobile ? "STEEL GARAGE" : "STEEL GARAGE — PARAMETRIC CAD"}
+            {isMobile ? "VB BAU GARAGE" : "VB BAU — STEEL GARAGE CAD"}
           </h1>
           {!isMobile && (
             <span className="rounded border border-white/10 px-2 py-0.5 font-mono text-[10px] text-white/50">
