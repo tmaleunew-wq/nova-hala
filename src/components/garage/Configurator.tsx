@@ -149,13 +149,12 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     }
   }, [initialUrlParams.hallType]);
 
-  const initHall = initialUrlParams.hallType && initialUrlParams.hallType !== CUSTOM_HALL ? hallsConfig[initialUrlParams.hallType] : null;
-  const isCatalog = !!initHall;
-  const [selectedPoleHeight, setSelectedPoleHeight] = useState<string>(() => initHall?.versions?.[0] ? `${initHall.versions[0].poleHeight}m` : "4m");
-  const initBays = initHall ? (initHall.defaultBays ?? 5) : DEFAULT_PARAMS.bayCount;
-  const initLength = initHall ? (initHall.defaultLength ?? (initBays * initHall.moduleLength)) : DEFAULT_PARAMS.length;
-  const [selectedLength, setSelectedLength] = useState<number>(() => initHall ? (initHall.defaultLength ?? (initBays * initHall.moduleLength)) : (initialUrlParams.length ?? DEFAULT_PARAMS.length));
-  const activeHall = selectedHall !== CUSTOM_HALL ? hallsConfig[selectedHall] : initHall;
+  const isCatalog = selectedHall !== CUSTOM_HALL && selectedHall !== "vlastna_garaz" && !!hallsConfig[selectedHall];
+  const activeHall = isCatalog ? hallsConfig[selectedHall] : (initialUrlParams.hallType && initialUrlParams.hallType !== CUSTOM_HALL ? hallsConfig[initialUrlParams.hallType] : null);
+  const [selectedPoleHeight, setSelectedPoleHeight] = useState<string>(() => activeHall?.versions?.[0] ? `${activeHall.versions[0].poleHeight}m` : "4m");
+  const initBays = activeHall ? (activeHall.defaultBays ?? 5) : DEFAULT_PARAMS.bayCount;
+  const initLength = activeHall ? (activeHall.defaultLength ?? (initBays * activeHall.moduleLength)) : DEFAULT_PARAMS.length;
+  const [selectedLength, setSelectedLength] = useState<number>(() => activeHall ? (activeHall.defaultLength ?? (initBays * activeHall.moduleLength)) : (initialUrlParams.length ?? DEFAULT_PARAMS.length));
   const hallVersions = (activeHall?.versions ?? []) as Array<{ poleHeight: number }>;
   const hallHeightOptions = hallVersions.length > 0
     ? hallVersions.map((ver) => `${ver.poleHeight}m`)
@@ -190,7 +189,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     }, { collapsed: false }),
     "Geometria": folder({
       hallType: {
-        value: initialUrlParams.hallType ?? CUSTOM_HALL,
+        value: selectedHall,
         options: hallOptions,
         label: "Typ z PDF",
         onChange: (v) => {
@@ -220,7 +219,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
               const gateH = isShed
                 ? (foundVer.H4 ? foundVer.H4 - 0.15 : 2.5)
                 : (foundVer.H2 ?? Math.min(3.8, foundVer.H - 0.2));
-              (setParams as any)({
+              safeSetParams({
                 clearHeight: foundVer.H,
                 doorWidth: gateW,
                 doorHeight: gateH,
@@ -230,7 +229,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         },
       },
       width: {
-        value: isCatalog ? initHall.width : (initialUrlParams.width ?? DEFAULT_PARAMS.width),
+        value: isCatalog && activeHall ? activeHall.width : (paramsRef.current?.width ?? initialUrlParams.width ?? DEFAULT_PARAMS.width),
         min: 2.5,
         max: 20,
         step: 0.1,
@@ -250,7 +249,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         },
       },
       length: {
-        value: isCatalog ? `${activeHall?.defaultLength ?? initLength}m` : (initialUrlParams.length ?? initLength),
+        value: isCatalog ? `${selectedLength}m` : (paramsRef.current?.length ?? initialUrlParams.length ?? initLength),
         ...(isCatalog ? { options: hallLengthOptions } : { min: 3, max: 20, step: 0.5 }),
         label: "Dĺžka Y",
         disabled: false,
@@ -258,16 +257,17 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         onChange: (val: any) => {
           const num = typeof val === "number" ? val : parseFloat(String(val).replace("m", ""));
           if (!Number.isNaN(num) && num > 0) {
+            setSelectedLength(num);
             if (selectedHall !== CUSTOM_HALL && hallsConfig[selectedHall]) {
               const h = hallsConfig[selectedHall];
               const bays = Math.round(num / h.moduleLength);
-              (setParams as any)({ bayCount: bays });
+              safeSetParams({ bayCount: bays });
             }
           }
         }
       } as any,
       clearHeight: {
-        value: isCatalog ? (initHall.versions?.[0]?.H ?? initHall.heights[0]) : (initialUrlParams.clearHeight ?? DEFAULT_PARAMS.clearHeight),
+        value: isCatalog && activeHall ? (activeHall.versions?.[0]?.H ?? activeHall.heights[0]) : (paramsRef.current?.clearHeight ?? initialUrlParams.clearHeight ?? DEFAULT_PARAMS.clearHeight),
         min: 2.0,
         max: 7.0,
         step: 0.001,
@@ -287,13 +287,13 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         },
       },
       roofType: {
-        value: isCatalog ? (initHall.type as any) : (initialUrlParams.roofType ?? DEFAULT_PARAMS.roofType),
+        value: isCatalog && activeHall ? (activeHall.type as any) : (paramsRef.current?.roofType ?? initialUrlParams.roofType ?? DEFAULT_PARAMS.roofType),
         options: { "Sedlová": "gable", "Pultová": "shed", "Kubická s atikou": "cubic" },
         label: "Strecha",
         disabled: !isCustom,
       },
       roofPitchDeg: {
-        value: isCatalog ? initHall.roofPitchDeg : (initialUrlParams.roofPitchDeg ?? DEFAULT_PARAMS.roofPitchDeg),
+        value: isCatalog && activeHall ? activeHall.roofPitchDeg : (paramsRef.current?.roofPitchDeg ?? initialUrlParams.roofPitchDeg ?? DEFAULT_PARAMS.roofPitchDeg),
         min: 5,
         max: 35,
         step: 1,
@@ -316,8 +316,8 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     }, { collapsed: false }),
     "Konštrukcia": folder({
       bayCount: {
-        value: isCatalog ? initBays : (initialUrlParams.bayCount ?? initBays),
-        min: isCatalog ? Math.round(initHall.minLength / initHall.moduleLength) : 2,
+        value: isCatalog && activeHall ? Math.round(selectedLength / activeHall.moduleLength) : (paramsRef.current?.bayCount ?? initialUrlParams.bayCount ?? initBays),
+        min: isCatalog && activeHall ? Math.round(activeHall.minLength / activeHall.moduleLength) : 2,
         max: isCatalog ? 15 : 10,
         step: 1,
         label: "Počet polí",
@@ -326,7 +326,9 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           const b = Number(val);
           if (selectedHall !== CUSTOM_HALL && hallsConfig[selectedHall]) {
             const h = hallsConfig[selectedHall];
-            (setParams as any)({ length: isCatalog ? `${val * h.moduleLength}m` : val * h.moduleLength });
+            const newL = b * h.moduleLength;
+            setSelectedLength(newL);
+            safeSetParams({ length: isCatalog ? `${newL}m` : newL });
           }
         }
       },
@@ -409,7 +411,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       },
       doorOpen: { value: isCatalog ? false : (initialUrlParams.doorOpen ?? DEFAULT_PARAMS.doorOpen), label: "Otvoriť bránu 🔓" },
       doorWidth: {
-        value: isCatalog ? (initHall.type === "shed" ? Math.min(3.0, initHall.width * 0.5) : (initHall.versions?.[0]?.E ?? 4.8)) : (initialUrlParams.doorWidth ?? DEFAULT_PARAMS.doorWidth),
+        value: isCatalog && activeHall ? (activeHall.type === "shed" ? Math.min(3.0, activeHall.width * 0.5) : (activeHall.versions?.[0]?.E ?? 4.8)) : (paramsRef.current?.doorWidth ?? initialUrlParams.doorWidth ?? DEFAULT_PARAMS.doorWidth),
         min: 1.5,
         max: 6.0,
         step: 0.1,
@@ -426,7 +428,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         }
       },
       doorHeight: {
-        value: isCatalog ? (initHall.type === "shed" ? (initHall.versions?.[0]?.H4 ? Math.min(initHall.versions[0].H4 - 0.15, 3.2) : 2.5) : (initHall.versions?.[0]?.H2 ? Math.min(initHall.versions[0].H2 - 0.15, 4.8) : Math.min(3.8, (initHall.versions?.[0]?.H ?? initHall.heights[0]) - 0.2))) : (initialUrlParams.doorHeight ?? DEFAULT_PARAMS.doorHeight),
+        value: isCatalog && activeHall ? (activeHall.type === "shed" ? (activeHall.versions?.[0]?.H4 ? Math.min(activeHall.versions[0].H4 - 0.15, 3.2) : 2.5) : (activeHall.versions?.[0]?.H2 ? Math.min(activeHall.versions[0].H2 - 0.15, 4.8) : Math.min(3.8, (activeHall.versions?.[0]?.H ?? activeHall.heights[0]) - 0.2))) : (paramsRef.current?.doorHeight ?? initialUrlParams.doorHeight ?? DEFAULT_PARAMS.doorHeight),
         min: 1.8,
         max: 6.0,
         step: 0.1,
