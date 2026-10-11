@@ -19,6 +19,7 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -148,6 +149,14 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
   const vat = totalCost * 0.20;
   const totalWithVat = totalCost + vat;
 
+  // Panel type labels & formatters
+  const panelLabel = p.panelType === "sandwich" ? "Sendvičový panel" : p.panelType === "smooth" ? "Hladký panel" : p.panelType === "wood_oak" ? "Zlatý dub (drevodekor)" : p.panelType === "wood_walnut" ? "Tmavý orech (drevodekor)" : "Trapézový plech";
+  const roofPanelLabel = p.roofPanelType === "trapezoid" ? "Trapézový plech" : p.roofPanelType === "smooth" ? "Hladký panel" : "Škridľový profil";
+  const fastenerLabel = p.fastenerGrade === "A2" ? "Nerez A2" : p.fastenerGrade === "A4" ? "Nerez A4" : "Pozinkované";
+  const sideLabel = (s: string) => s === "left" ? "ľavá" : s === "right" ? "pravá" : "zadná";
+  const gateTypeLabel = p.gateType === "upAndOver" ? "výklopná" : p.gateType === "doubleLeaf" ? "dvojkrídlová" : "sekčná";
+  const fmt = (n: number) => `${n.toFixed(2)} €`;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -168,12 +177,6 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
     }
     searchParams.set("client", name);
     const evaluationUrl = `${window.location.origin}/vyhodnotenie?${searchParams.toString()}`;
-
-    // Panel type labels
-    const panelLabel = p.panelType === "sandwich" ? "Sendvičový panel" : p.panelType === "smooth" ? "Hladký panel" : p.panelType === "wood_oak" ? "Zlatý dub (drevodekor)" : p.panelType === "wood_walnut" ? "Tmavý orech (drevodekor)" : "Trapézový plech";
-    const roofPanelLabel = p.roofPanelType === "trapezoid" ? "Trapézový plech" : p.roofPanelType === "smooth" ? "Hladký panel" : "Škridľový profil";
-    const fastenerLabel = p.fastenerGrade === "A2" ? "Nerez A2" : p.fastenerGrade === "A4" ? "Nerez A4" : "Pozinkované";
-    const sideLabel = (s: string) => s === "left" ? "ľavá" : s === "right" ? "pravá" : "zadná";
 
     // Generate simple order ID
     const orderId = `SSF-${Date.now().toString(36).toUpperCase()}`;
@@ -200,7 +203,6 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
     ].join("\n");
 
     // ── SECTION 3: Doplnky ──
-    const gateTypeLabel = p.gateType === "upAndOver" ? "výklopná" : p.gateType === "doubleLeaf" ? "dvojkrídlová" : "sekčná";
     const doorType = `Garážová brána: ${totalGates}x ${p.doorWidth}x${p.doorHeight}m (${gateTypeLabel}, ${p.sectionalDoorColor})`;
     const windowVal = p.hasWindows && p.windowCount > 0
       ? `${p.windowCount}x (${p.windowWidth}x${p.windowHeight}m) – ${sideLabel(p.windowSide)} strana`
@@ -213,16 +215,13 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
       `Žľaby a zvody: ${p.trimmingColor}`,
     ].join("\n");
 
-    // Format price helper
-    const fmt = (n: number) => `${n.toFixed(2)} €`;
-
     // Admin params WITH calculated euro prices
     const adminTemplateParams = {
       to_email: "tmal.eu.new@gmail.com",
       customer_email: "tmal.eu.new@gmail.com",
       customer_name: name,
       customer_phone: phone,
-      customer_address: "Podľa dohody",
+      customer_address: city || "Podľa dohody",
       order_id: orderId,
       building_type: buildingType,
       dimensions: dimensions,
@@ -247,7 +246,7 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
       customer_email: email,
       customer_name: name,
       customer_phone: phone,
-      customer_address: "Podľa dohody",
+      customer_address: city || "Podľa dohody",
       order_id: orderId,
       building_type: buildingType,
       dimensions: dimensions,
@@ -334,78 +333,183 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
     <>
       {/* Quote Request Modal */}
       {showForm && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-[340px] rounded-lg border border-white/10 bg-[#0e1116] p-5 font-mono text-white shadow-2xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                Nezáväzný dopyt
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-md overflow-y-auto">
+          <div className="relative my-auto w-full max-w-3xl rounded-2xl border border-white/15 bg-[#0e1116] p-5 sm:p-7 font-mono text-white shadow-2xl">
+            {/* Header */}
+            <div className="mb-6 flex items-start justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="inline-flex items-center justify-center rounded-lg bg-white/95 px-2.5 py-1 shadow-sm">
+                  <img src="/logo.png" alt="VB BAU" className="h-5 w-auto object-contain" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold uppercase tracking-wider text-emerald-400">
+                    Dopyt cenovej ponuky
+                  </h3>
+                  <p className="text-[11px] text-white/50">
+                    Súhrn nakonfigurovanej stavby a kontaktné údaje
+                  </p>
+                </div>
+              </div>
               <button
+                type="button"
                 onClick={() => setShowForm(false)}
-                className="text-white/40 transition hover:text-white"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/60 transition hover:bg-white/15 hover:text-white cursor-pointer"
+                title="Zavrieť"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-3 text-[11px]">
-              <div>
-                <label className="block mb-1 text-white/60">Meno a priezvisko</label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded border border-white/10 bg-black/50 px-2 py-1.5 text-white/90 focus:border-emerald-400 focus:outline-none"
-                  placeholder="Ján Novák"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column: Súhrn konfigurácie */}
+              <div className="space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-xs">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="font-bold text-white uppercase tracking-wider">Súhrn konfigurácie</span>
+                  <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                    {p.hallType && p.hallType !== "Vlastný" && p.hallType !== "vlastna_garaz" ? p.hallType : "Garáž na mieru"}
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-[11px]">
+                  <div className="flex justify-between border-b border-white/5 py-1">
+                    <span className="text-white/60">Rozmery (Š × D × V):</span>
+                    <span className="font-bold text-white">{p.width.toFixed(1)} × {p.length.toFixed(1)} × {p.clearHeight.toFixed(1)} m</span>
+                  </div>
+                  <div className="flex justify-between border-b border-white/5 py-1">
+                    <span className="text-white/60">Zastavaná plocha:</span>
+                    <span className="font-bold text-white">{(p.width * p.length).toFixed(1)} m²</span>
+                  </div>
+                  <div className="flex justify-between border-b border-white/5 py-1">
+                    <span className="text-white/60">Strecha:</span>
+                    <span className="font-bold text-white">
+                      {p.roofType === "gable" ? "Sedlová" : p.roofType === "shed" ? "Pultová" : "Kubická"} ({p.roofPitchDeg}°)
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b border-white/5 py-1">
+                    <span className="text-white/60">Steny (opláštenie):</span>
+                    <span className="font-bold text-white truncate max-w-[150px]" title={panelLabel}>{panelLabel}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-white/5 py-1">
+                    <span className="text-white/60">Farba stien / strechy:</span>
+                    <span className="font-bold text-white flex items-center gap-1.5">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full border border-white/20" style={{ backgroundColor: p.claddingColor }} />
+                      <span className="inline-block h-2.5 w-2.5 rounded-full border border-white/20" style={{ backgroundColor: p.roofColor }} />
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b border-white/5 py-1">
+                    <span className="text-white/60">Garážová brána:</span>
+                    <span className="font-bold text-white">{totalGates}x ({gateTypeLabel})</span>
+                  </div>
+                  {p.hasPersonalDoor && (
+                    <div className="flex justify-between border-b border-white/5 py-1">
+                      <span className="text-white/60">Personálne dvere:</span>
+                      <span className="font-bold text-white">Áno ({sideLabel(p.personalDoorSide)})</span>
+                    </div>
+                  )}
+                  {p.hasWindows && p.windowCount > 0 && (
+                    <div className="flex justify-between border-b border-white/5 py-1">
+                      <span className="text-white/60">Okná:</span>
+                      <span className="font-bold text-white">{p.windowCount}x ({p.windowWidth}×{p.windowHeight} m)</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Orientačná cena */}
+                <div className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-[11px] text-emerald-200/70 uppercase tracking-wider">Orientačný odhad:</span>
+                    <div className="text-right">
+                      <div className="text-base font-bold text-emerald-400">{fmt(totalWithVat)}</div>
+                      <div className="text-[10px] text-white/50">{fmt(totalCost)} bez DPH</div>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-[9px] text-white/40 leading-tight">
+                    * Uvedená cena je nezáväzný odhad. Konečnú kalkuláciu s montážou a dopravou vám zašleme po preverení.
+                  </p>
+                </div>
               </div>
 
+              {/* Right Column: Kontaktný formulár */}
               <div>
-                <label className="block mb-1 text-white/60">E-mail</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded border border-white/10 bg-black/50 px-2 py-1.5 text-white/90 focus:border-emerald-400 focus:outline-none"
-                  placeholder="jan.novak@example.com"
-                />
-              </div>
+                <form onSubmit={handleSubmit} className="space-y-3 text-[11px]">
+                  <div>
+                    <label className="block mb-1 text-white/70">Meno a priezvisko *</label>
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-white/90 focus:border-emerald-400 focus:outline-none"
+                      placeholder="Ján Novák"
+                    />
+                  </div>
 
-              <div>
-                <label className="block mb-1 text-white/60">Telefón</label>
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full rounded border border-white/10 bg-black/50 px-2 py-1.5 text-white/90 focus:border-emerald-400 focus:outline-none"
-                  placeholder="+421 900 123 456"
-                />
-              </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block mb-1 text-white/70">Telefón *</label>
+                      <input
+                        type="tel"
+                        required
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-white/90 focus:border-emerald-400 focus:outline-none"
+                        placeholder="+421 900 123 456"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-white/70">E-mail *</label>
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-white/90 focus:border-emerald-400 focus:outline-none"
+                        placeholder="jan.novak@example.com"
+                      />
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block mb-1 text-white/60">Poznámka / špecifikácia</label>
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={2}
-                  className="w-full rounded border border-white/10 bg-black/50 px-2 py-1.5 text-white/90 focus:border-emerald-400 focus:outline-none resize-none"
-                  placeholder="Mám záujem o montáž / špecifické RAL farby..."
-                />
-              </div>
+                  <div>
+                    <label className="block mb-1 text-white/70">Mesto / Obec realizácie</label>
+                    <input
+                      type="text"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-white/90 focus:border-emerald-400 focus:outline-none"
+                      placeholder="napr. Nitra, Žilina..."
+                    />
+                  </div>
 
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full rounded bg-emerald-400 py-2 text-center text-xs font-bold text-black transition hover:bg-emerald-300 disabled:opacity-50"
-                >
-                  {isSubmitting ? "Odosiela sa..." : "Odoslať nezáväzný dopyt"}
-                </button>
+                  <div>
+                    <label className="block mb-1 text-white/70">Poznámka / doplňujúce požiadavky</label>
+                    <textarea
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      rows={2}
+                      className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-white/90 focus:border-emerald-400 focus:outline-none resize-none text-[11px]"
+                      placeholder="Záujem o montáž, prípravu podkladu, termín realizácie..."
+                    />
+                  </div>
+
+                  <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowForm(false)}
+                      className="w-full sm:w-1/3 rounded-lg border border-white/10 bg-white/5 py-2.5 text-center text-xs font-bold text-white/70 transition hover:bg-white/10 hover:text-white cursor-pointer"
+                    >
+                      Späť k 3D
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full sm:w-2/3 rounded-lg bg-emerald-400 py-2.5 text-center text-xs font-bold text-slate-950 transition hover:bg-emerald-300 disabled:opacity-50 cursor-pointer shadow-lg shadow-emerald-500/20"
+                    >
+                      {isSubmitting ? "Odosiela sa..." : "Odoslať nezáväzný dopyt"}
+                    </button>
+                  </div>
+                </form>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
