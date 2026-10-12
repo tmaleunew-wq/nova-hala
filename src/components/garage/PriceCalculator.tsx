@@ -216,6 +216,7 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
       `Základová doska: ${p.showFoundation ? `Áno (${W}x${L}m)` : "Nie"}`,
       `Lemovanie / rohy: ${resolveColorName(p.trimmingColor)} ${p.flashingMatchesPanels ? "(zhodné s panelmi)" : ""}`,
       `Žľaby a zvody: ${resolveColorName(p.trimmingColor)}`,
+      ...(p.hasExtension ? [`Bočný prístrešok: ${p.extensionType === "garage" ? "2. garáž" : p.extensionType === "storage" ? "Sklad" : "Carport"} (${p.extensionWidth ?? 3.5}m, ${p.extensionSide === "left" ? "vľavo" : "vpravo"})`] : []),
     ].join("\n");
 
     const quoteUrl = `${window.location.origin}/ponuka?id=${orderId}&${searchParams.toString()}`;

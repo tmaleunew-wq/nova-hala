@@ -34,7 +34,7 @@ function GarageDoor({
   const activeDecor = doorDecor ?? p.gateDecor ?? "none";
   const maxSafeDoorHeight = Math.max(1.8, p.clearHeight - 0.2);
   const actualDoorHeight = Math.min(p.doorHeight, maxSafeDoorHeight);
-  const panels = Math.max(6, Math.min(8, Math.round(actualDoorHeight / 0.32)));
+  const panels = Math.max(4, Math.min(5, Math.round(actualDoorHeight / 0.52)));
   const panelH = actualDoorHeight / panels;
 
   // Local state for smooth animation
@@ -126,14 +126,20 @@ function GarageDoor({
               <group key={i} position={[0, panelY, panelZ]} rotation={[rotX, 0, 0]}>
                 {/* Hlavné teleso lamely */}
                 <mesh castShadow receiveShadow material={gateMaterial}>
-                  <boxGeometry args={[gateWidth - 0.01, panelH - 0.004, 0.04]} />
+                  <boxGeometry args={[gateWidth - 0.01, panelH - 0.006, 0.04]} />
+                </mesh>
+
+                {/* Jemná stredová dizajnová drážka (M-profil sekčnej brány) */}
+                <mesh position={[0, 0, 0.0205]}>
+                  <boxGeometry args={[gateWidth - 0.02, 0.005, 0.002]} />
+                  <meshStandardMaterial color="#1c1f24" roughness={0.9} />
                 </mesh>
 
                 {/* Tmavá tesniaca drážka medzi lamelami */}
                 {i > 0 && (
                   <mesh position={[0, -panelH / 2 + 0.002, 0.021]}>
-                    <boxGeometry args={[gateWidth - 0.01, 0.005, 0.003]} />
-                    <meshStandardMaterial color="#1c1f24" roughness={0.9} />
+                    <boxGeometry args={[gateWidth - 0.01, 0.007, 0.004]} />
+                    <meshStandardMaterial color="#14171a" roughness={0.95} />
                   </mesh>
                 )}
 
@@ -554,7 +560,7 @@ export function Accessories({ p, explodeY }: { p: GarageParams; explodeY: number
                 {/* Main horizontal ridge cap */}
                 <mesh position={[0, yPos, 0]} castShadow>
                   <boxGeometry args={[0.16, 0.04, capLen]} />
-                  <meshStandardMaterial color={p.roofColor} metalness={0.6} roughness={0.5} wireframe={p.wireframe} />
+                  <meshStandardMaterial color={p.trimmingColor || p.roofColor} metalness={0.6} roughness={0.5} wireframe={p.wireframe} />
                 </mesh>
 
                 {/* Front & Back vertical end closures */}
@@ -568,7 +574,7 @@ export function Accessories({ p, explodeY }: { p: GarageParams; explodeY: number
                       castShadow
                     >
                       <boxGeometry args={[0.16, coverH, t]} />
-                      <meshStandardMaterial color={p.roofColor} metalness={0.6} roughness={0.5} wireframe={p.wireframe} />
+                      <meshStandardMaterial color={p.trimmingColor || p.roofColor} metalness={0.6} roughness={0.5} wireframe={p.wireframe} />
                     </mesh>
                   );
                 })}

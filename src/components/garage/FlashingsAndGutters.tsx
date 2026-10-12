@@ -231,7 +231,7 @@ export function Bargeboards({ p, explodeY }: { p: GarageParams; explodeY: number
   const roofThickness = (p.panelType === "sandwich" || p.panelType === "smooth") ? Math.max(0.04, p.roofPanelThicknessMm / 1000) : 0.01;
   const sz = p.profileSize;
 
-  const color = p.roofColor || "#2a2d33";
+  const color = p.trimmingColor || "#2a2d33";
 
   const mat = useMemo(() => new THREE.MeshStandardMaterial({
     color: color,
@@ -346,7 +346,7 @@ export function EaveFlashings({ p, explodeY }: { p: GarageParams; explodeY: numb
   const wallThickness = isThickWall(p.panelType) ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
   const sz = p.profileSize;
 
-  const color = p.roofColor || "#2a2d33";
+  const color = p.trimmingColor || "#2a2d33";
 
   const mat = useMemo(() => new THREE.MeshStandardMaterial({
     color: color,

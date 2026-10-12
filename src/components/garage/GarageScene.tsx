@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { useThree } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
+import { useThree, useFrame } from "@react-three/fiber";
 import { Grid } from "@react-three/drei";
 import * as THREE from "three";
 import type { GarageParams } from "@/lib/garage/types";
@@ -106,11 +106,23 @@ export function Scene({
   );
 }
 
-export function CameraRig({ preset, params }: { preset: ViewPreset; params: GarageParams }) {
+export function CameraRig({
+  preset,
+  params,
+  focusTab,
+}: {
+  preset: ViewPreset;
+  params: GarageParams;
+  focusTab?: string;
+}) {
   const { camera, controls } = useThree() as {
     camera: THREE.PerspectiveCamera;
     controls: { target: THREE.Vector3; update: () => void } | null;
   };
+
+  const targetPos = useRef<THREE.Vector3>(new THREE.Vector3());
+  const targetLook = useRef<THREE.Vector3>(new THREE.Vector3());
+  const isTransitioning = useRef<boolean>(false);
 
   useEffect(() => {
     if (!camera) return;
@@ -137,21 +149,74 @@ export function CameraRig({ preset, params }: { preset: ViewPreset; params: Gara
     const horizFactor = vertFactor * Math.max(0.3, aspect);
     const effectiveFactor = aspect < 1 ? horizFactor : vertFactor;
 
-    // Comfortable margin: enlarge view on the garage
-    const margin = isMobileViewport ? 1.30 : (isCustom ? 0.88 : 1.18);
+    const isRoofFocus = focusTab === "roof" && preset === "iso";
+    const isDoorsFocus = focusTab === "doors" && preset === "iso";
+    const isExtensionFocus = focusTab === "extension" && preset === "iso";
+    const extSign = params.extensionSide === "left" ? -1 : 1;
+
+    const isSingleGarage = (params.gateCount ?? 1) === 1 && W <= 4.5;
+    const mobileOffsetY = isSingleGarage ? -H * 0.32 : -H * 0.45;
+
+    // Comfortable margin: keep garage consistently framed and elevated on mobile
+    const margin = isMobileViewport
+      ? (isRoofFocus
+          ? 0.88
+          : isDoorsFocus
+          ? 0.82
+          : isExtensionFocus
+          ? 0.72
+          : (isSingleGarage ? 1.02 : 1.22))
+      : (isRoofFocus
+          ? 0.60
+          : isDoorsFocus
+          ? 0.52
+          : isExtensionFocus
+          ? 0.72
+          : (isCustom ? 0.88 : 1.18));
     const dist = (maxDimension / effectiveFactor) * margin;
 
-    // ZAPF perspective: frontal 22° 3/4 angle on the gate with eye-level elevation
-    const isoDir = new THREE.Vector3(
-      isCustom ? -0.52 : -1.15,
-      isCustom ? 0.36 : 0.70,
-      isCustom ? -1.18 : -1.0
-    ).normalize();
-    // Shifting camera target: decreasing target.x shifts the garage to the left on screen
+    // Perspective direction: elevated for roof, frontal close-up for doors, side-3/4 for extension
+    const isoDir = isRoofFocus
+      ? new THREE.Vector3(
+          isCustom ? -0.44 : -0.75,
+          isCustom ? 0.70 : 0.82,
+          isCustom ? -0.88 : -0.85
+        ).normalize()
+      : isDoorsFocus
+      ? new THREE.Vector3(
+          isCustom ? -0.22 : -0.35,
+          isMobileViewport ? 0.28 : 0.18,
+          -1.25
+        ).normalize()
+      : isExtensionFocus
+      ? new THREE.Vector3(
+          extSign * 0.95,
+          0.42,
+          -0.95
+        ).normalize()
+      : new THREE.Vector3(
+          isCustom ? -0.52 : -1.15,
+          isCustom ? 0.36 : 0.70,
+          isCustom ? -1.18 : -1.0
+        ).normalize();
+
+    // Shifting camera target: on mobile, garage must ALWAYS stay in the elevated visible half
     const target = new THREE.Vector3(
-      isCustom && !isMobileViewport && preset === "iso" ? 0.15 : 0,
-      isCustom ? H * 0.42 : H / 2,
-      isCustom ? -0.4 : 0
+      isExtensionFocus
+        ? (params.extensionWidth ?? 3.5) * 0.3 * extSign
+        : (isCustom && !isMobileViewport && preset === "iso" ? 0.15 : 0),
+      isMobileViewport
+        ? (isRoofFocus
+            ? mobileOffsetY + 0.45
+            : isDoorsFocus
+            ? mobileOffsetY + 0.12
+            : mobileOffsetY)
+        : (isRoofFocus
+            ? H + 0.35
+            : isDoorsFocus
+            ? (params.doorHeight ?? 2.1) * 0.52
+            : (isCustom ? H * 0.42 : H / 2)),
+      isRoofFocus ? 0 : isDoorsFocus ? -L / 2 : (isCustom ? -0.4 : 0)
     );
 
     let pos: THREE.Vector3;
@@ -172,14 +237,32 @@ export function CameraRig({ preset, params }: { preset: ViewPreset; params: Gara
       }
     }
 
-    camera.position.copy(pos);
-    camera.lookAt(target);
-    camera.updateProjectionMatrix();
+    targetPos.current.copy(pos);
+    targetLook.current.copy(target);
+    isTransitioning.current = true;
+  }, [preset, params.width, params.length, params.clearHeight, params.hallType, focusTab, params.extensionSide, params.extensionWidth, params.hasExtension, camera]);
+
+  useFrame((_, delta) => {
+    if (!isTransitioning.current) return;
+    const speed = Math.min(1, delta * 3.6);
+    camera.position.lerp(targetPos.current, speed);
     if (controls) {
-      controls.target.copy(target);
+      controls.target.lerp(targetLook.current, speed);
       controls.update();
+    } else {
+      camera.lookAt(targetLook.current);
     }
-  }, [preset, params.width, params.length, params.clearHeight, params.hallType, camera, controls]);
+    camera.updateProjectionMatrix();
+
+    if (camera.position.distanceTo(targetPos.current) < 0.02) {
+      camera.position.copy(targetPos.current);
+      if (controls) {
+        controls.target.copy(targetLook.current);
+        controls.update();
+      }
+      isTransitioning.current = false;
+    }
+  });
 
   return null;
 }

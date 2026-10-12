@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Leva } from "leva";
 import type { GarageParams } from "@/lib/garage/types";
+import defaultConfig from "@/config/default.json";
 import {
   Ruler,
   Home,
@@ -24,11 +25,13 @@ export interface CustomGarageMenuProps {
   isSummaryOpen: boolean;
   setIsSummaryOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setQuoteRequestSignal: React.Dispatch<React.SetStateAction<number>>;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
-type TabType = "dimensions" | "roof" | "doors" | "colors" | "extension" | "view" | "summary";
+type TabType = "dimensions" | "roof" | "doors" | "colors" | "view" | "summary";
 
-const RAL_PALETTE = [
+const DEFAULT_RAL_PALETTE = [
   { name: "RAL 7016 Antracit", hex: "#2b2f36" },
   { name: "RAL 9010 Biela", hex: "#f4f5f7" },
   { name: "RAL 9006 Strieborná", hex: "#9aa1ab" },
@@ -37,6 +40,54 @@ const RAL_PALETTE = [
   { name: "RAL 6005 Zelená", hex: "#284a37" },
   { name: "RAL 9005 Čierna", hex: "#18181b" },
 ];
+
+export const RAL_PALETTE: Array<{ name: string; hex: string }> =
+  (defaultConfig as any)?.palette ?? DEFAULT_RAL_PALETTE;
+
+export function RalColorPicker({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value?: string;
+  onChange: (hex: string) => void;
+}) {
+  const activeColor = RAL_PALETTE.find((c) => c.hex.toLowerCase() === value?.toLowerCase());
+  return (
+    <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
+      <div className="flex justify-between items-center">
+        <label className="text-xs font-semibold text-slate-200">{label}:</label>
+        <span className="text-emerald-400 text-xs font-bold">
+          {activeColor?.name ?? value}
+        </span>
+      </div>
+      <div className="grid grid-cols-7 gap-2 pt-1">
+        {RAL_PALETTE.map((c) => {
+          const isSelected = value?.toLowerCase() === c.hex.toLowerCase();
+          return (
+            <button
+              key={c.hex}
+              type="button"
+              onClick={() => onChange(c.hex)}
+              title={c.name}
+              className={`h-8 rounded-lg border-2 transition cursor-pointer relative flex items-center justify-center ${
+                isSelected
+                  ? "border-emerald-300 scale-105 ring-2 ring-emerald-400/50 shadow-md"
+                  : "border-white/20 hover:scale-105 hover:border-white/40"
+              }`}
+              style={{ backgroundColor: c.hex }}
+            >
+              {isSelected && (
+                <Check className="h-4 w-4 text-emerald-400 bg-black/70 rounded-full p-0.5" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export function CustomGarageMenu({
   showControls,
@@ -48,8 +99,16 @@ export function CustomGarageMenu({
   isSummaryOpen,
   setIsSummaryOpen,
   setQuoteRequestSignal,
+  activeTab: externalActiveTab,
+  onTabChange,
 }: CustomGarageMenuProps) {
-  const [activeTab, setActiveTab] = useState<TabType>("dimensions");
+  const [internalActiveTab, setInternalActiveTab] = useState<TabType>("dimensions");
+  const [isMobileMinimized, setIsMobileMinimized] = useState<boolean>(false);
+  const activeTab = (externalActiveTab as TabType) || internalActiveTab;
+  const setActiveTab = (tab: TabType) => {
+    setInternalActiveTab(tab);
+    onTabChange?.(tab);
+  };
 
   const area = (typedParams.width * typedParams.length).toFixed(1);
   const currentGarageType: "single" | "double" | "wide" =
@@ -63,42 +122,59 @@ export function CustomGarageMenu({
     <>
       <Leva hidden />
       <div
-        className={`quote-export-panel absolute right-3 top-[132px] md:top-28 z-30 max-h-[calc(100vh-140px)] md:max-h-[80vh] flex flex-col rounded-2xl bg-[#0c1017]/95 shadow-2xl border border-emerald-500/40 backdrop-blur-md transition-all duration-300 ${
+        className={`quote-export-panel absolute z-30 flex flex-col rounded-2xl bg-[#0c1017]/95 shadow-2xl border border-emerald-500/40 backdrop-blur-md transition-all duration-300 ${
         showControls
-          ? "opacity-100 translate-x-0 pointer-events-auto"
-          : "opacity-0 translate-x-12 pointer-events-none"
-      } md:w-[415px] w-[calc(100vw-24px)] max-w-[440px]`}
+          ? "opacity-100 translate-y-0 md:translate-x-0 pointer-events-auto"
+          : "opacity-0 translate-y-8 md:translate-y-0 md:translate-x-12 pointer-events-none"
+      } bottom-2 left-2 right-2 md:bottom-auto md:left-auto md:right-3 md:top-16 max-h-[44vh] md:max-h-[calc(100vh-80px)] w-auto md:w-[460px] md:max-w-[480px]`}
     >
       {/* 1. STICKY HEADER */}
-      <div className="shrink-0 px-4 py-3 border-b border-white/10 bg-[#111723] flex items-center justify-between">
+      <div className="shrink-0 px-3.5 md:px-4 py-2 md:py-3 border-b border-white/10 bg-[#111723] flex flex-col">
+        {/* Mobile drag pill indicator */}
+        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-1.5 md:hidden" />
+        <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="relative flex h-3 w-3">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
           </span>
           <div>
-            <div className="text-sm font-mono font-bold text-white tracking-wider uppercase flex items-center gap-2">
+            <div className="text-sm md:text-base font-mono font-bold text-white tracking-wider uppercase flex items-center gap-2">
               <span>Vlastná garáž</span>
-              <span className="text-[10px] text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.5 rounded-md border border-emerald-400/40">
+              <span className="text-[10px] md:text-xs text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.5 rounded-md border border-emerald-400/40">
                 NA MIERU
               </span>
             </div>
-            <div className="text-xs font-mono text-emerald-400/80 font-medium mt-0.5">
+            <div className="text-xs md:text-sm font-mono text-emerald-400/80 font-medium mt-0.5">
               {typedParams.width} × {typedParams.length} m · <span className="text-white/60">{area} m²</span>
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setQuoteRequestSignal((v) => v + 1)}
-          className="rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-mono text-xs font-bold px-3 py-1.5 transition cursor-pointer active:scale-95 shadow-md shadow-emerald-500/20"
-        >
-          Dopyt
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setQuoteRequestSignal((v) => v + 1)}
+            className="rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-mono text-xs md:text-sm font-bold px-3.5 py-1.5 transition cursor-pointer active:scale-95 shadow-md shadow-emerald-500/20"
+          >
+            Dopyt
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsMobileMinimized((v) => !v)}
+            title={isMobileMinimized ? "Rozbaliť menu" : "Zbaliť menu"}
+            className="md:hidden p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition cursor-pointer"
+          >
+            {isMobileMinimized ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
       </div>
 
+      {!isMobileMinimized && (
+        <>
+
       {/* 2. SUB-NAVIGATION TABS */}
-      <div className="shrink-0 grid grid-cols-7 border-b border-white/10 bg-[#0e131d] text-[10px] md:text-[11px] font-mono">
+      <div className="shrink-0 grid grid-cols-6 border-b border-white/10 bg-[#0e131d] text-[11px] md:text-xs font-mono">
         <button
           type="button"
           onClick={() => setActiveTab("dimensions")}
@@ -153,19 +229,6 @@ export function CustomGarageMenu({
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab("extension")}
-          title="Modul / Prístrešok"
-          className={`flex flex-col items-center justify-center py-2.5 border-r border-white/5 transition cursor-pointer ${
-            activeTab === "extension"
-              ? "bg-emerald-500/25 text-emerald-300 border-b-2 border-b-emerald-400 font-bold shadow-inner"
-              : "text-white/70 hover:bg-white/10 hover:text-white"
-          }`}
-        >
-          <PlusSquare className="h-4 w-4 mb-1" />
-          <span>Modul</span>
-        </button>
-        <button
-          type="button"
           onClick={() => setActiveTab("view")}
           title="Zobrazenie CAD"
           className={`flex flex-col items-center justify-center py-2.5 border-r border-white/5 transition cursor-pointer ${
@@ -193,7 +256,7 @@ export function CustomGarageMenu({
       </div>
 
       {/* 3. SCROLLABLE TAB CONTENT */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 font-mono text-xs">
+      <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4 font-mono text-xs md:text-[13px]">
         {/* --- TAB 1: ROZMERY --- */}
         {activeTab === "dimensions" && (
           <div className="space-y-4">
@@ -217,8 +280,8 @@ export function CustomGarageMenu({
                   onClick={() => {
                     setParams({
                       gateCount: 1,
-                      doorWidth: Math.min(typedParams.doorWidth ?? 2.5, 2.8),
-                      width: typedParams.width > 4.5 ? 3.5 : typedParams.width,
+                      doorWidth: 2.8,
+                      width: 4.0,
                     });
                   }}
                   className={`flex flex-col items-center justify-between p-2 rounded-xl transition cursor-pointer text-center group ${
@@ -552,6 +615,66 @@ export function CustomGarageMenu({
                 </div>
               )}
             </div>
+
+            {/* Farba strechy */}
+            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-semibold text-slate-200">Farba strechy:</label>
+                <span className="text-emerald-400 text-xs font-bold">
+                  {RAL_PALETTE.find((c) => c.hex.toLowerCase() === typedParams.roofColor?.toLowerCase())?.name ?? typedParams.roofColor}
+                </span>
+              </div>
+              <div className="grid grid-cols-7 gap-2 pt-1">
+                {RAL_PALETTE.map((c) => (
+                  <button
+                    key={c.hex}
+                    type="button"
+                    onClick={() => setParams({ roofColor: c.hex })}
+                    title={c.name}
+                    className={`h-8 rounded-lg border-2 transition cursor-pointer relative flex items-center justify-center ${
+                      typedParams.roofColor?.toLowerCase() === c.hex.toLowerCase()
+                        ? "border-emerald-300 scale-105 ring-2 ring-emerald-400/50 shadow-md"
+                        : "border-white/20 hover:scale-105 hover:border-white/40"
+                    }`}
+                    style={{ backgroundColor: c.hex }}
+                  >
+                    {typedParams.roofColor?.toLowerCase() === c.hex.toLowerCase() && (
+                      <Check className="h-4 w-4 text-emerald-400 bg-black/70 rounded-full p-0.5" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Farba lemovania strechy a odkvapov */}
+            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-semibold text-slate-200">Farba lemovania & odkvapov:</label>
+                <span className="text-emerald-400 text-xs font-bold">
+                  {RAL_PALETTE.find((c) => c.hex.toLowerCase() === typedParams.trimmingColor?.toLowerCase())?.name ?? typedParams.trimmingColor}
+                </span>
+              </div>
+              <div className="grid grid-cols-7 gap-2 pt-1">
+                {RAL_PALETTE.map((c) => (
+                  <button
+                    key={c.hex}
+                    type="button"
+                    onClick={() => setParams({ trimmingColor: c.hex })}
+                    title={c.name}
+                    className={`h-8 rounded-lg border-2 transition cursor-pointer relative flex items-center justify-center ${
+                      typedParams.trimmingColor?.toLowerCase() === c.hex.toLowerCase()
+                        ? "border-emerald-300 scale-105 ring-2 ring-emerald-400/50 shadow-md"
+                        : "border-white/20 hover:scale-105 hover:border-white/40"
+                    }`}
+                    style={{ backgroundColor: c.hex }}
+                  >
+                    {typedParams.trimmingColor?.toLowerCase() === c.hex.toLowerCase() && (
+                      <Check className="h-4 w-4 text-emerald-400 bg-black/70 rounded-full p-0.5" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -640,6 +763,36 @@ export function CustomGarageMenu({
                 onChange={(e) => setParams({ doorHeight: parseFloat(e.target.value) })}
                 className="w-full accent-emerald-400 cursor-pointer h-2 bg-slate-700 rounded-lg"
               />
+            </div>
+
+            {/* Farba brány */}
+            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-semibold text-slate-200">Farba garážovej brány:</label>
+                <span className="text-emerald-400 text-xs font-bold">
+                  {RAL_PALETTE.find((c) => c.hex.toLowerCase() === typedParams.sectionalDoorColor?.toLowerCase())?.name ?? typedParams.sectionalDoorColor}
+                </span>
+              </div>
+              <div className="grid grid-cols-7 gap-2 pt-1">
+                {RAL_PALETTE.map((c) => (
+                  <button
+                    key={c.hex}
+                    type="button"
+                    onClick={() => setParams({ sectionalDoorColor: c.hex, sectionalDoor2Color: c.hex })}
+                    title={c.name}
+                    className={`h-8 rounded-lg border-2 transition cursor-pointer relative flex items-center justify-center ${
+                      typedParams.sectionalDoorColor?.toLowerCase() === c.hex.toLowerCase()
+                        ? "border-emerald-300 scale-105 ring-2 ring-emerald-400/50 shadow-md"
+                        : "border-white/20 hover:scale-105 hover:border-white/40"
+                    }`}
+                    style={{ backgroundColor: c.hex }}
+                  >
+                    {typedParams.sectionalDoorColor?.toLowerCase() === c.hex.toLowerCase() && (
+                      <Check className="h-4 w-4 text-emerald-400 bg-black/70 rounded-full p-0.5" />
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Dvere a okná toggles */}
@@ -822,105 +975,59 @@ export function CustomGarageMenu({
                 ))}
               </div>
             </div>
-          </div>
-        )}
 
-        {/* --- TAB 5: PRÍSTREŠOK / MODUL --- */}
-        {activeTab === "extension" && (
-          <div className="space-y-4">
+            {/* Rohové lemovanie a odkvapy */}
             <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
                 <div>
-                  <div className="text-xs font-bold text-slate-100">Prídavný bočný modul</div>
-                  <div className="text-[11px] text-white/60">Carport / 2. garáž / sklad</div>
+                  <div className="text-xs font-semibold text-slate-200">Rohové lemovanie & odkvapy</div>
+                  <div className="text-[10px] text-white/50">Krycie lišty a žľaby</div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setParams({ hasExtension: !typedParams.hasExtension })}
-                  className={`w-12 h-6 flex items-center rounded-full p-1 transition cursor-pointer border border-white/20 ${
-                    typedParams.hasExtension ? "bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" : "bg-slate-700"
+                  onClick={() => setParams({ showAccessories: !typedParams.showAccessories })}
+                  className={`w-11 h-6 flex items-center rounded-full p-1 transition cursor-pointer border border-white/20 ${
+                    typedParams.showAccessories ? "bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" : "bg-slate-700"
                   }`}
+                  title={typedParams.showAccessories ? "Vypnúť lemovanie" : "Zapnúť lemovanie"}
                 >
                   <div
                     className={`bg-slate-950 w-4 h-4 rounded-full shadow-md transform transition ${
-                      typedParams.hasExtension ? "translate-x-6" : "translate-x-0"
+                      typedParams.showAccessories ? "translate-x-5" : "translate-x-0"
                     }`}
                   />
                 </button>
               </div>
 
-              {typedParams.hasExtension && (
-                <div className="pt-2.5 border-t border-white/10 space-y-3">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-200 block mb-1.5">Využitie modulu:</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { id: "carport", label: "Carport" },
-                        { id: "garage", label: "2. garáž" },
-                        { id: "storage", label: "Sklad" },
-                      ].map((ex) => (
-                        <button
-                          key={ex.id}
-                          type="button"
-                          onClick={() => setParams({ extensionType: ex.id as any })}
-                          className={`py-2 rounded-lg border text-center transition cursor-pointer text-xs ${
-                            (typedParams.extensionType ?? "carport") === ex.id
-                              ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
-                              : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80"
-                          }`}
-                        >
-                          {ex.label}
-                        </button>
-                      ))}
-                    </div>
+              {typedParams.showAccessories && (
+                <>
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-semibold text-slate-200">Farba lemovania:</label>
+                    <span className="text-emerald-400 text-xs font-bold">
+                      {RAL_PALETTE.find((c) => c.hex.toLowerCase() === typedParams.trimmingColor?.toLowerCase())?.name ?? typedParams.trimmingColor}
+                    </span>
                   </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-200 block mb-1.5">Strana pripojenia:</label>
-                    <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-7 gap-2 pt-1">
+                    {RAL_PALETTE.map((c) => (
                       <button
+                        key={c.hex}
                         type="button"
-                        onClick={() => setParams({ extensionSide: "right" })}
-                        className={`py-2 rounded-lg border text-center transition cursor-pointer text-xs ${
-                          typedParams.extensionSide !== "left"
-                            ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
-                            : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80"
+                        onClick={() => setParams({ trimmingColor: c.hex })}
+                        title={c.name}
+                        className={`h-8 rounded-lg border-2 transition cursor-pointer relative flex items-center justify-center ${
+                          typedParams.trimmingColor?.toLowerCase() === c.hex.toLowerCase()
+                            ? "border-emerald-300 scale-105 ring-2 ring-emerald-400/50 shadow-md"
+                            : "border-white/20 hover:scale-105 hover:border-white/40"
                         }`}
+                        style={{ backgroundColor: c.hex }}
                       >
-                        Vpravo
+                        {typedParams.trimmingColor?.toLowerCase() === c.hex.toLowerCase() && (
+                          <Check className="h-4 w-4 text-emerald-400 bg-black/70 rounded-full p-0.5" />
+                        )}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setParams({ extensionSide: "left" })}
-                        className={`py-2 rounded-lg border text-center transition cursor-pointer text-xs ${
-                          typedParams.extensionSide === "left"
-                            ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
-                            : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80"
-                        }`}
-                      >
-                        Vľavo
-                      </button>
-                    </div>
+                    ))}
                   </div>
-
-                  <div className="space-y-1.5 pt-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-semibold text-slate-200">Šírka prístrešku:</span>
-                      <span className="text-emerald-400 font-extrabold text-base font-mono">
-                        {typedParams.extensionWidth ?? 3.5} m
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="2.5"
-                      max="6.0"
-                      step="0.1"
-                      value={typedParams.extensionWidth ?? 3.5}
-                      onChange={(e) => setParams({ extensionWidth: parseFloat(e.target.value) })}
-                      className="w-full accent-emerald-400 cursor-pointer h-2 bg-slate-700 rounded-lg"
-                    />
-                  </div>
-                </div>
+                </>
               )}
             </div>
           </div>
@@ -1053,6 +1160,8 @@ export function CustomGarageMenu({
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
     </>
   );

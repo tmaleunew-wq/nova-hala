@@ -156,10 +156,10 @@ export function PurPanel({
       bevelEnabled: false,
       curveSegments: 2,
     });
-    const zTrans = isRoof ? -thickness / 2 : thickness / 2 - depth;
+    const zTrans = thickness / 2 - depth;
     g.translate(0, 0, zTrans);
     return g;
-  }, [shape, thickness, isSandwichActual, isRoof]);
+  }, [shape, thickness, isSandwichActual]);
 
   const coreGeom = useMemo(() => {
     if (!isSandwichActual) return null;
@@ -181,10 +181,10 @@ export function PurPanel({
       bevelEnabled: false,
       curveSegments: 2,
     });
-    const zTrans = isRoof ? thickness / 2 - depth : -thickness / 2;
+    const zTrans = -thickness / 2;
     g.translate(0, 0, zTrans);
     return g;
-  }, [shape, thickness, isSandwichActual, isRoof]);
+  }, [shape, thickness, isSandwichActual]);
 
   const handlePointerOver = (e: any) => {
     e.stopPropagation();

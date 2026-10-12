@@ -108,6 +108,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   const [selectedHall, setSelectedHall] = useState(initialUrlParams.hallType ?? CUSTOM_HALL);
   const isCustom = selectedHall === CUSTOM_HALL || selectedHall === "vlastna_garaz";
   const [customParams, setCustomParams] = useState<Partial<GarageParams>>({});
+  const [customActiveTab, setCustomActiveTab] = useState<string>("dimensions");
 
   const safeSetParams = (newP: Record<string, any>) => {
     try {
@@ -829,7 +830,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           target={[0, typedParams.clearHeight / 2, 0]}
           maxPolarAngle={Math.PI / 2 - 0.02}
         />
-        <CameraRig preset={preset} params={typedParams} />
+        <CameraRig preset={preset} params={typedParams} focusTab={customActiveTab} />
         {!isMobile && (
           <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
             <GizmoViewport axisColors={["#ef4444", "#22c55e", "#3b82f6"]} labelColor="white" />
@@ -897,7 +898,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       {!showPicker && (
         <button
           onClick={() => setShowControls(v => !v)}
-          className={`absolute right-3 top-20 md:top-14 z-30 flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-mono font-bold shadow-lg transition-all active:scale-95 cursor-pointer ${
+          className={`absolute right-2 md:right-3 top-16 md:top-14 z-30 flex items-center gap-1 md:gap-1.5 rounded-full px-2.5 py-1.5 md:px-3 md:py-2 text-[11px] md:text-xs font-mono font-bold shadow-lg transition-all active:scale-95 cursor-pointer ${
             isCustom
               ? "bg-emerald-400 text-slate-900 hover:bg-emerald-300 shadow-emerald-500/20"
               : "bg-cyan-400 text-slate-950 hover:bg-cyan-300 shadow-cyan-500/20"
@@ -929,6 +930,8 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           isSummaryOpen={isSummaryOpen}
           setIsSummaryOpen={setIsSummaryOpen}
           setQuoteRequestSignal={setQuoteRequestSignal}
+          activeTab={customActiveTab}
+          onTabChange={setCustomActiveTab}
         />
       ) : (
         <StandardHallMenu

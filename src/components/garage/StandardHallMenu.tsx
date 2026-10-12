@@ -43,11 +43,11 @@ export function StandardHallMenu({
 }: StandardHallMenuProps) {
   return (
     <div
-      className={`quote-export-panel absolute right-3 top-[132px] md:top-28 z-30 max-h-[calc(100vh-140px)] md:max-h-[80vh] overflow-y-auto rounded-2xl bg-[#0e1116]/95 shadow-2xl border border-cyan-500/40 shadow-cyan-950/40 transition-all duration-300 ${
+      className={`quote-export-panel absolute z-30 overflow-y-auto rounded-2xl bg-[#0e1116]/95 shadow-2xl border border-cyan-500/40 shadow-cyan-950/40 transition-all duration-300 ${
         showControls
-          ? "opacity-100 translate-x-0 pointer-events-auto"
-          : "opacity-0 translate-x-12 pointer-events-none"
-      } md:w-[415px] w-[calc(100vw-24px)] max-w-[440px]`}
+          ? "opacity-100 translate-y-0 md:translate-x-0 pointer-events-auto"
+          : "opacity-0 translate-y-8 md:translate-y-0 md:translate-x-12 pointer-events-none"
+      } bottom-2 left-2 right-2 md:bottom-auto md:left-auto md:right-3 md:top-16 max-h-[58vh] md:max-h-[calc(100vh-80px)] w-auto md:w-[460px] md:max-w-[480px]`}
     >
       {/* Pinned Sticky Header pre Katalógovú halu */}
       <div className="sticky top-0 z-30 px-3.5 py-2.5 border-b border-cyan-500/30 bg-[#10141d] shadow-md flex items-center justify-between">

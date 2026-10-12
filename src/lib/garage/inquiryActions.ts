@@ -57,7 +57,9 @@ export const sendInquiry = createServerFn({ method: "POST" })
           <p><strong>Model:</strong> ${modelName}</p>
           <p><strong>Rozmery:</strong> ${params.width} x ${params.length} x ${params.clearHeight} m</p>
           <p><strong>Opláštenie:</strong> ${params.panelType === "sandwich" ? "Sendvičové panely" : "Trapézový plech"} (Steny: ${resolveColorName(params.claddingColor)}, Strecha: ${resolveColorName(params.roofColor)})</p>
-          <p><strong>Garážová brána:</strong> 1x (${params.doorWidth}x${params.doorHeight}m, ${resolveColorName(params.sectionalDoorColor)})</p>
+          <p><strong>Garážová brána:</strong> ${params.gateCount === 2 ? "2x" : "1x"} (${params.doorWidth}x${params.doorHeight}m, ${resolveColorName(params.sectionalDoorColor)})</p>
+          <p><strong>Lemovanie & odkvapy:</strong> ${resolveColorName(params.trimmingColor)}</p>
+          ${params.hasExtension ? `<p><strong>Bočný prístrešok:</strong> ${params.extensionType === "garage" ? "2. garáž" : params.extensionType === "storage" ? "Sklad" : "Carport"} (${params.extensionWidth ?? 3.5}m, ${params.extensionSide === "left" ? "vľavo" : "vpravo"})</p>` : ""}
           <p><strong>Osobné dvere:</strong> ${params.hasPersonalDoor ? `Áno (${resolveColorName(params.doorColor)})` : "Nie"}</p>
           <p><strong>Okná:</strong> ${params.hasWindows ? `${params.windowCount}x (${params.windowWidth}x${params.windowHeight}m)` : "Žiadne"}</p>
           <p><strong>Odhadovaná cena:</strong> <span style="font-size: 18px; font-weight: bold; color: ${primaryColor};">${totalPrice || "Bude upresnená"}</span></p>

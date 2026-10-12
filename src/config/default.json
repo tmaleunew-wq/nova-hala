@@ -23,5 +23,15 @@
     "bayCount": 2,
     "doorWidth": 2.5,
     "doorHeight": 2.2
-  }
+  },
+  "palette": [
+    { "name": "RAL 7016 Antracit", "hex": "#2b2f36" },
+    { "name": "RAL 9010 Biela", "hex": "#f4f5f7" },
+    { "name": "RAL 9006 Strieborná", "hex": "#9aa1ab" },
+    { "name": "RAL 8017 Hnedá", "hex": "#4a3728" },
+    { "name": "RAL 3009 Tehlová", "hex": "#6e2626" },
+    { "name": "RAL 6005 Zelená", "hex": "#284a37" },
+    { "name": "RAL 9005 Čierna", "hex": "#18181b" }
+  ]
 }
+
