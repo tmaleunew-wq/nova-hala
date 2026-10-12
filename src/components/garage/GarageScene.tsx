@@ -147,9 +147,9 @@ export function CameraRig({ preset, params }: { preset: ViewPreset; params: Gara
       isCustom ? 0.36 : 0.70,
       isCustom ? -1.18 : -1.0
     ).normalize();
-    // Shifting camera target to the right (+X) shifts the garage to the left on screen
+    // Shifting camera target: decreasing target.x shifts the garage to the left on screen
     const target = new THREE.Vector3(
-      isCustom && !isMobileViewport && preset === "iso" ? 1.30 : 0,
+      isCustom && !isMobileViewport && preset === "iso" ? 0.15 : 0,
       isCustom ? H * 0.42 : H / 2,
       isCustom ? -0.4 : 0
     );
