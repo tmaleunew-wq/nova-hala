@@ -809,8 +809,9 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     <div className="relative h-screen w-screen bg-[oklch(0.16_0.01_240)] select-none overflow-hidden">
       <Canvas
         shadows
-        camera={{ position: [10, 8, -10], fov: 35, near: 0.1, far: 500 }}
-        gl={{ antialias: true, preserveDrawingBuffer: true }}
+        dpr={[1, 2]}
+        camera={{ position: [10, 8, -10], fov: 35, near: 0.4, far: 350 }}
+        gl={{ antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance" }}
       >
         <color attach="background" args={["#f5f5f5"]} />
         <fog attach="fog" args={["#f5f5f5", 80, 450]} />

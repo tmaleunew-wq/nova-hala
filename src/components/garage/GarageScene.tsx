@@ -55,11 +55,12 @@ export function Scene({
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-camera-left={-15}
-        shadow-camera-right={15}
-        shadow-camera-top={15}
-        shadow-camera-bottom={-15}
-        shadow-bias={-0.0001}
+        shadow-camera-left={-22}
+        shadow-camera-right={22}
+        shadow-camera-top={22}
+        shadow-camera-bottom={-22}
+        shadow-bias={-0.00002}
+        shadow-normalBias={0.04}
       />
       <directionalLight position={[-6, 8, 6]} intensity={0.4} />
       <hemisphereLight args={["#ffffff", "#888e99", 0.6]} />

@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { Leva } from "leva";
 import type { GarageParams } from "@/lib/garage/types";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 export interface StandardHallMenuProps {
   showControls: boolean;
@@ -41,57 +42,86 @@ export function StandardHallMenu({
   setQuoteRequestSignal,
   onToggleCladding,
 }: StandardHallMenuProps) {
+  const [isMobileMinimized, setIsMobileMinimized] = useState<boolean>(false);
+
   return (
     <div
-      className={`quote-export-panel absolute z-30 overflow-y-auto rounded-2xl bg-[#0e1116]/95 shadow-2xl border border-cyan-500/40 shadow-cyan-950/40 transition-all duration-300 ${
+      className={`quote-export-panel absolute z-30 flex flex-col rounded-2xl bg-[#0e1116]/95 shadow-2xl border border-cyan-500/40 shadow-cyan-950/40 transition-all duration-300 ${
         showControls
           ? "opacity-100 translate-y-0 md:translate-x-0 pointer-events-auto"
           : "opacity-0 translate-y-8 md:translate-y-0 md:translate-x-12 pointer-events-none"
-      } bottom-2 left-2 right-2 md:bottom-auto md:left-auto md:right-3 md:top-16 max-h-[58vh] md:max-h-[calc(100vh-80px)] w-auto md:w-[460px] md:max-w-[480px]`}
+      } bottom-2 left-2 right-2 md:bottom-auto md:left-auto md:right-3 md:top-16 ${
+        isMobileMinimized ? "max-h-auto" : "max-h-[44vh] md:max-h-[calc(100vh-80px)]"
+      } w-auto md:w-[460px] md:max-w-[480px]`}
     >
       {/* Pinned Sticky Header pre Katalógovú halu */}
-      <div className="sticky top-0 z-30 px-3.5 py-2.5 border-b border-cyan-500/30 bg-[#10141d] shadow-md flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
-          <div>
-            <div className="text-xs font-mono font-bold text-white tracking-wider uppercase flex items-center gap-1.5">
-              <span>Katalógová hala</span>
-              <span className="text-[10px] text-cyan-400 font-normal">[Menu]</span>
-            </div>
-            <div className="text-[10px] font-mono text-white/50">
-              Typový projekt oceľovej haly
+      <div className="shrink-0 sticky top-0 z-[1005] px-3 md:px-3.5 py-2 md:py-2.5 border-b border-cyan-500/30 bg-[#10141d] shadow-md flex flex-col">
+        {/* Mobile drag handle */}
+        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-1.5 md:hidden" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+            <div>
+              <div className="text-xs font-mono font-bold text-white tracking-wider uppercase flex items-center gap-1.5">
+                <span>Katalógová hala</span>
+                <span className="text-[10px] text-cyan-400 font-normal">[Menu]</span>
+              </div>
+              <div className="text-[10px] font-mono text-white/50">
+                {typedParams.width} × {typedParams.length} m · {(typedParams.width * typedParams.length).toFixed(0)} m²
+              </div>
             </div>
           </div>
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+              {selectedHall}
+            </span>
+            <button
+              type="button"
+              onClick={() => setQuoteRequestSignal((v) => v + 1)}
+              className="rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-mono text-xs font-bold px-2.5 py-1 transition cursor-pointer active:scale-95 shadow-md shadow-cyan-500/20"
+            >
+              Dopyt
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsMobileMinimized((v) => !v)}
+              title={isMobileMinimized ? "Rozbaliť menu" : "Zbaliť menu"}
+              className="md:hidden p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition cursor-pointer"
+            >
+              {isMobileMinimized ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
-        <span className="font-mono text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
-          {selectedHall}
-        </span>
       </div>
 
-      {/* Rýchly prepínač Opláštenia */}
-      <div className="px-3.5 py-2.5 bg-[#141a24] border-b border-white/10 flex items-center justify-between">
-        <span className="text-xs font-mono font-semibold text-slate-200">
-          Opláštenie haly:
-        </span>
-        <button
-          type="button"
-          onClick={onToggleCladding}
-          className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition border cursor-pointer ${
-            typedParams.showCladding
-              ? "bg-cyan-500/25 border-cyan-400 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]"
-              : "bg-slate-800 border-white/15 text-slate-400 hover:text-white"
-          }`}
-        >
-          {typedParams.showCladding ? "✓ Zapnuté" : "✕ Vypnuté (Iba konštrukcia)"}
-        </button>
-      </div>
+      {!isMobileMinimized && (
+        <div className="overflow-y-auto flex-1 flex flex-col">
+          {/* Rýchly prepínač Opláštenia */}
+          <div className="shrink-0 px-3.5 py-2.5 bg-[#141a24] border-b border-white/10 flex items-center justify-between">
+            <span className="text-xs font-mono font-semibold text-slate-200">
+              Opláštenie haly:
+            </span>
+            <button
+              type="button"
+              onClick={onToggleCladding}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition border cursor-pointer ${
+                typedParams.showCladding
+                  ? "bg-cyan-500/25 border-cyan-400 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]"
+                  : "bg-slate-800 border-white/15 text-slate-400 hover:text-white"
+              }`}
+            >
+              {typedParams.showCladding ? "✓ Zapnuté" : "✕ Vypnuté (Iba konštrukcia)"}
+            </button>
+          </div>
 
-      <Leva
-        fill
-        flat
-        titleBar={false}
-        theme={levaTheme}
-      />
+          <div className="relative shrink-0">
+            <Leva
+              fill
+              flat
+              titleBar={false}
+              theme={levaTheme}
+            />
+          </div>
 
       {/* Súhrn konfigurácie */}
       <div className="border-t border-white/10 bg-[#161b22]">
@@ -199,6 +229,8 @@ export function StandardHallMenu({
           </div>
         )}
       </div>
+        </div>
+      )}
     </div>
   );
 }
