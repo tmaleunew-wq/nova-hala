@@ -141,3 +141,32 @@ export const DEFAULT_PARAMS: GarageParams = {
   extensionType: "garage",
   extensionGateOpen: false,
 };
+
+export const COLOR_MAP: Record<string, string> = {
+  "#ffffff": "RAL 9010 Biela",
+  "#f4f5f7": "RAL 9010 Biela",
+  "#2b2f36": "RAL 7016 Antracit",
+  "#3a3f47": "RAL 7016 Antracit",
+  "#18181b": "RAL 9005 Čierna",
+  "#030303": "RAL 9005 Čierna",
+  "#000000": "RAL 9005 Čierna",
+  "#9aa1ab": "RAL 9006 Strieborná",
+  "#6e7681": "RAL 9006 Sivá oceľ",
+  "#4a3728": "RAL 8017 Hnedá",
+  "#6e2626": "RAL 3009 Tehlová",
+  "#284a37": "RAL 6005 Zelená",
+  "#708090": "RAL 7016 Bridlicová sivá",
+  "#808080": "RAL 7004 Signálna sivá",
+  "wood_oak": "Zlatý dub (drevodekor)",
+  "wood_walnut": "Tmavý orech (drevodekor)",
+};
+
+export function resolveColorName(val?: string): string {
+  if (!val) return "Štandardná";
+  const clean = val.trim().toLowerCase();
+  if (COLOR_MAP[clean]) return COLOR_MAP[clean];
+  if (!clean.startsWith("#") && COLOR_MAP[`#${clean}`]) {
+    return COLOR_MAP[`#${clean}`];
+  }
+  return val;
+}

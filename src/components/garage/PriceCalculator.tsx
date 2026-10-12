@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import type { GarageParams } from "@/lib/garage/types";
+import { type GarageParams, resolveColorName } from "@/lib/garage/types";
 import { ridgeHeight, highEave } from "./Structure";
 import { toast } from "sonner";
 import { getCladdingConfig } from "@/lib/garage/configHelper";
 import emailjs from "@emailjs/browser";
 import { saveInquiryToSupabase } from "@/lib/supabase";
+import { sendInquiry } from "@/lib/garage/inquiryActions";
+import { SuccessModal } from "./SuccessModal";
 
 interface PriceCalculatorProps {
   p: GarageParams;
@@ -16,6 +18,7 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
   const claddingConfig = getCladdingConfig(clientName);
 
   const [showForm, setShowForm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -192,8 +195,8 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
       `Strecha: ${roofPanelLabel} (${p.insulationCore} ${p.roofPanelThicknessMm}mm)`,
       `Orientácia: ${p.claddingOrientation === "horizontal" ? "Horizontálna" : "Vertikálna"}`,
     ].join("\n");
-    const wallColor = `Fasáda: ${p.claddingColor}`;
-    const roofColorVal = `Strecha: ${p.roofColor}`;
+    const wallColor = `Fasáda: ${resolveColorName(p.claddingColor)}`;
+    const roofColorVal = `Strecha: ${resolveColorName(p.roofColor)}`;
     const panelDetails = [
       `Vonk. plech: ${p.outerSheetMm}mm | Vnút. plech: ${p.innerSheetMm}mm`,
       `Povrch: ${p.coatingType} ${p.coatingThicknessUm} µm`,
@@ -203,17 +206,19 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
     ].join("\n");
 
     // ── SECTION 3: Doplnky ──
-    const doorType = `Garážová brána: ${totalGates}x ${p.doorWidth}x${p.doorHeight}m (${gateTypeLabel}, ${p.sectionalDoorColor})`;
+    const doorType = `Garážová brána: ${totalGates}x ${p.doorWidth}x${p.doorHeight}m (${gateTypeLabel}, ${resolveColorName(p.sectionalDoorColor)})`;
     const windowVal = p.hasWindows && p.windowCount > 0
       ? `${p.windowCount}x (${p.windowWidth}x${p.windowHeight}m) – ${sideLabel(p.windowSide)} strana`
       : "Žiadne";
     const addonsLines = [
-      `Osobné dvere: ${p.hasPersonalDoor ? `Áno – ${sideLabel(p.personalDoorSide)} strana (${p.doorColor})` : "Nie"}`,
+      `Osobné dvere: ${p.hasPersonalDoor ? `Áno – ${sideLabel(p.personalDoorSide)} strana (${resolveColorName(p.doorColor)})` : "Nie"}`,
       `Svetlíky: ${p.hasSkylights ? "Áno" : "Nie"}`,
       `Základová doska: ${p.showFoundation ? `Áno (${W}x${L}m)` : "Nie"}`,
-      `Lemovanie / rohy: ${p.trimmingColor} ${p.flashingMatchesPanels ? "(zhodné s panelmi)" : ""}`,
-      `Žľaby a zvody: ${p.trimmingColor}`,
+      `Lemovanie / rohy: ${resolveColorName(p.trimmingColor)} ${p.flashingMatchesPanels ? "(zhodné s panelmi)" : ""}`,
+      `Žľaby a zvody: ${resolveColorName(p.trimmingColor)}`,
     ].join("\n");
+
+    const quoteUrl = `${window.location.origin}/ponuka?id=${orderId}&${searchParams.toString()}`;
 
     // Admin params WITH calculated euro prices
     const adminTemplateParams = {
@@ -240,7 +245,7 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
       reply_to: email,
     };
 
-    // Client params WITHOUT prices (or with "Bude upresnená")
+    // Client params WITHOUT prices matching Pergola Pro
     const clientTemplateParams = {
       to_email: email,
       customer_email: email,
@@ -261,9 +266,20 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
       addon_price: "—",
       total_price: "Bude upresnená",
       notes: message || "Bez poznámky",
-      summary_link: evaluationUrl,
+      summary_link: quoteUrl,
       reply_to: "tmal.eu.new@gmail.com",
     };
+
+    // Capture 3D canvas snapshot
+    const canvas = document.querySelector("canvas");
+    let imageDataUrl = "";
+    if (canvas) {
+      try {
+        imageDataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      } catch (err) {
+        console.warn("Canvas snapshot capture:", err);
+      }
+    }
 
     // Save order locally for Admin Dashboard & Supabase
     const newOrder = {
@@ -272,10 +288,14 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
       name,
       email,
       phone,
+      city,
       message,
       params: p,
       totalWithVat,
       evaluationUrl,
+      quoteUrl,
+      imageDataUrl,
+      scene: { imageDataUrl },
     };
 
     // Async save to Supabase
@@ -291,35 +311,45 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
     });
 
     try {
+      if (imageDataUrl) {
+        sessionStorage.setItem(`ssf_img_${orderId}`, imageDataUrl);
+        localStorage.setItem(`ssf_latest_img`, imageDataUrl);
+      }
       const existing = JSON.parse(localStorage.getItem("ssf_orders") || "[]");
       localStorage.setItem("ssf_orders", JSON.stringify([newOrder, ...existing]));
+      localStorage.setItem("ssf_quotes", JSON.stringify([newOrder, ...existing]));
     } catch (e) {
       console.error("Chyba pri ukladaní objednávky:", e);
     }
 
     try {
-      // 1. Send to Admin (with calculated prices)
-      const adminPromise = emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, adminTemplateParams, EMAILJS_PUBLIC_KEY);
+      // 1. Send via Resend with Pergola Pro HTML structure
+      const resendPromise = sendInquiry({
+        data: {
+          name,
+          email,
+          phone,
+          message,
+          params: p,
+          origin: window.location.origin,
+          totalPrice: `${fmt(totalWithVat)} s DPH`,
+          quoteUrl,
+        },
+      }).catch((e) => console.warn("[Resend] Notice:", e));
 
-      // 2. Send to Client
-      const clientPromise = emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, clientTemplateParams, EMAILJS_PUBLIC_KEY);
+      // 2. Send via EmailJS as parallel backup
+      const adminPromise = emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, adminTemplateParams, EMAILJS_PUBLIC_KEY).catch(() => null);
+      const clientPromise = emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, clientTemplateParams, EMAILJS_PUBLIC_KEY).catch(() => null);
 
-      const results = await Promise.allSettled([adminPromise, clientPromise]);
-      const adminOk = results[0].status === "fulfilled";
-      const clientOk = results[1].status === "fulfilled";
+      await Promise.allSettled([resendPromise, adminPromise, clientPromise]);
 
-      if (adminOk || clientOk) {
-        toast.success("Dopyt bol úspešne odoslaný! Budeme vás kontaktovať.");
-        setShowForm(false);
-        setName("");
-        setEmail("");
-        setPhone("");
-        setMessage("");
-      } else {
-        const err0 = results[0].status === "rejected" ? (results[0].reason?.text || results[0].reason?.message || String(results[0].reason)) : "";
-        const err1 = results[1].status === "rejected" ? (results[1].reason?.text || results[1].reason?.message || String(results[1].reason)) : "";
-        toast.error(`Chyba pri odosielaní: ${err0 || err1}`);
-      }
+      toast.success("Dopyt bol odoslaný. Odkaz na vašu ponuku nájdete v e-maile.");
+      setShowForm(false);
+      setShowSuccess(true);
+      setName("");
+      setEmail("");
+      setPhone("");
+      setMessage("");
     } catch (error: any) {
       const errMsg = error?.text || error?.message || String(error);
       toast.error(`Chyba: ${errMsg}`);
@@ -524,6 +554,19 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
             </div>
           </div>
         </div>
+      )}
+
+      {showSuccess && (
+        <SuccessModal
+          dealer={{
+            name: "VBAU s.r.o.",
+            email: "tmal.eu.new@gmail.com",
+            phone: "+421 900 123 456",
+            address: "Bratislava, Slovensko",
+          }}
+          onReset={() => window.location.reload()}
+          onClose={() => setShowSuccess(false)}
+        />
       )}
     </>
   );

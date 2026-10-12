@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import type { GarageParams } from "./types";
+import { type GarageParams, resolveColorName } from "./types";
 
 interface InquiryData {
   name: string;
@@ -8,18 +8,20 @@ interface InquiryData {
   message: string;
   params: GarageParams;
   origin: string;
+  totalPrice?: string;
+  quoteUrl?: string;
 }
 
 export const sendInquiry = createServerFn({ method: "POST" })
   .inputValidator((data: InquiryData) => data)
   .handler(async ({ data }) => {
-    const { name, email, phone, message, params, origin } = data;
+    const { name, email, phone, message, params, origin, totalPrice } = data;
 
     const resendApiKey = process.env.RESEND_API_KEY;
     const adminEmail = process.env.ADMIN_EMAIL || "info@steelshedforge.com";
     const senderEmail = process.env.SENDER_EMAIL || "onboarding@resend.dev";
 
-    // Build the /vyhodnotenie link containing all query parameters
+    // Build the query parameters for both the admin evaluation and customer online offer
     const searchParams = new URLSearchParams();
     const keys = Object.keys(params) as (keyof GarageParams)[];
     for (const key of keys) {
@@ -29,69 +31,178 @@ export const sendInquiry = createServerFn({ method: "POST" })
       }
       searchParams.set(key, val);
     }
+    if (name) searchParams.set("client_name", name);
+    if (email) searchParams.set("client_email", email);
+    if (phone) searchParams.set("client_phone", phone);
+    if (message) searchParams.set("client_note", message);
+
     const evaluationUrl = `${origin}/vyhodnotenie?${searchParams.toString()}`;
+    const quoteUrl = data.quoteUrl || `${origin}/ponuka?${searchParams.toString()}`;
+    const modelName = params.roofType === "gable" ? "Garáž so sedlovou strechou" : "Garáž s pultovou strechou";
+    const primaryColor = "#10b981";
+    const companyName = "VBAU s.r.o.";
 
-    // Construct email content for admin
+    // Construct email content for admin matching Pergola Pro
     const adminHtml = `
-      <div style="font-family: monospace; padding: 20px; background-color: #0b0f14; color: #f1f5f9; border-radius: 8px;">
-        <h2 style="color: #34d399; border-bottom: 1px solid #334155; padding-bottom: 10px;">NOVÝ DOPYT - GARÁŽ</h2>
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+        <h1 style="color: #0f172a; font-size: 24px;">Nový dopyt prijatý</h1>
+        <p>Dostali ste novú konfiguráciu od zákazníka.</p>
         
-        <p><strong>Meno klienta:</strong> ${name}</p>
-        <p><strong>E-mail:</strong> <a href="mailto:${email}" style="color: #34d399;">${email}</a></p>
-        <p><strong>Telefón:</strong> ${phone}</p>
-        <p><strong>Poznámka:</strong> ${message || "Bez poznámky"}</p>
-        
-        <h3 style="color: #34d399; margin-top: 20px;">Špecifikácia projektu:</h3>
-        <ul style="list-style-type: none; padding-left: 0;">
-          <li>Rozmer: ${params.width} x ${params.length} x ${params.clearHeight} m</li>
-          <li>Strecha: ${params.roofType === "gable" ? "Sedlová" : "Pultová"} (${params.roofPitchDeg}°)</li>
-          <li>Opláštenie: ${params.panelType} (Steny: ${params.claddingColor}, Strecha: ${params.roofColor})</li>
-          <li>Otvory: Brána ${params.doorWidth}x${params.doorHeight}m, Dvere: ${params.hasPersonalDoor ? "Áno" : "Nie"}, Okná: ${params.hasWindows ? params.windowCount : 0}</li>
-          <li>Základová doska: ${params.showFoundation ? "Áno" : "Nie"}</li>
-        </ul>
+        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #e2e8f0;">
+          <p><strong>Zákazník:</strong> ${name}</p>
+          <p><strong>E-mail:</strong> <a href="mailto:${email}" style="color: ${primaryColor}; text-decoration: none;">${email}</a></p>
+          <p><strong>Telefón:</strong> ${phone}</p>
+          <p><strong>Poznámka:</strong> ${message || "Bez poznámky"}</p>
+          <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+          <p><strong>Model:</strong> ${modelName}</p>
+          <p><strong>Rozmery:</strong> ${params.width} x ${params.length} x ${params.clearHeight} m</p>
+          <p><strong>Opláštenie:</strong> ${params.panelType === "sandwich" ? "Sendvičové panely" : "Trapézový plech"} (Steny: ${resolveColorName(params.claddingColor)}, Strecha: ${resolveColorName(params.roofColor)})</p>
+          <p><strong>Garážová brána:</strong> 1x (${params.doorWidth}x${params.doorHeight}m, ${resolveColorName(params.sectionalDoorColor)})</p>
+          <p><strong>Osobné dvere:</strong> ${params.hasPersonalDoor ? `Áno (${resolveColorName(params.doorColor)})` : "Nie"}</p>
+          <p><strong>Okná:</strong> ${params.hasWindows ? `${params.windowCount}x (${params.windowWidth}x${params.windowHeight}m)` : "Žiadne"}</p>
+          <p><strong>Odhadovaná cena:</strong> <span style="font-size: 18px; font-weight: bold; color: ${primaryColor};">${totalPrice || "Bude upresnená"}</span></p>
+        </div>
 
-        <div style="margin-top: 30px; text-align: center;">
-          <a href="${evaluationUrl}" style="background-color: #34d399; color: #0f172a; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;">
-            OTVORIŤ VYHODNOTENIE A UPRAVIŤ CENY
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${evaluationUrl}" style="background: ${primaryColor}; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+            Zobraziť interaktívnu ponuku
           </a>
+        </div>
+        
+        <p style="font-size: 12px; color: #64748b;">Tento dopyt bol vygenerovaný konfigurátorom ${companyName}</p>
+      </div>
+    `;
+
+    // Construct email content for client matching Pergola Pro
+    const clientHtml = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+        <h1 style="color: #0f172a; font-size: 24px;">Ďakujeme za váš dopyt</h1>
+        <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: ${primaryColor}; font-weight: bold;">${companyName}</p>
+        
+        <p>Dobrý deň ${name || "zákazník"}, váš dopyt sme úspešne prijali do nášho systému.</p>
+        
+        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #e2e8f0;">
+          <p><strong>Váš model:</strong> ${modelName}</p>
+          <p><strong>Rozmery:</strong> ${params.width} x ${params.length} x ${params.clearHeight} m</p>
+          <p><strong>Odhadovaná cena:</strong> <span style="font-size: 18px; font-weight: bold; color: ${primaryColor};">${totalPrice || "Bude upresnená"}</span></p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${quoteUrl}" style="background: ${primaryColor}; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+            Zobraziť moju ponuku online
+          </a>
+          <p style="margin-top: 15px; font-size: 13px; color: #64748b;">Cez tento odkaz si môžete ponuku kedykoľvek otvoriť a stiahnuť ako PDF.</p>
+        </div>
+
+        <p>Náš obchodný zástupca vás bude čoskoro kontaktovať pre dohodnutie ďalšieho postupu.</p>
+        
+        <div style="font-size: 13px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 20px;">
+          <p style="margin: 0 0 5px 0; font-weight: bold; color: #1e293b;">${companyName}</p>
+          <p style="margin: 0 0 3px 0;">✆ +421 900 000 000</p>
+          <p style="margin: 0;">✉ <a href="mailto:${adminEmail}" style="color: ${primaryColor}; text-decoration: none;">${adminEmail}</a></p>
         </div>
       </div>
     `;
 
-    // Construct email content for client
-    const clientHtml = `
-      <div style="font-family: sans-serif; padding: 20px; color: #334155;">
-        <h2 style="color: #10b981;">Ďakujeme za váš dopyt!</h2>
-        <p>Vážený zákazník ${name},</p>
-        <p>úspešne sme zaregistrovali váš dopyt na oceľovú garáž s nasledujúcimi parametrami:</p>
-        
-        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-          <tr style="background-color: #f8fafc;">
-            <td style="padding: 8px; border: 1px solid #e2e8f0; font-weight: bold;">Šírka x Dĺžka</td>
-            <td style="padding: 8px; border: 1px solid #e2e8f0;">${params.width} x ${params.length} m</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #e2e8f0; font-weight: bold;">Svetlá výška</td>
-            <td style="padding: 8px; border: 1px solid #e2e8f0;">${params.clearHeight} m</td>
-          </tr>
-          <tr style="background-color: #f8fafc;">
-            <td style="padding: 8px; border: 1px solid #e2e8f0; font-weight: bold;">Typ strechy</td>
-            <td style="padding: 8px; border: 1px solid #e2e8f0;">${params.roofType === "gable" ? "Sedlová" : "Pultová"}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #e2e8f0; font-weight: bold;">Opláštenie</td>
-            <td style="padding: 8px; border: 1px solid #e2e8f0;">${params.panelType === "sandwich" ? "Sendvičové panely" : "Trapézový plech"}</td>
-          </tr>
-          <tr style="background-color: #f8fafc;">
-            <td style="padding: 8px; border: 1px solid #e2e8f0; font-weight: bold;">Garážová brána</td>
-            <td style="padding: 8px; border: 1px solid #e2e8f0;">1x (${params.doorWidth} x ${params.doorHeight} m)</td>
-          </tr>
-        </table>
+    let gmailSent = false;
+    const gmailUser = process.env.GMAIL_SMTP_USER || "pergolaconfigurator@gmail.com";
+    const gmailPass = (process.env.GMAIL_APP_PASSWORD || "mwjp iniv piep tcdf").replace(/\s+/g, "");
 
-        <p>Náš obchodný zástupca pripraví presnú cenovú ponuku a bude vás kontaktovať e-mailom alebo telefonicky.</p>
-        <p>S pozdravom,<br/><strong>Tím Steel Shed Forge</strong></p>
-      </div>
-    `;
+    if (gmailUser && gmailPass) {
+      try {
+        const tls = await import("node:tls");
+        const readline = await import("node:readline");
+
+        function buildMime(msg: { to: string; subject: string; html: string; fromName?: string }) {
+          const boundary = "boundary_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+          const fromHeader = msg.fromName
+            ? ` =?UTF-8?B?${Buffer.from(msg.fromName, "utf8").toString("base64")}?= <${gmailUser}>`
+            : gmailUser;
+          const subjectHeader = ` =?UTF-8?B?${Buffer.from(msg.subject, "utf8").toString("base64")}?=`;
+
+          return [
+            `From: ${fromHeader}`,
+            `To: ${msg.to}`,
+            `Reply-To: ${adminEmail}`,
+            `Subject: ${subjectHeader}`,
+            "MIME-Version: 1.0",
+            `Content-Type: multipart/mixed; boundary="${boundary}"`,
+            "",
+            `--${boundary}`,
+            'Content-Type: text/html; charset="UTF-8"',
+            "Content-Transfer-Encoding: 8bit",
+            "",
+            msg.html,
+            "",
+            `--${boundary}--`,
+            "",
+          ].join("\r\n");
+        }
+
+        async function sendOneMail(toAddr: string, subject: string, html: string) {
+          const socket = tls.connect({ host: "smtp.gmail.com", port: 465, servername: "smtp.gmail.com", rejectUnauthorized: true });
+          socket.setTimeout(10000);
+
+          await new Promise((res, rej) => {
+            const tm = setTimeout(() => { socket.destroy(); rej(new Error("SMTP timeout")); }, 12000);
+            socket.once("secureConnect", () => { clearTimeout(tm); res(null); });
+            socket.once("error", (e) => { clearTimeout(tm); rej(e); });
+          });
+
+          socket.setEncoding("utf8");
+          const rl = readline.createInterface({ input: socket, crlfDelay: Infinity });
+          const it = rl[Symbol.asyncIterator]();
+
+          async function readResp() {
+            while (true) {
+              const nx = await it.next();
+              if (nx.done) throw new Error("SMTP closed unexpectedly");
+              const line = String(nx.value || "");
+              const m = line.match(/^(\d{3})([ -])(.*)$/);
+              if (m && m[2] === " ") return { code: Number(m[1]), message: m[3] };
+            }
+          }
+
+          async function sendCmd(cmd: string, okCodes: number[]) {
+            socket.write(cmd + "\r\n");
+            const r = await readResp();
+            if (!okCodes.includes(r.code)) throw new Error(`SMTP fail (${cmd.split(" ")[0]}): ${r.code} ${r.message}`);
+            return r;
+          }
+
+          try {
+            await readResp();
+            await sendCmd("EHLO smtp.gmail.com", [250]);
+            await sendCmd("AUTH LOGIN", [334]);
+            await sendCmd(Buffer.from(gmailUser).toString("base64"), [334]);
+            await sendCmd(Buffer.from(gmailPass).toString("base64"), [235]);
+            await sendCmd(`MAIL FROM:<${gmailUser}>`, [250]);
+            await sendCmd(`RCPT TO:<${toAddr.trim()}>`, [250, 251]);
+            await sendCmd("DATA", [354]);
+            socket.write(buildMime({ to: toAddr, subject, html, fromName: companyName }) + "\r\n.\r\n");
+            await readResp();
+            await sendCmd("QUIT", [221]);
+          } finally {
+            rl.close();
+            socket.end();
+          }
+        }
+
+        console.log(`[SMTP] Sending inquiry emails via Gmail (${gmailUser})...`);
+        const pAdmin = sendOneMail(adminEmail, `Nový dopyt - ${companyName}`, adminHtml);
+        const pClient = email ? sendOneMail(email, `Potvrdenie dopytu - ${companyName}`, clientHtml) : Promise.resolve();
+
+        await Promise.all([pAdmin, pClient]);
+        gmailSent = true;
+        console.log("[SMTP] Both emails sent successfully via Gmail!");
+      } catch (smtpErr) {
+        console.warn("[SMTP] Gmail SMTP error, falling back to Resend:", smtpErr);
+      }
+    }
+
+    if (gmailSent) {
+      return { success: true, method: "gmail_smtp" };
+    }
 
     if (!resendApiKey) {
       console.warn("Chýba RESEND_API_KEY. E-maily neboli odoslané reálne, iba vypísané do konzoly.");
@@ -143,10 +254,6 @@ export const sendInquiry = createServerFn({ method: "POST" })
 
       const adminOk = adminResponse.ok;
       const clientOk = clientResponse.ok;
-
-      if (!adminOk || !clientOk) {
-        console.error("[Resend] Failures:", { adminOk, clientOk, adminBody, clientBody });
-      }
 
       return { success: adminOk && clientOk, simulated: false, adminResult: adminBody, clientResult: clientBody };
     } catch (error) {

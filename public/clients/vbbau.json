@@ -1,0 +1,51 @@
+{
+  "id": "vbbau",
+  "is_demo": false,
+  "lang": "sk",
+  "subscription": {
+    "isPremium": true,
+    "leadsLimit": 9999,
+    "leadsCurrent": 0
+  },
+  "crm": {
+    "targetEmail": "tmal.eu.new@gmail.com",
+    "sendCustomerCopy": true
+  },
+  "branding": {
+    "companyName": "VBAU s.r.o.",
+    "primaryColor": "#00c8ff",
+    "themeMode": "light",
+    "logo": "/logo.png",
+    "contactEmail": "tmal.eu.new@gmail.com",
+    "phone": "+421 900 123 456",
+    "address": "Bratislava, Slovensko",
+    "documentTitle": "Oficiálna cenová ponuka",
+    "footerNote": "Táto cenová ponuka je platná 14 dní od vystavenia."
+  },
+  "dealer": {
+    "name": "VBAU s.r.o.",
+    "email": "tmal.eu.new@gmail.com",
+    "phone": "+421 900 123 456",
+    "address": "Bratislava, Slovensko"
+  },
+  "financials": {
+    "currency": "€",
+    "currencyPosition": "right",
+    "taxRate": 20,
+    "taxIncluded": true
+  },
+  "uiConfig": {
+    "priceDisplayMode": "numeric"
+  },
+  "pricing": {
+    "basePrice": 3500,
+    "lengthRate": 150,
+    "widthRate": 180,
+    "heightRate": 0,
+    "display": {
+      "mode": "numeric",
+      "summary": { "enabled": true, "showLinePrices": true, "showTotals": true },
+      "pdf": { "enabled": true, "showLinePrices": true, "showTotals": true }
+    }
+  }
+}

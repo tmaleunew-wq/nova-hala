@@ -13,6 +13,7 @@ import { Route as VyhodnotenieRouteImport } from './routes/vyhodnotenie'
 import { Route as Variant4RouteImport } from './routes/variant4'
 import { Route as Variant3RouteImport } from './routes/variant3'
 import { Route as Variant2RouteImport } from './routes/variant2'
+import { Route as PonukaRouteImport } from './routes/ponuka'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -36,6 +37,11 @@ const Variant2Route = Variant2RouteImport.update({
   path: '/variant2',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PonukaRoute = PonukaRouteImport.update({
+  id: '/ponuka',
+  path: '/ponuka',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -50,6 +56,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/ponuka': typeof PonukaRoute
   '/variant2': typeof Variant2Route
   '/variant3': typeof Variant3Route
   '/variant4': typeof Variant4Route
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/ponuka': typeof PonukaRoute
   '/variant2': typeof Variant2Route
   '/variant3': typeof Variant3Route
   '/variant4': typeof Variant4Route
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/ponuka': typeof PonukaRoute
   '/variant2': typeof Variant2Route
   '/variant3': typeof Variant3Route
   '/variant4': typeof Variant4Route
@@ -77,16 +86,25 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/ponuka'
     | '/variant2'
     | '/variant3'
     | '/variant4'
     | '/vyhodnotenie'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/variant2' | '/variant3' | '/variant4' | '/vyhodnotenie'
+  to:
+    | '/'
+    | '/admin'
+    | '/ponuka'
+    | '/variant2'
+    | '/variant3'
+    | '/variant4'
+    | '/vyhodnotenie'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/ponuka'
     | '/variant2'
     | '/variant3'
     | '/variant4'
@@ -96,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  PonukaRoute: typeof PonukaRoute
   Variant2Route: typeof Variant2Route
   Variant3Route: typeof Variant3Route
   Variant4Route: typeof Variant4Route
@@ -132,6 +151,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Variant2RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ponuka': {
+      id: '/ponuka'
+      path: '/ponuka'
+      fullPath: '/ponuka'
+      preLoaderRoute: typeof PonukaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -152,6 +178,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  PonukaRoute: PonukaRoute,
   Variant2Route: Variant2Route,
   Variant3Route: Variant3Route,
   Variant4Route: Variant4Route,
