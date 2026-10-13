@@ -35,7 +35,7 @@ export function ProductPicker({
           <div className="mb-3 sm:mb-4 inline-flex items-center justify-center rounded-2xl bg-white/95 px-4 sm:px-5 py-2 sm:py-2.5 shadow-[0_0_30px_rgba(255,255,255,0.2)]">
             <img
               src="/logo.png"
-              alt="VB BAU"
+              alt="VBAU"
               className="h-8 sm:h-10 md:h-12 w-auto object-contain"
             />
           </div>

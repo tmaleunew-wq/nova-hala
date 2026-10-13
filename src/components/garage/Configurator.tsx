@@ -11,6 +11,7 @@ import { PriceCalculator } from "./PriceCalculator";
 import { PremiumSpecPanel } from "./PremiumSpecPanel";
 import { ProductPicker } from "./ProductPicker";
 import { ArModal } from "./ArModal";
+import { VariantComparisonModal } from "./VariantComparisonModal";
 import { HallCatalogModal } from "./HallCatalogModal";
 import { CatalogInfoCard } from "./CatalogInfoCard";
 import { TopNavigation } from "./TopNavigation";
@@ -87,6 +88,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   const [isSummaryOpen, setIsSummaryOpen] = useState(true);
   const [showControls, setShowControls] = useState(() => (typeof window !== "undefined" ? window.innerWidth >= 768 : true));
   const [showHallSpecs, setShowHallSpecs] = useState(false);
+  const [showComparisonModal, setShowComparisonModal] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -783,6 +785,13 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     const currentParams = new URLSearchParams(window.location.search);
     const client = currentParams.get("client");
     const variantParam = currentParams.get("variant");
+    const cadParam = currentParams.get("cad");
+    const adminParam = currentParams.get("admin");
+    if (cadParam === "1" || adminParam === "1") {
+      sessionStorage.setItem("ssf_cad_export", "true");
+    } else {
+      sessionStorage.removeItem("ssf_cad_export");
+    }
 
     const searchParams = new URLSearchParams();
     if (selectedHall) {
@@ -804,6 +813,12 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     }
     if (variantParam) {
       searchParams.set("variant", variantParam);
+    }
+    if (cadParam) {
+      searchParams.set("cad", cadParam);
+    }
+    if (adminParam) {
+      searchParams.set("admin", adminParam);
     }
     const newRelativePathQuery = window.location.pathname + "?" + searchParams.toString();
     window.history.replaceState(null, "", newRelativePathQuery);
@@ -943,6 +958,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           setQuoteRequestSignal={setQuoteRequestSignal}
           activeTab={customActiveTab}
           onTabChange={setCustomActiveTab}
+          onOpenComparison={() => setShowComparisonModal(true)}
         />
       ) : (
         <StandardHallMenu
@@ -958,6 +974,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           onToggleCladding={() => (setParams as any)({ showCladding: !typedParams.showCladding })}
           activeTab={customActiveTab}
           onTabChange={setCustomActiveTab}
+          onOpenComparison={() => setShowComparisonModal(true)}
           hallsConfig={hallsConfig}
           selectedPoleHeight={selectedPoleHeight}
           setSelectedPoleHeight={setSelectedPoleHeight}
@@ -981,6 +998,14 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         onClose={() => setShowArModal(false)}
         exportRef={exportRef}
         hallName={selectedHall}
+      />
+      {/* Variant Comparison Modal */}
+      <VariantComparisonModal
+        isOpen={showComparisonModal}
+        onClose={() => setShowComparisonModal(false)}
+        currentParams={typedParams}
+        currentHall={selectedHall}
+        onApplyVariant={(params) => (setParams as any)(params)}
       />
     </div>
   );

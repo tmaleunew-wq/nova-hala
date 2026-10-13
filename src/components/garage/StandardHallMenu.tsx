@@ -15,7 +15,12 @@ import {
   ChevronUp,
   Plus,
   Minus,
+  Download,
+  ArrowRightLeft,
 } from "lucide-react";
+import { downloadGarageDxf } from "@/lib/garage/dxfGenerator";
+import { downloadGarageFloorPlanPdf } from "@/lib/garage/floorPlanPdfGenerator";
+import { GarageBomTable } from "./GarageBomTable";
 
 export interface StandardHallMenuProps {
   showControls: boolean;
@@ -35,9 +40,19 @@ export interface StandardHallMenuProps {
   setSelectedPoleHeight?: (h: string) => void;
   selectedLength?: number;
   setSelectedLength?: (l: number) => void;
+  onOpenComparison?: () => void;
 }
 
 type TabType = "dimensions" | "roof" | "doors" | "colors" | "view" | "summary";
+
+const WIZARD_STEPS: { id: TabType; title: string }[] = [
+  { id: "dimensions", title: "Rozmery" },
+  { id: "roof", title: "Strecha" },
+  { id: "doors", title: "Brány & Otvory" },
+  { id: "colors", title: "Farby" },
+  { id: "view", title: "CAD Zobrazenie" },
+  { id: "summary", title: "Súhrn" },
+];
 
 export function HallRalColorPicker({
   label,
@@ -102,6 +117,7 @@ export function StandardHallMenu({
   setSelectedPoleHeight = () => {},
   selectedLength = 20,
   setSelectedLength = () => {},
+  onOpenComparison,
 }: StandardHallMenuProps) {
   const [internalActiveTab, setInternalActiveTab] = useState<TabType>("dimensions");
   const [isMobileMinimized, setIsMobileMinimized] = useState<boolean>(false);
@@ -111,6 +127,11 @@ export function StandardHallMenu({
     setInternalActiveTab(tab);
     onTabChange?.(tab);
   };
+
+  const canExportCad =
+    typeof window !== "undefined" &&
+    (new URLSearchParams(window.location.search).get("cad") === "1" ||
+      new URLSearchParams(window.location.search).get("admin") === "1");
 
   const allHalls = passedHallsConfig || getHallsConfig();
   const curHall: HallConfig | undefined = allHalls[selectedHall];
@@ -164,6 +185,17 @@ export function StandardHallMenu({
               <span className="hidden sm:inline font-mono text-[10px] bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
                 {selectedHall}
               </span>
+              {onOpenComparison && (
+                <button
+                  type="button"
+                  onClick={onOpenComparison}
+                  className="hidden sm:flex items-center gap-1 rounded-lg bg-white/10 hover:bg-white/15 text-white font-mono text-xs px-2.5 py-1.5 transition cursor-pointer border border-white/10 active:scale-95"
+                  title="Porovnať varianty konfigurácie"
+                >
+                  <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-300" />
+                  <span>Porovnať</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setQuoteRequestSignal((v) => v + 1)}
@@ -185,6 +217,22 @@ export function StandardHallMenu({
 
         {!isMobileMinimized && (
           <>
+            {/* WIZARD STEPPER PROGRESS */}
+            <div className="shrink-0 px-3.5 py-1.5 bg-[#0b0f16] border-b border-white/5 flex items-center justify-between text-[10px] font-mono">
+              <span className="text-white/60">
+                Krok <strong className="text-cyan-300">{WIZARD_STEPS.findIndex((s) => s.id === activeTab) + 1}</strong> z {WIZARD_STEPS.length}:{" "}
+                <span className="text-white font-medium">{WIZARD_STEPS.find((s) => s.id === activeTab)?.title}</span>
+              </span>
+              <div className="w-20 sm:w-28 h-1.5 bg-white/10 rounded-full overflow-hidden ml-2">
+                <div
+                  className="h-full bg-cyan-400 transition-all duration-300 rounded-full shadow-[0_0_8px_rgba(34,211,238,0.7)]"
+                  style={{
+                    width: `${((WIZARD_STEPS.findIndex((s) => s.id === activeTab) + 1) / WIZARD_STEPS.length) * 100}%`,
+                  }}
+                />
+              </div>
+            </div>
+
             {/* 2. SUB-NAVIGATION TABS */}
             <div className="shrink-0 grid grid-cols-6 border-b border-white/10 bg-[#0e131d] text-[11px] md:text-xs font-mono">
               <button
@@ -846,6 +894,41 @@ export function StandardHallMenu({
                       className="w-full accent-cyan-400 cursor-pointer h-2 bg-slate-700 rounded-lg"
                     />
                   </div>
+
+                  {/* DXF AutoCAD 2D export (Iba pre admina / ?cad=1) */}
+                  {canExportCad && (
+                    <div className="p-3 rounded-xl bg-[#121824]/90 border border-white/10 shadow-sm space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-100 font-semibold">CAD / AutoCAD Export:</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono font-bold">
+                          DXF 2D
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-white/60 leading-relaxed">
+                        Technický výkres pôdorysu s kótami, osami a stĺpmi (PDF na okamžité zobrazenie alebo DXF pre CAD softvér).
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 pt-0.5">
+                        <button
+                          type="button"
+                          onClick={() => downloadGarageFloorPlanPdf(typedParams, `${selectedHall || "hala"}_vykres`)}
+                          className="py-2 px-2.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 active:scale-[0.99] text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md shadow-cyan-500/20"
+                          title="Stiahnuť a otvoriť výkres priamo v PDF"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>Výkres (PDF)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => downloadGarageDxf(typedParams, `${selectedHall || "hala"}_podorys.dxf`)}
+                          className="py-2 px-2.5 rounded-lg bg-white/10 hover:bg-white/15 active:scale-[0.99] text-white font-semibold text-xs flex items-center justify-center gap-1.5 border border-white/15 transition cursor-pointer"
+                          title="Stiahnuť pre AutoCAD / Revit"
+                        >
+                          <Download className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>AutoCAD (.DXF)</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -910,6 +993,9 @@ export function StandardHallMenu({
                       )}
                     </div>
 
+                    {/* Výkaz materiálu (BOM) */}
+                    <GarageBomTable params={typedParams} accentColor="cyan" />
+
                     <div>
                       <label className="block mb-1 text-[10px] text-white/60 uppercase tracking-wider font-semibold">
                         Poznámka k dopytu:
@@ -930,8 +1016,87 @@ export function StandardHallMenu({
                     >
                       Dopytovať cenovú ponuku haly
                     </button>
+
+                    {canExportCad && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => downloadGarageFloorPlanPdf(typedParams, `${selectedHall || "hala"}_vykres`)}
+                          className="py-2 px-2 rounded-lg bg-cyan-400/15 hover:bg-cyan-400/25 text-cyan-300 hover:text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 border border-cyan-400/30 transition cursor-pointer"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>Výkres (PDF)</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => downloadGarageDxf(typedParams, `${selectedHall || "hala"}_podorys.dxf`)}
+                          className="py-2 px-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-[11px] font-medium flex items-center justify-center gap-1.5 border border-white/10 transition cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>CAD (.DXF)</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {onOpenComparison && (
+                      <button
+                        type="button"
+                        onClick={onOpenComparison}
+                        className="w-full py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-cyan-300 hover:text-white text-[11px] font-medium flex items-center justify-center gap-1.5 border border-cyan-500/20 transition cursor-pointer"
+                      >
+                        <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Porovnať varianty vedľa seba</span>
+                      </button>
+                    )}
                   </div>
                 </div>
+              )}
+            </div>
+
+            {/* 4. PINNED WIZARD NAVIGATION FOOTER */}
+            <div className="shrink-0 p-2.5 md:p-3 border-t border-white/10 bg-[#0e131d]/95 backdrop-blur flex items-center justify-between gap-2 font-mono text-xs">
+              {WIZARD_STEPS.findIndex((s) => s.id === activeTab) > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const idx = WIZARD_STEPS.findIndex((s) => s.id === activeTab);
+                    if (idx > 0) setActiveTab(WIZARD_STEPS[idx - 1].id);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 transition flex items-center gap-1 cursor-pointer active:scale-95"
+                >
+                  <span>←</span>
+                  <span className="hidden sm:inline">Späť</span>
+                </button>
+              ) : (
+                <div />
+              )}
+
+              <div className="text-[11px] text-white/40 hidden sm:block">
+                {WIZARD_STEPS.findIndex((s) => s.id === activeTab) + 1} / {WIZARD_STEPS.length}
+              </div>
+
+              {WIZARD_STEPS.findIndex((s) => s.id === activeTab) < WIZARD_STEPS.length - 1 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const idx = WIZARD_STEPS.findIndex((s) => s.id === activeTab);
+                    if (idx < WIZARD_STEPS.length - 1) setActiveTab(WIZARD_STEPS[idx + 1].id);
+                  }}
+                  className="px-4 py-1.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold shadow-md shadow-cyan-500/20 transition flex items-center gap-1.5 cursor-pointer ml-auto active:scale-95"
+                >
+                  <span>Ďalej: {WIZARD_STEPS[WIZARD_STEPS.findIndex((s) => s.id === activeTab) + 1]?.title}</span>
+                  <span>➔</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setQuoteRequestSignal((v) => v + 1)}
+                  className="px-4 py-1.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold shadow-lg shadow-cyan-500/25 transition flex items-center gap-1.5 cursor-pointer ml-auto active:scale-95"
+                >
+                  <span>Odoslať dopyt</span>
+                  <span>✓</span>
+                </button>
               )}
             </div>
           </>

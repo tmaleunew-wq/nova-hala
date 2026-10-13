@@ -24,6 +24,7 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [message, setMessage] = useState("");
+  const [gdprAgreed, setGdprAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [isMobile, setIsMobile] = useState(false);
@@ -162,6 +163,10 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!gdprAgreed) {
+      toast.error("Pre odoslanie dopytu musíte súhlasiť so spracovaním osobných údajov.");
+      return;
+    }
     setIsSubmitting(true);
 
     const EMAILJS_SERVICE = "service_idgg40s";
@@ -370,7 +375,7 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
             <div className="mb-6 flex items-start justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-3">
                 <div className="inline-flex items-center justify-center rounded-lg bg-white/95 px-2.5 py-1 shadow-sm">
-                  <img src="/logo.png" alt="VB BAU" className="h-5 w-auto object-contain" />
+                  <img src="/logo.png" alt="VBAU" className="h-5 w-auto object-contain" />
                 </div>
                 <div>
                   <h3 className="text-sm sm:text-base font-bold uppercase tracking-wider text-emerald-400">
@@ -522,6 +527,33 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
                     />
                   </div>
 
+                  {/* GDPR Consent */}
+                  <div className="pt-1">
+                    <label className="flex items-start gap-2.5 cursor-pointer select-none text-[11px] text-white/70 leading-relaxed group">
+                      <input
+                        type="checkbox"
+                        required
+                        checked={gdprAgreed}
+                        onChange={(e) => setGdprAgreed(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-white/20 bg-black/60 text-emerald-400 focus:ring-emerald-400 accent-emerald-400 cursor-pointer shrink-0"
+                      />
+                      <span>
+                        {claddingConfig.gdprConsentText || "Súhlasím so spracovaním osobných údajov za účelom vypracovania cenovej ponuky."}{" "}
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          className="text-emerald-400 underline hover:text-emerald-300 font-medium cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toast.info("Vaše osobné údaje slúžia výhradne na účely vypracovania a zaslania cenovej ponuky.");
+                          }}
+                        >
+                          (Zásady ochrany osobných údajov)
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+
                   <div className="pt-2 flex flex-col sm:flex-row gap-2">
                     <button
                       type="button"
@@ -532,8 +564,8 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
                     </button>
                     <button
                       type="submit"
-                      disabled={isSubmitting}
-                      className="w-full sm:w-2/3 rounded-lg bg-emerald-400 py-2.5 text-center text-xs font-bold text-slate-950 transition hover:bg-emerald-300 disabled:opacity-50 cursor-pointer shadow-lg shadow-emerald-500/20"
+                      disabled={isSubmitting || !gdprAgreed}
+                      className="w-full sm:w-2/3 rounded-lg bg-emerald-400 py-2.5 text-center text-xs font-bold text-slate-950 transition hover:bg-emerald-300 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-emerald-500/20"
                     >
                       {isSubmitting ? "Odosiela sa..." : "Odoslať nezáväzný dopyt"}
                     </button>

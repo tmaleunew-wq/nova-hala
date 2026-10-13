@@ -16,6 +16,8 @@
   "imageCatalog": "/catalog",
   "catalogWithCladding": false,
   "pickerLayout": "grid",
+  "gdprConsentText": "Súhlasím so spracovaním osobných údajov za účelom vypracovania cenovej ponuky.",
+  "privacyPolicyUrl": "/gdpr",
   "defaultGarage": {
     "width": 4.0,
     "length": 6.0,

@@ -67,6 +67,8 @@ export interface CladdingConfig {
   imageCatalog?: string;
   catalogWithCladding?: boolean;
   pickerLayout?: "grid" | "binary";
+  gdprConsentText?: string;
+  privacyPolicyUrl?: string;
 }
 
 export function getCladdingConfig(clientName?: string | null): CladdingConfig {
