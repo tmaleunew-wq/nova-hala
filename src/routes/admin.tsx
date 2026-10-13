@@ -7,7 +7,7 @@ import {
   ArrowLeft, Printer, Link as LinkIcon, DollarSign, RefreshCw, 
   Calculator, FileText, FileSpreadsheet, Search, User, Phone, 
   Mail, Calendar, ShieldCheck, CheckCircle, Trash2, Plus, Eye,
-  Layers, Package, ChevronRight, Sliders
+  Layers, Package, ChevronRight, Sliders, QrCode
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateOrderExcelXml } from "@/lib/garage/excelGenerator";
@@ -15,6 +15,7 @@ import { fetchInquiriesFromSupabase, supabase } from "@/lib/supabase";
 
 import { AdminAuthGate } from "@/components/garage/AdminAuthGate";
 import { PriceQuoteModal } from "@/components/garage/PriceQuoteModal";
+import { BuildingQrModal } from "@/components/garage/BuildingQrModal";
 import { AdminPricingAdjustment } from "@/components/garage/AdminPricingAdjustment";
 import { AdminPricingTable } from "@/components/garage/AdminPricingTable";
 
@@ -54,6 +55,7 @@ function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   // Active selected order params & pricing
   const [params, setParams] = useState<GarageParams>(DEFAULT_PARAMS);
@@ -475,15 +477,22 @@ function AdminDashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => setIsQrModalOpen(true)}
+                  className="flex items-center gap-1.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3.5 py-1.5 text-xs font-bold hover:bg-emerald-500/30 transition shadow-sm cursor-pointer"
+                >
+                  <QrCode className="h-3.5 w-3.5" />
+                  QR Kód stavby (PDF + AR)
+                </button>
+                <button
                   onClick={() => setIsQuoteModalOpen(true)}
-                  className="flex items-center gap-1.5 rounded bg-emerald-400 font-bold text-black border border-emerald-300 px-3.5 py-1.5 text-xs hover:bg-emerald-300 transition shadow-lg shadow-emerald-400/20"
+                  className="flex items-center gap-1.5 rounded bg-emerald-400 font-bold text-black border border-emerald-300 px-3.5 py-1.5 text-xs hover:bg-emerald-300 transition shadow-lg shadow-emerald-400/20 cursor-pointer"
                 >
                   <FileText className="h-3.5 w-3.5" />
                   Vytvoriť Cenovú Ponuku (PDF/E-mail)
                 </button>
                 <button
                   onClick={handleCopyShareLink}
-                  className="flex items-center gap-1.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 text-xs hover:bg-emerald-500/30 transition"
+                  className="flex items-center gap-1.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 text-xs hover:bg-emerald-500/30 transition cursor-pointer"
                 >
                   <LinkIcon className="h-3.5 w-3.5" />
                   Kopírovať odkaz
@@ -594,6 +603,17 @@ function AdminDashboard() {
           customItem2Label,
           customItem2Cost: calculatedCustomItem2Cost,
         }}
+      />
+
+      {/* Building QR Modal */}
+      <BuildingQrModal
+        isOpen={isQrModalOpen}
+        onClose={() => setIsQrModalOpen(false)}
+        orderId={selectedOrderId || ""}
+        clientName={clientName}
+        clientEmail={clientEmail}
+        clientPhone={clientPhone}
+        params={params}
       />
     </div>
   );
