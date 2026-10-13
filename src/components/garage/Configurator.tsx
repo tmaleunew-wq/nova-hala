@@ -136,7 +136,11 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     safeSetParams(newP);
   };
   const [showCatalogModal, setShowCatalogModal] = useState(false);
-  const [showPicker, setShowPicker] = useState(false);
+  const [showPicker, setShowPicker] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const sp = new URLSearchParams(window.location.search);
+    return !sp.has("hallType") && !sp.has("type") && !sp.has("hall") && !sp.has("model");
+  });
   const [showEnvironment, setShowEnvironment] = useState(true);
   const [showArModal, setShowArModal] = useState(false);
   const configWithCladding = getCatalogWithCladding(activeVariant);
@@ -734,6 +738,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     const exactLen = exactBays * h.moduleLength;
     typedParams = {
       ...typedParams,
+      ...customParams,
       hallType: selectedHall,
       width: h.width,
       roofType: h.type as any,
@@ -774,8 +779,10 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (showPicker) return;
     const currentParams = new URLSearchParams(window.location.search);
     const client = currentParams.get("client");
+    const variantParam = currentParams.get("variant");
 
     const searchParams = new URLSearchParams();
     if (selectedHall) {
@@ -795,9 +802,12 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     if (client) {
       searchParams.set("client", client);
     }
+    if (variantParam) {
+      searchParams.set("variant", variantParam);
+    }
     const newRelativePathQuery = window.location.pathname + "?" + searchParams.toString();
     window.history.replaceState(null, "", newRelativePathQuery);
-  }, [typedParams, selectedHall]);
+  }, [typedParams, selectedHall, showPicker]);
 
   const handleShare = () => {
     if (typeof window === "undefined") return;
@@ -938,6 +948,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         <StandardHallMenu
           showControls={!showPicker && showControls}
           typedParams={typedParams}
+          setParams={handleCustomSetParams}
           selectedHall={selectedHall}
           notes={notes}
           setNotes={setNotes}
@@ -945,6 +956,13 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           setIsSummaryOpen={setIsSummaryOpen}
           setQuoteRequestSignal={setQuoteRequestSignal}
           onToggleCladding={() => (setParams as any)({ showCladding: !typedParams.showCladding })}
+          activeTab={customActiveTab}
+          onTabChange={setCustomActiveTab}
+          hallsConfig={hallsConfig}
+          selectedPoleHeight={selectedPoleHeight}
+          setSelectedPoleHeight={setSelectedPoleHeight}
+          selectedLength={selectedLength}
+          setSelectedLength={setSelectedLength}
         />
       )}
 
