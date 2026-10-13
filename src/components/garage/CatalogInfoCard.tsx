@@ -12,6 +12,7 @@ interface CatalogInfoCardProps {
   setSelectedLength: (l: number) => void;
   onSetParams: (params: Record<string, any>) => void;
   onOpenCatalogModal: () => void;
+  onOpenPicker?: () => void;
 }
 
 export function CatalogInfoCard({
@@ -25,6 +26,7 @@ export function CatalogInfoCard({
   setSelectedLength,
   onSetParams,
   onOpenCatalogModal,
+  onOpenPicker,
 }: CatalogInfoCardProps) {
   const poleNum = parseInt(selectedPoleHeight, 10);
   const activeVer =
@@ -33,18 +35,36 @@ export function CatalogInfoCard({
 
   return (
     <div className="pointer-events-auto w-full rounded border border-cyan-500/40 bg-[#0e1116]/85 p-2.5 font-mono text-[10px] text-white/90 backdrop-blur shadow-xl">
-      <div
-        onClick={() => setShowHallSpecs((v) => !v)}
-        className="flex items-center justify-between border-b border-white/10 pb-1 mb-1.5 cursor-pointer select-none"
-      >
-        <span className="font-bold text-cyan-400">
-          TYPOVÝ MODEL: {selectedHall}
-          {curHall.subtitle ? ` · ${curHall.subtitle}` : ""}
-        </span>
-        <span className="text-white/50 text-[9px] flex items-center gap-1">
-          <span>{curHall.framework || "EN 1090"}</span>
-          <span className="text-cyan-400 font-bold">{showHallSpecs ? "▴" : "▾"}</span>
-        </span>
+      <div className="flex items-center justify-between border-b border-white/10 pb-1 mb-1.5 select-none gap-2">
+        <div
+          onClick={() => setShowHallSpecs((v) => !v)}
+          className="flex items-center gap-1.5 cursor-pointer flex-1 min-w-0"
+        >
+          <span className="font-bold text-cyan-400 truncate">
+            TYPOVÝ MODEL: {selectedHall}
+            {curHall.subtitle ? ` · ${curHall.subtitle}` : ""}
+          </span>
+          <span className="text-cyan-400 font-bold text-[9px] shrink-0">{showHallSpecs ? "▴" : "▾"}</span>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onOpenPicker && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenPicker();
+              }}
+              className="flex items-center gap-1 rounded bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/50 px-2 py-0.5 text-[9px] font-bold text-cyan-300 transition cursor-pointer shadow-sm"
+              title="Otvoriť výber z 9 typových hál"
+            >
+              <span>⊞</span>
+              <span>Zmeniť halu</span>
+            </button>
+          )}
+          <span className="text-white/50 text-[9px]">
+            {curHall.framework || "EN 1090"}
+          </span>
+        </div>
       </div>
 
       {showHallSpecs && (

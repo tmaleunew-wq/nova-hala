@@ -676,6 +676,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   if (typeof window !== "undefined") {
     (window as any).__applyHallType = applyHallType;
     (window as any).__setParams = setParams;
+    (window as any).__openHallPicker = () => setShowPicker(true);
   }
 
   const cleanParams: Partial<GarageParams> = {};
@@ -911,6 +912,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
             setSelectedLength={setSelectedLength}
             onSetParams={(p) => (setParams as any)(p)}
             onOpenCatalogModal={() => setShowCatalogModal(true)}
+            onOpenPicker={() => setShowPicker(true)}
           />
         )}
       </div>
@@ -959,6 +961,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           activeTab={customActiveTab}
           onTabChange={setCustomActiveTab}
           onOpenComparison={() => setShowComparisonModal(true)}
+          onOpenPicker={() => setShowPicker(true)}
         />
       ) : (
         <StandardHallMenu
@@ -980,6 +983,8 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           setSelectedPoleHeight={setSelectedPoleHeight}
           selectedLength={selectedLength}
           setSelectedLength={setSelectedLength}
+          onSelectHall={applyHallType}
+          onOpenPicker={() => setShowPicker(true)}
         />
       )}
 

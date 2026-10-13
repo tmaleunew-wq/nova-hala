@@ -41,16 +41,18 @@ export interface StandardHallMenuProps {
   selectedLength?: number;
   setSelectedLength?: (l: number) => void;
   onOpenComparison?: () => void;
+  onSelectHall?: (hall: string) => void;
+  onOpenPicker?: () => void;
 }
 
 type TabType = "dimensions" | "roof" | "doors" | "colors" | "view" | "summary";
 
 const WIZARD_STEPS: { id: TabType; title: string }[] = [
+  { id: "view", title: "CAD Zobrazenie" },
   { id: "dimensions", title: "Rozmery" },
   { id: "roof", title: "Strecha" },
   { id: "doors", title: "Brány & Otvory" },
   { id: "colors", title: "Farby" },
-  { id: "view", title: "CAD Zobrazenie" },
   { id: "summary", title: "Súhrn" },
 ];
 
@@ -118,8 +120,10 @@ export function StandardHallMenu({
   selectedLength = 20,
   setSelectedLength = () => {},
   onOpenComparison,
+  onSelectHall,
+  onOpenPicker,
 }: StandardHallMenuProps) {
-  const [internalActiveTab, setInternalActiveTab] = useState<TabType>("dimensions");
+  const [internalActiveTab, setInternalActiveTab] = useState<TabType>("view");
   const [isMobileMinimized, setIsMobileMinimized] = useState<boolean>(false);
 
   const activeTab = (externalActiveTab as TabType) || internalActiveTab;
@@ -134,6 +138,9 @@ export function StandardHallMenu({
       new URLSearchParams(window.location.search).get("admin") === "1");
 
   const allHalls = passedHallsConfig || getHallsConfig();
+  const hallKeys = Object.keys(allHalls).filter(
+    (k) => k !== "vlastna_garaz" && k !== "Vlastná garáž" && k !== "Vlastný"
+  );
   const curHall: HallConfig | undefined = allHalls[selectedHall];
 
   const moduleLength = curHall?.moduleLength ?? 5;
@@ -237,6 +244,19 @@ export function StandardHallMenu({
             <div className="shrink-0 grid grid-cols-6 border-b border-white/10 bg-[#0e131d] text-[11px] md:text-xs font-mono">
               <button
                 type="button"
+                onClick={() => setActiveTab("view")}
+                title="Zobrazenie CAD"
+                className={`flex flex-col items-center justify-center py-2.5 border-r border-white/5 transition cursor-pointer ${
+                  activeTab === "view"
+                    ? "bg-cyan-500/25 text-cyan-300 border-b-2 border-b-cyan-400 font-bold shadow-inner"
+                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                <Eye className="h-4 w-4 mb-1" />
+                <span>CAD</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setActiveTab("dimensions")}
                 title="Rozmery haly"
                 className={`flex flex-col items-center justify-center py-2.5 border-r border-white/5 transition cursor-pointer ${
@@ -289,19 +309,6 @@ export function StandardHallMenu({
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab("view")}
-                title="Zobrazenie CAD"
-                className={`flex flex-col items-center justify-center py-2.5 border-r border-white/5 transition cursor-pointer ${
-                  activeTab === "view"
-                    ? "bg-cyan-500/25 text-cyan-300 border-b-2 border-b-cyan-400 font-bold shadow-inner"
-                    : "text-white/70 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                <Eye className="h-4 w-4 mb-1" />
-                <span>CAD</span>
-              </button>
-              <button
-                type="button"
                 onClick={() => setActiveTab("summary")}
                 title="Súhrn špecifikácie"
                 className={`flex flex-col items-center justify-center py-2.5 transition cursor-pointer ${
@@ -320,29 +327,69 @@ export function StandardHallMenu({
               {/* --- TAB 1: ROZMERY HALY --- */}
               {activeTab === "dimensions" && (
                 <div className="space-y-4">
-                  {/* Typový model haly info card */}
+                  {/* Typový model haly info card s obrázkom z variantu 2 a tlačidlom na výber */}
                   <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-2.5 shadow-md">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-semibold text-slate-200 tracking-wide">Typový model haly:</span>
-                      <span className="text-[10px] font-bold text-cyan-400 bg-cyan-500/15 border border-cyan-500/30 px-2 py-0.5 rounded">
-                        {selectedHall}
+                    {/* Render haly */}
+                    <div className="relative w-full h-36 sm:h-44 rounded-lg overflow-hidden bg-gradient-to-b from-[#182030] to-[#0c1018] border border-white/10 flex items-center justify-center p-2 group shadow-inner">
+                      <img
+                        src={`/catalog_variant2/${curHall?.imageKey || "KD8"}_render.png`}
+                        alt={selectedHall}
+                        className="h-full w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)] transition duration-300 group-hover:scale-105"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = `/catalog/${curHall?.imageKey || "KD8"}_render.png`;
+                        }}
+                      />
+                      {curHall?.badge && (
+                        <span className="absolute top-2 right-2 rounded-full bg-cyan-400 text-slate-950 font-mono text-[9px] font-bold px-2 py-0.5 shadow-md">
+                          {curHall.badge}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex justify-between items-center pt-0.5">
+                      <div>
+                        <span className="text-xs font-bold text-white tracking-wide block">{selectedHall}</span>
+                        {curHall?.subtitle && (
+                          <span className="text-[10px] text-cyan-300 font-medium">{curHall.subtitle}</span>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-cyan-400 bg-cyan-500/15 border border-cyan-500/30 px-2 py-0.5 rounded">
+                        {typedParams.width} × {currentLength} m
                       </span>
                     </div>
+
                     {curHall?.description && (
-                      <p className="text-[11px] text-white/60 leading-relaxed font-sans">
+                      <p className="text-[11px] text-white/70 leading-relaxed font-sans">
                         {curHall.description}
                       </p>
                     )}
+
                     <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
-                      <div className="bg-black/30 p-2 rounded-lg border border-white/5">
+                      <div className="bg-black/40 p-2 rounded-lg border border-white/5">
                         <span className="text-white/50 block text-[10px]">Statický profil:</span>
-                        <span className="text-white font-medium">{curHall?.gablePillars || "HEB / IPE"}</span>
+                        <span className="text-white font-medium">{curHall?.framework || curHall?.gablePillars || "IPE 160"}</span>
                       </div>
-                      <div className="bg-black/30 p-2 rounded-lg border border-white/5">
+                      <div className="bg-black/40 p-2 rounded-lg border border-white/5">
                         <span className="text-white/50 block text-[10px]">Osová rozteč (modul):</span>
                         <span className="text-cyan-400 font-bold">{moduleLength} m</span>
                       </div>
                     </div>
+
+                    {/* Vyskakovacie okno na výber z 9 typových hál */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onOpenPicker) {
+                          onOpenPicker();
+                        } else if ((window as any).__openHallPicker) {
+                          (window as any).__openHallPicker();
+                        }
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/40 font-mono text-xs font-bold transition shadow-sm cursor-pointer mt-1"
+                    >
+                      <span>⊞</span>
+                      <span>Zmeniť typový model (Katalóg 9 hál)</span>
+                    </button>
                   </div>
 
                   {/* Šírka haly (Fixná typová šírka) */}

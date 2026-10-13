@@ -33,16 +33,17 @@ export interface CustomGarageMenuProps {
   activeTab?: string;
   onTabChange?: (tab: string) => void;
   onOpenComparison?: () => void;
+  onOpenPicker?: () => void;
 }
 
 type TabType = "dimensions" | "roof" | "doors" | "colors" | "view" | "summary";
 
 const WIZARD_STEPS: { id: TabType; title: string }[] = [
+  { id: "view", title: "CAD Zobrazenie" },
   { id: "dimensions", title: "Rozmery" },
   { id: "roof", title: "Strecha" },
   { id: "doors", title: "Brány & Otvory" },
   { id: "colors", title: "Farby" },
-  { id: "view", title: "CAD Zobrazenie" },
   { id: "summary", title: "Súhrn" },
 ];
 
@@ -117,8 +118,9 @@ export function CustomGarageMenu({
   activeTab: externalActiveTab,
   onTabChange,
   onOpenComparison,
+  onOpenPicker,
 }: CustomGarageMenuProps) {
-  const [internalActiveTab, setInternalActiveTab] = useState<TabType>("dimensions");
+  const [internalActiveTab, setInternalActiveTab] = useState<TabType>("view");
   const [isMobileMinimized, setIsMobileMinimized] = useState<boolean>(false);
   const activeTab = (externalActiveTab as TabType) || internalActiveTab;
   const setActiveTab = (tab: TabType) => {
@@ -224,6 +226,19 @@ export function CustomGarageMenu({
       <div className="shrink-0 grid grid-cols-6 border-b border-white/10 bg-[#0e131d] text-[11px] md:text-xs font-mono">
         <button
           type="button"
+          onClick={() => setActiveTab("view")}
+          title="Zobrazenie CAD"
+          className={`flex flex-col items-center justify-center py-2.5 border-r border-white/5 transition cursor-pointer ${
+            activeTab === "view"
+              ? "bg-emerald-500/25 text-emerald-300 border-b-2 border-b-emerald-400 font-bold shadow-inner"
+              : "text-white/70 hover:bg-white/10 hover:text-white"
+          }`}
+        >
+          <Eye className="h-4 w-4 mb-1" />
+          <span>CAD</span>
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab("dimensions")}
           title="Rozmery"
           className={`flex flex-col items-center justify-center py-2.5 border-r border-white/5 transition cursor-pointer ${
@@ -276,19 +291,6 @@ export function CustomGarageMenu({
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab("view")}
-          title="Zobrazenie CAD"
-          className={`flex flex-col items-center justify-center py-2.5 border-r border-white/5 transition cursor-pointer ${
-            activeTab === "view"
-              ? "bg-emerald-500/25 text-emerald-300 border-b-2 border-b-emerald-400 font-bold shadow-inner"
-              : "text-white/70 hover:bg-white/10 hover:text-white"
-          }`}
-        >
-          <Eye className="h-4 w-4 mb-1" />
-          <span>CAD</span>
-        </button>
-        <button
-          type="button"
           onClick={() => setActiveTab("summary")}
           title="Súhrn konfigurácie"
           className={`flex flex-col items-center justify-center py-2.5 transition cursor-pointer ${
@@ -307,6 +309,49 @@ export function CustomGarageMenu({
         {/* --- TAB 1: ROZMERY --- */}
         {activeTab === "dimensions" && (
           <div className="space-y-4">
+            {/* Typový náhľad garáže z variantu 2 */}
+            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-2.5 shadow-md">
+              <div className="relative w-full h-36 sm:h-44 rounded-lg overflow-hidden bg-gradient-to-b from-[#182030] to-[#0c1018] border border-white/10 flex items-center justify-center p-2 group shadow-inner">
+                <img
+                  src="/catalog_variant2/vlastna_garaz.png"
+                  alt="Vlastná garáž na mieru"
+                  className="h-full w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)] transition duration-300 group-hover:scale-105"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = "/catalog/vlastna_garaz.png";
+                  }}
+                />
+                <span className="absolute top-2 right-2 rounded-full bg-emerald-400 text-slate-950 font-mono text-[9px] font-bold px-2 py-0.5 shadow-md">
+                  Vlastný rozmer
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-0.5">
+                <div>
+                  <span className="text-xs font-bold text-white tracking-wide block">Garáž na mieru</span>
+                  <span className="text-[10px] text-emerald-300 font-medium">Individuálna konfigurácia</span>
+                </div>
+                <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">
+                  {typedParams.width} × {typedParams.length} m
+                </span>
+              </div>
+              <p className="text-[11px] text-white/70 leading-relaxed font-sans">
+                Plne prispôsobiteľná oceľová garáž s možnosťou voľby typu strechy, brán a farebného prevedenia.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onOpenPicker) {
+                    onOpenPicker();
+                  } else if ((window as any).__openHallPicker) {
+                    (window as any).__openHallPicker();
+                  }
+                }}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 font-mono text-xs font-bold transition shadow-sm cursor-pointer mt-1"
+              >
+                <span>⊞</span>
+                <span>Prejsť na typovú halu (Katalóg 9 hál)</span>
+              </button>
+            </div>
+
             {/* Typ garáže (Garagentyp) */}
             <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-2.5 shadow-md">
               <div className="flex justify-between items-center">
