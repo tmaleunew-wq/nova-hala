@@ -20,9 +20,11 @@ export interface GarageParams {
   claddingColor: string;     // hex
   roofColor: string;         // hex
   doorColor: string;         // hex – personal door
+  doorDecor?: "none" | "wood_oak" | "wood_walnut";
   sectionalDoorColor: string;// hex – garage door 1 (gate)
   sectionalDoor2Color?: string;// hex – garage door 2 (gate 2)
   trimmingColor: string;     // hex – corner flashings, joint flashings, gutters
+  windowColor?: string;      // hex – window frame color
   panelType: "trapezoid" | "sandwich" | "smooth" | "wood_oak" | "wood_walnut";
   roofPanelType: "trapezoid" | "sandwich" | "smooth" | "tile";
   claddingOrientation: "vertical" | "horizontal";
@@ -49,7 +51,9 @@ export interface GarageParams {
   gate2Decor?: "none" | "wood_oak" | "wood_walnut";
   hasBackDoor?: boolean;
   hasPersonalDoor: boolean;
-  personalDoorSide: "left" | "right" | "back";
+  personalDoorSide: "left" | "right" | "back" | "front_left" | "front_right";
+  personalDoorPosition?: "front" | "back";
+  doorFocus?: "gate" | "personalDoor";
   hasWindows: boolean;
   hasSkylights: boolean;
   windowSide: "left" | "right" | "back";
@@ -92,9 +96,11 @@ export const DEFAULT_PARAMS: GarageParams = {
   claddingColor: "#ffffff",
   roofColor: "#2b2f36",
   doorColor: "#3a3f47",
+  doorDecor: "none",
   sectionalDoorColor: "#3a3f47",
   sectionalDoor2Color: "#3a3f47",
   trimmingColor: "#030303",
+  windowColor: "#2b2f36",
   panelType: "sandwich",
   roofPanelType: "sandwich",
   claddingOrientation: "horizontal",
@@ -119,6 +125,7 @@ export const DEFAULT_PARAMS: GarageParams = {
   hasBackDoor: false,
   hasPersonalDoor: true,
   personalDoorSide: "right",
+  personalDoorPosition: "front",
   hasWindows: true,
   hasSkylights: false,
   windowSide: "left",

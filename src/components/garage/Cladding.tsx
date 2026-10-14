@@ -371,6 +371,12 @@ export function Cladding({
         { cx: dLayout.rightCx, cy: actualDH / 2 + 0.02, w: dLayout.actualDoorW, h: actualDH },
       ]
     : [{ cx: 0, cy: actualDH / 2 + 0.02, w: actualDW, h: actualDH }];
+  if (p.hasPersonalDoor && p.personalDoorSide === "front_left") {
+    // Keďže front panel má rotáciu Math.PI, invertujeme znamienko
+    frontDoorHoles.push({ cx: W / 2 - 0.65, cy: 1.0, w: 0.9, h: 2.0 });
+  } else if (p.hasPersonalDoor && p.personalDoorSide === "front_right") {
+    frontDoorHoles.push({ cx: -W / 2 + 0.65, cy: 1.0, w: 0.9, h: 2.0 });
+  }
   const personalHole: Rect = { cx: getPersonalDoorZ(p), cy: 1.0, w: 0.9, h: 2.0 };
   const winSpread: Rect[] = [];
   if (p.hasWindows && p.windowCount > 0) {

@@ -43,7 +43,7 @@ function GarageDoor({
 
   useFrame((_, delta) => {
     const target = p.doorOpen ? 1 : 0;
-    const speed = 2.0;
+    const speed = 1.2;
     const diff = target - progressRef.current;
     if (Math.abs(diff) > 0.001) {
       progressRef.current += Math.sign(diff) * Math.min(Math.abs(diff), speed * delta);
@@ -143,24 +143,38 @@ function GarageDoor({
                   </mesh>
                 )}
 
-                {/* Spodné gumové tesnenie a kľučka na spodnom paneli */}
+                {/* Spodné gumové tesnenie */}
                 {i === 0 && (
-                  <>
-                    <mesh position={[0, -panelH / 2 + 0.01, 0.01]}>
-                      <boxGeometry args={[gateWidth - 0.01, 0.02, 0.045]} />
-                      <meshStandardMaterial color="#16181b" roughness={0.95} />
+                  <mesh position={[0, -panelH / 2 + 0.01, 0.01]}>
+                    <boxGeometry args={[gateWidth - 0.01, 0.02, 0.045]} />
+                    <meshStandardMaterial color="#16181b" roughness={0.95} />
+                  </mesh>
+                )}
+
+                {/* Realistické zapustené madlo sekčnej brány so zámkom v 2. paneli (ergonomická výška ~80cm) */}
+                {i === 1 && (
+                  <group position={[gateWidth * 0.22, 0, 0.022]}>
+                    {/* Zapustená miska / rozeta madla */}
+                    <mesh castShadow>
+                      <boxGeometry args={[0.18, 0.08, 0.012]} />
+                      <meshStandardMaterial color="#181a1d" roughness={0.6} metalness={0.4} />
                     </mesh>
-                    <group position={[gateWidth * 0.2, -panelH / 2 + 0.14, 0.025]}>
-                      <mesh castShadow>
-                        <boxGeometry args={[0.14, 0.028, 0.018]} />
-                        <meshStandardMaterial color="#1a1c1e" metalness={0.8} roughness={0.3} />
-                      </mesh>
-                      <mesh position={[0, 0.032, 0]}>
-                        <cylinderGeometry args={[0.009, 0.009, 0.008, 16]} />
-                        <meshStandardMaterial color="#a0a5ab" metalness={0.9} roughness={0.2} />
-                      </mesh>
-                    </group>
-                  </>
+                    {/* Vnútorné vybranie pre prsty */}
+                    <mesh position={[0, 0.005, 0.003]}>
+                      <boxGeometry args={[0.13, 0.04, 0.008]} />
+                      <meshStandardMaterial color="#0d0e10" roughness={0.9} />
+                    </mesh>
+                    {/* Ergonomická úchopová lišta madla */}
+                    <mesh position={[0, 0.012, 0.009]} castShadow>
+                      <boxGeometry args={[0.12, 0.016, 0.012]} />
+                      <meshStandardMaterial color="#22252a" metalness={0.7} roughness={0.3} />
+                    </mesh>
+                    {/* Cylindrická vložka FAB zámku */}
+                    <mesh position={[0, -0.022, 0.007]} rotation={[Math.PI / 2, 0, 0]}>
+                      <cylinderGeometry args={[0.007, 0.007, 0.004, 16]} />
+                      <meshStandardMaterial color="#c0c5cb" metalness={0.9} roughness={0.2} />
+                    </mesh>
+                  </group>
                 )}
               </group>
             );
@@ -197,15 +211,27 @@ function GarageDoor({
               <boxGeometry args={[gateWidth, actualDoorHeight, 0.015]} />
               <meshStandardMaterial color="#1a1c20" metalness={0.8} roughness={0.5} wireframe={p.wireframe} />
             </mesh>
-            {/* Madlo a zámok v strede dole */}
-            <group position={[0, -actualDoorHeight / 2 + 0.35, 0.035]}>
+            {/* Realistická centrálna otočná T-kľučka a zámok v ergonomickej výške (~95cm) */}
+            <group position={[0, -actualDoorHeight / 2 + 0.95, 0.025]}>
+              {/* Plastovo-kovová rozeta */}
               <mesh castShadow>
-                <boxGeometry args={[0.16, 0.035, 0.03]} />
-                <meshStandardMaterial color="#111111" metalness={0.9} roughness={0.2} />
+                <boxGeometry args={[0.08, 0.15, 0.01]} />
+                <meshStandardMaterial color="#1a1c20" roughness={0.5} metalness={0.4} />
               </mesh>
-              <mesh position={[0, 0.04, 0]}>
-                <cylinderGeometry args={[0.012, 0.012, 0.01, 16]} />
-                <meshStandardMaterial color="#silver" metalness={0.9} roughness={0.1} />
+              {/* Cylindrická vložka FAB zámku */}
+              <mesh position={[0, -0.038, 0.006]} rotation={[Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[0.007, 0.007, 0.005, 16]} />
+                <meshStandardMaterial color="#c0c5cb" metalness={0.95} roughness={0.2} />
+              </mesh>
+              {/* Čap otočného mechanizmu */}
+              <mesh position={[0, 0.022, 0.014]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+                <cylinderGeometry args={[0.011, 0.011, 0.022, 16]} />
+                <meshStandardMaterial color="#111315" roughness={0.3} metalness={0.8} />
+              </mesh>
+              {/* Horizontálna otočná T-kľučka */}
+              <mesh position={[0, 0.022, 0.028]} rotation={[0, 0, Math.PI / 2]} castShadow>
+                <boxGeometry args={[0.024, 0.14, 0.016]} />
+                <meshStandardMaterial color="#111315" roughness={0.3} metalness={0.8} />
               </mesh>
             </group>
           </group>
@@ -237,17 +263,34 @@ function GarageDoor({
               <mesh position={[-leafW / 2, 0, 0]} castShadow receiveShadow material={gateMaterial}>
                 <boxGeometry args={[leafW, actualDoorHeight - 0.02, 0.04]} />
               </mesh>
-              {/* Kľučka na pravom krídle */}
-              <group position={[-leafW + 0.1, -0.1, 0.035]}>
+              {/* Kľučka so štítkom a zámkom na pravom (aktívnom) krídle */}
+              <group position={[-leafW + 0.08, -0.05, 0.025]}>
+                {/* Dverový štítok */}
                 <mesh castShadow>
-                  <boxGeometry args={[0.03, 0.14, 0.015]} />
-                  <meshStandardMaterial color="#1a1a1a" metalness={0.8} roughness={0.3} />
+                  <boxGeometry args={[0.038, 0.22, 0.008]} />
+                  <meshStandardMaterial color="#1a1c20" metalness={0.8} roughness={0.3} />
                 </mesh>
-                <mesh position={[-0.04, 0.03, 0.02]} rotation={[0, 0, 0]} castShadow>
-                  <boxGeometry args={[0.1, 0.02, 0.02]} />
-                  <meshStandardMaterial color="# silver" metalness={0.9} roughness={0.1} />
+                {/* Cylindrická vložka FAB zámku */}
+                <mesh position={[0, -0.055, 0.005]} rotation={[Math.PI / 2, 0, 0]}>
+                  <cylinderGeometry args={[0.007, 0.007, 0.006, 16]} />
+                  <meshStandardMaterial color="#c0c5cb" metalness={0.95} roughness={0.2} />
+                </mesh>
+                {/* Čap kľučky */}
+                <mesh position={[0, 0.045, 0.018]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+                  <cylinderGeometry args={[0.009, 0.009, 0.028, 16]} />
+                  <meshStandardMaterial color="#2a2d32" metalness={0.85} roughness={0.2} />
+                </mesh>
+                {/* Páka kľučky smerujúca do vnútra krídla */}
+                <mesh position={[0.05, 0.045, 0.032]} rotation={[0, 0, 0]} castShadow>
+                  <boxGeometry args={[0.11, 0.018, 0.014]} />
+                  <meshStandardMaterial color="#2a2d32" metalness={0.85} roughness={0.2} />
                 </mesh>
               </group>
+              {/* Zvislá stredová krycia lišta na styku krídel (klapačka) */}
+              <mesh position={[-leafW, 0, 0.022]} castShadow>
+                <boxGeometry args={[0.035, actualDoorHeight - 0.02, 0.006]} />
+                <meshStandardMaterial color="#1a1c20" metalness={0.7} roughness={0.4} />
+              </mesh>
               {/* Pánty */}
               {[-0.4, 0.4].map((py, idx) => (
                 <mesh key={idx} position={[-0.01, py * (p.doorHeight / 2), 0.025]}>
@@ -292,6 +335,12 @@ function PersonalDoor({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   } else if (p.personalDoorSide === "right") {
     position = [W / 2 + offset + ex * 2.2, 0, doorZ];
     rotation = [0, Math.PI / 2, 0];
+  } else if (p.personalDoorSide === "front_left") {
+    position = [-W / 2 + 0.65, 0, -L / 2 - offset + ex * -2.2];
+    rotation = [0, 0, 0];
+  } else if (p.personalDoorSide === "front_right") {
+    position = [W / 2 - 0.65, 0, -L / 2 - offset + ex * -2.2];
+    rotation = [0, 0, 0];
   } else {
     // Back wall
     position = [0, 0, L / 2 + offset + ex * 2.2];
@@ -304,14 +353,23 @@ function PersonalDoor({ p, explodeY }: { p: GarageParams; explodeY: number }) {
 
   const pbrMaterial = useMemo(() => {
     if (p.wireframe) return null;
-    if (p.gateDecor === "wood_oak") {
+    if (p.doorDecor === "wood_oak") {
       return createPBRWoodMaterial("golden_oak", "vertical");
     }
-    if (p.gateDecor === "wood_walnut") {
+    if (p.doorDecor === "wood_walnut") {
       return createPBRWoodMaterial("walnut", "vertical");
     }
-    return createPBRSmoothMaterial(p.doorColor);
-  }, [p.gateDecor, p.doorColor, p.wireframe]);
+    if (p.doorDecor === "none" && p.doorColor) {
+      return createPBRSmoothMaterial(p.doorColor);
+    }
+    if (p.gateDecor === "wood_oak" && !p.doorColor) {
+      return createPBRWoodMaterial("golden_oak", "vertical");
+    }
+    if (p.gateDecor === "wood_walnut" && !p.doorColor) {
+      return createPBRWoodMaterial("walnut", "vertical");
+    }
+    return createPBRSmoothMaterial(p.doorColor || "#3a3f47");
+  }, [p.doorDecor, p.gateDecor, p.doorColor, p.wireframe]);
 
   return (
     <group position={position} rotation={rotation}>
@@ -404,6 +462,7 @@ function Windows({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   const W = p.width;
   const L = p.length;
   const ex = explodeY;
+  const frameColor = p.windowColor || "#2b2f36";
 
   const wallThickness = (p.panelType === "sandwich" || p.panelType === "smooth")
     ? Math.max(0.04, p.wallPanelThicknessMm / 1000)
@@ -448,22 +507,22 @@ function Windows({ p, explodeY }: { p: GarageParams; explodeY: number }) {
           {/* Left frame post */}
           <mesh position={[-p.windowWidth / 2 - 0.015, 0, 0]} castShadow>
             <boxGeometry args={[0.03, p.windowHeight + 0.06, frameThickness]} />
-            <meshStandardMaterial color="#2a2d33" metalness={0.4} roughness={0.6} wireframe={p.wireframe} />
+            <meshStandardMaterial color={frameColor} metalness={0.4} roughness={0.6} wireframe={p.wireframe} />
           </mesh>
           {/* Right frame post */}
           <mesh position={[p.windowWidth / 2 + 0.015, 0, 0]} castShadow>
             <boxGeometry args={[0.03, p.windowHeight + 0.06, frameThickness]} />
-            <meshStandardMaterial color="#2a2d33" metalness={0.4} roughness={0.6} wireframe={p.wireframe} />
+            <meshStandardMaterial color={frameColor} metalness={0.4} roughness={0.6} wireframe={p.wireframe} />
           </mesh>
           {/* Top frame header */}
           <mesh position={[0, p.windowHeight / 2 + 0.015, 0]} castShadow>
             <boxGeometry args={[p.windowWidth + 0.06, 0.03, frameThickness]} />
-            <meshStandardMaterial color="#2a2d33" metalness={0.4} roughness={0.6} wireframe={p.wireframe} />
+            <meshStandardMaterial color={frameColor} metalness={0.4} roughness={0.6} wireframe={p.wireframe} />
           </mesh>
           {/* Bottom frame sill */}
           <mesh position={[0, -p.windowHeight / 2 - 0.015, 0]} castShadow>
             <boxGeometry args={[p.windowWidth + 0.06, 0.03, frameThickness]} />
-            <meshStandardMaterial color="#2a2d33" metalness={0.4} roughness={0.6} wireframe={p.wireframe} />
+            <meshStandardMaterial color={frameColor} metalness={0.4} roughness={0.6} wireframe={p.wireframe} />
           </mesh>
         </group>
       </group>,

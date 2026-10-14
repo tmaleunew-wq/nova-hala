@@ -33,10 +33,14 @@ export function getFrameZ(p: GarageParams): number[] {
 
 export function getPersonalDoorZ(p: GarageParams): number {
   const zs = getFrameZ(p);
+  const isBack = p.personalDoorPosition === "back";
   if (zs.length >= 3) {
-    return (zs[1] + zs[2]) / 2;
+    if (isBack) {
+      return (zs[zs.length - 2] + zs[zs.length - 1]) / 2;
+    }
+    return (zs[0] + zs[1]) / 2;
   }
-  return -p.length / 4;
+  return isBack ? p.length / 4 : -p.length / 4;
 }
 
 export function getWindowZs(p: { length: number; bayCount: number; windowCount: number }): number[] {

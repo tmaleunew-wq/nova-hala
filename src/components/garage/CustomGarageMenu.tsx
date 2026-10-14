@@ -265,7 +265,10 @@ export function CustomGarageMenu({
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab("doors")}
+          onClick={() => {
+            setActiveTab("doors");
+            setParams({ doorFocus: "gate" });
+          }}
           title="Brány a dvere"
           className={`flex flex-col items-center justify-center py-2.5 border-r border-white/5 transition cursor-pointer ${
             activeTab === "doors"
@@ -309,49 +312,6 @@ export function CustomGarageMenu({
         {/* --- TAB 1: ROZMERY --- */}
         {activeTab === "dimensions" && (
           <div className="space-y-4">
-            {/* Typový náhľad garáže z variantu 2 */}
-            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-2.5 shadow-md">
-              <div className="relative w-full h-36 sm:h-44 rounded-lg overflow-hidden bg-gradient-to-b from-[#182030] to-[#0c1018] border border-white/10 flex items-center justify-center p-2 group shadow-inner">
-                <img
-                  src="/catalog_variant2/vlastna_garaz.png"
-                  alt="Vlastná garáž na mieru"
-                  className="h-full w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)] transition duration-300 group-hover:scale-105"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = "/catalog/vlastna_garaz.png";
-                  }}
-                />
-                <span className="absolute top-2 right-2 rounded-full bg-emerald-400 text-slate-950 font-mono text-[9px] font-bold px-2 py-0.5 shadow-md">
-                  Vlastný rozmer
-                </span>
-              </div>
-              <div className="flex justify-between items-center pt-0.5">
-                <div>
-                  <span className="text-xs font-bold text-white tracking-wide block">Garáž na mieru</span>
-                  <span className="text-[10px] text-emerald-300 font-medium">Individuálna konfigurácia</span>
-                </div>
-                <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">
-                  {typedParams.width} × {typedParams.length} m
-                </span>
-              </div>
-              <p className="text-[11px] text-white/70 leading-relaxed font-sans">
-                Plne prispôsobiteľná oceľová garáž s možnosťou voľby typu strechy, brán a farebného prevedenia.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  if (onOpenPicker) {
-                    onOpenPicker();
-                  } else if ((window as any).__openHallPicker) {
-                    (window as any).__openHallPicker();
-                  }
-                }}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 font-mono text-xs font-bold transition shadow-sm cursor-pointer mt-1"
-              >
-                <span>⊞</span>
-                <span>Prejsť na typovú halu (Katalóg 9 hál)</span>
-              </button>
-            </div>
-
             {/* Typ garáže (Garagentyp) */}
             <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-2.5 shadow-md">
               <div className="flex justify-between items-center">
@@ -779,7 +739,7 @@ export function CustomGarageMenu({
               <div className="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setParams({ gateCount: 1 })}
+                  onClick={() => setParams({ gateCount: 1, doorFocus: "gate" })}
                   className={`py-2 rounded-lg border text-center transition cursor-pointer text-xs ${
                     typedParams.gateCount !== 2
                       ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
@@ -790,7 +750,7 @@ export function CustomGarageMenu({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setParams({ gateCount: 2 })}
+                  onClick={() => setParams({ gateCount: 2, doorFocus: "gate" })}
                   className={`py-2 rounded-lg border text-center transition cursor-pointer text-xs ${
                     typedParams.gateCount === 2
                       ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
@@ -814,7 +774,7 @@ export function CustomGarageMenu({
                   <button
                     key={t.id}
                     type="button"
-                    onClick={() => setParams({ gateType: t.id as any })}
+                    onClick={() => setParams({ gateType: t.id as any, doorFocus: "gate" })}
                     className={`py-2 rounded-lg border text-center transition cursor-pointer text-xs ${
                       (typedParams.gateType ?? "sectional") === t.id
                         ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
@@ -824,6 +784,31 @@ export function CustomGarageMenu({
                     {t.label}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Animácia otvorenia / zatvorenia brány */}
+            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-2.5 shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full inline-block ${typedParams.doorOpen ? "bg-amber-400 animate-pulse" : "bg-emerald-400"}`} />
+                    <span>{typedParams.doorOpen ? "Brána je otvorená" : "Brána je zatvorená"}</span>
+                  </div>
+                  <div className="text-[11px] text-white/60">3D animácia pohybu brány</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setParams({ doorOpen: !typedParams.doorOpen, doorFocus: "gate" })}
+                  className={`px-3.5 py-2 rounded-lg font-bold text-xs transition cursor-pointer flex items-center gap-2 shadow-lg active:scale-95 ${
+                    typedParams.doorOpen
+                      ? "bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-amber-400/25 ring-2 ring-amber-400/40"
+                      : "bg-emerald-400 hover:bg-emerald-300 text-slate-950 shadow-emerald-400/25 ring-2 ring-emerald-400/40"
+                  }`}
+                >
+                  <span className="text-sm">{typedParams.doorOpen ? "🔒" : "🔓"}</span>
+                  <span>{typedParams.doorOpen ? "Zatvoriť bránu" : "Otvoriť bránu"}</span>
+                </button>
               </div>
             </div>
 
@@ -839,7 +824,7 @@ export function CustomGarageMenu({
                 max={typedParams.gateCount === 2 ? 3.0 : 5.0}
                 step="0.1"
                 value={typedParams.doorWidth}
-                onChange={(e) => setParams({ doorWidth: parseFloat(e.target.value) })}
+                onChange={(e) => setParams({ doorWidth: parseFloat(e.target.value), doorFocus: "gate" })}
                 className="w-full accent-emerald-400 cursor-pointer h-2 bg-slate-700 rounded-lg"
               />
               <div className="flex justify-between items-center pt-1.5">
@@ -852,7 +837,7 @@ export function CustomGarageMenu({
                 max="3.2"
                 step="0.1"
                 value={typedParams.doorHeight}
-                onChange={(e) => setParams({ doorHeight: parseFloat(e.target.value) })}
+                onChange={(e) => setParams({ doorHeight: parseFloat(e.target.value), doorFocus: "gate" })}
                 className="w-full accent-emerald-400 cursor-pointer h-2 bg-slate-700 rounded-lg"
               />
             </div>
@@ -870,7 +855,7 @@ export function CustomGarageMenu({
                   <button
                     key={c.hex}
                     type="button"
-                    onClick={() => setParams({ sectionalDoorColor: c.hex, sectionalDoor2Color: c.hex })}
+                    onClick={() => setParams({ sectionalDoorColor: c.hex, sectionalDoor2Color: c.hex, doorFocus: "gate" })}
                     title={c.name}
                     className={`h-8 rounded-lg border-2 transition cursor-pointer relative flex items-center justify-center ${
                       typedParams.sectionalDoorColor?.toLowerCase() === c.hex.toLowerCase()
@@ -887,17 +872,23 @@ export function CustomGarageMenu({
               </div>
             </div>
 
-            {/* Dvere a okná toggles */}
-            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
+            {/* Dvere a okná toggles & nastavenia */}
+            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3.5 shadow-md">
               {/* Bočné vstupné dvere */}
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-xs font-bold text-slate-100">Vchodové dvere</div>
-                  <div className="text-[11px] text-white/60">Samostatný bočný vstup</div>
+                  <div className="text-[11px] text-white/60">Samostatný bočný / zadný vstup</div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setParams({ hasPersonalDoor: !typedParams.hasPersonalDoor })}
+                  onClick={() => {
+                    const nextVal = !typedParams.hasPersonalDoor;
+                    setParams({
+                      hasPersonalDoor: nextVal,
+                      doorFocus: nextVal ? "personalDoor" : "gate",
+                    });
+                  }}
                   className={`w-12 h-6 flex items-center rounded-full p-1 transition cursor-pointer border border-white/20 ${
                     typedParams.hasPersonalDoor ? "bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" : "bg-slate-700"
                   }`}
@@ -909,6 +900,154 @@ export function CustomGarageMenu({
                   />
                 </button>
               </div>
+
+              {/* Nastavenie strany a farby dverí ak sú aktívne */}
+              {typedParams.hasPersonalDoor && (
+                <div className="pt-2 border-t border-white/10 space-y-3 bg-white/[0.02] -mx-1 p-2 rounded-lg">
+                  {/* Umiestnenie dverí */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-300 font-medium">Umiestnenie dverí:</span>
+                      <span className="text-emerald-400 font-bold text-xs">
+                        {typedParams.personalDoorSide === "front_left"
+                          ? "Vpredu vľavo"
+                          : typedParams.personalDoorSide === "front_right"
+                          ? "Vpredu vpravo"
+                          : typedParams.personalDoorSide === "back"
+                          ? "Vzadu"
+                          : typedParams.personalDoorSide === "left"
+                          ? typedParams.personalDoorPosition === "back"
+                            ? "Vľavo vzadu"
+                            : "Vľavo vpredu"
+                          : typedParams.personalDoorPosition === "back"
+                          ? "Vpravo vzadu"
+                          : "Vpravo vpredu"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        { side: "left", pos: "front", label: "Vľavo vpredu" },
+                        { side: "left", pos: "back", label: "Vľavo vzadu" },
+                        { side: "right", pos: "front", label: "Vpravo vpredu" },
+                        { side: "right", pos: "back", label: "Vpravo vzadu" },
+                        { side: "front_left", pos: "front", label: "Vpredu vľavo" },
+                        { side: "front_right", pos: "front", label: "Vpredu vpravo" },
+                        { side: "back", pos: "back", label: "Vzadu" },
+                      ].map((loc) => {
+                        const isMatch =
+                          loc.side === "front_left"
+                            ? typedParams.personalDoorSide === "front_left"
+                            : loc.side === "front_right"
+                            ? typedParams.personalDoorSide === "front_right"
+                            : loc.side === "back"
+                            ? typedParams.personalDoorSide === "back"
+                            : typedParams.personalDoorSide === loc.side &&
+                              (typedParams.personalDoorPosition ?? "front") === loc.pos;
+
+                        return (
+                          <button
+                            key={`${loc.side}-${loc.pos}`}
+                            type="button"
+                            onClick={() =>
+                              setParams({
+                                personalDoorSide: loc.side as any,
+                                personalDoorPosition: loc.pos as any,
+                                doorFocus: "personalDoor",
+                              })
+                            }
+                            className={`py-1.5 px-2 rounded-lg border text-center transition cursor-pointer text-xs ${
+                              isMatch
+                                ? "border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
+                                : "border-white/15 bg-slate-800/80 text-slate-300 hover:bg-slate-700/80"
+                            } ${loc.side === "back" ? "col-span-2" : ""}`}
+                          >
+                            {loc.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Farba a povrch vchodových dverí */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-300 font-medium">Farba / dekor dverí:</span>
+                      <span className="text-emerald-400 text-xs font-bold">
+                        {typedParams.doorDecor === "wood_oak"
+                          ? "Zlatý dub"
+                          : typedParams.doorDecor === "wood_walnut"
+                          ? "Tmavý orech"
+                          : (RAL_PALETTE.find(
+                              (c) =>
+                                c.hex.toLowerCase() ===
+                                (typedParams.doorColor ?? "#3a3f47").toLowerCase()
+                            )?.name ?? typedParams.doorColor ?? "RAL 7016")}
+                      </span>
+                    </div>
+
+                    {/* Drevodekor voľba */}
+                    <div className="flex gap-1.5 pb-1">
+                      <button
+                        type="button"
+                        onClick={() => setParams({ doorDecor: "none", doorFocus: "personalDoor" })}
+                        className={`flex-1 py-1 rounded text-[11px] font-bold border transition cursor-pointer ${
+                          (typedParams.doorDecor ?? "none") === "none"
+                            ? "border-emerald-400 bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-400/30"
+                            : "border-white/15 bg-slate-800/60 text-slate-300 hover:bg-slate-700/60"
+                        }`}
+                      >
+                        RAL farba
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setParams({ doorDecor: "wood_oak", doorFocus: "personalDoor" })}
+                        className={`flex-1 py-1 rounded text-[11px] font-bold border transition cursor-pointer ${
+                          typedParams.doorDecor === "wood_oak"
+                            ? "border-amber-400 bg-amber-500/25 text-amber-200 ring-1 ring-amber-400/40"
+                            : "border-white/15 bg-slate-800/60 text-slate-300 hover:bg-slate-700/60"
+                        }`}
+                      >
+                        Zlatý dub
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setParams({ doorDecor: "wood_walnut", doorFocus: "personalDoor" })}
+                        className={`flex-1 py-1 rounded text-[11px] font-bold border transition cursor-pointer ${
+                          typedParams.doorDecor === "wood_walnut"
+                            ? "border-amber-700 bg-amber-900/40 text-amber-200 ring-1 ring-amber-600/40"
+                            : "border-white/15 bg-slate-800/60 text-slate-300 hover:bg-slate-700/60"
+                        }`}
+                      >
+                        Tmavý orech
+                      </button>
+                    </div>
+
+                    {/* RAL paleta ak nie je vybraný drevodekor */}
+                    {(typedParams.doorDecor ?? "none") === "none" && (
+                      <div className="grid grid-cols-7 gap-1.5 pt-0.5">
+                        {RAL_PALETTE.map((c) => (
+                          <button
+                            key={c.hex}
+                            type="button"
+                            onClick={() => setParams({ doorColor: c.hex, doorDecor: "none", doorFocus: "personalDoor" })}
+                            title={c.name}
+                            className={`h-7 rounded-lg border-2 transition cursor-pointer relative flex items-center justify-center ${
+                              (typedParams.doorColor ?? "#3a3f47").toLowerCase() === c.hex.toLowerCase()
+                                ? "border-emerald-300 scale-105 ring-2 ring-emerald-400/50 shadow-md"
+                                : "border-white/20 hover:scale-105 hover:border-white/40"
+                            }`}
+                            style={{ backgroundColor: c.hex }}
+                          >
+                            {(typedParams.doorColor ?? "#3a3f47").toLowerCase() === c.hex.toLowerCase() && (
+                              <Check className="h-3.5 w-3.5 text-emerald-400 bg-black/70 rounded-full p-0.5" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Okná */}
               <div className="flex items-center justify-between pt-2.5 border-t border-white/10">
@@ -923,7 +1062,7 @@ export function CustomGarageMenu({
                       type="button"
                       onClick={() => setParams({ hasWindows: cnt > 0, windowCount: cnt })}
                       className={`w-8 h-8 rounded-lg text-xs font-mono font-bold transition cursor-pointer ${
-                        typedParams.windowCount === cnt
+                        (typedParams.windowCount ?? 0) === cnt
                           ? "bg-emerald-400 text-slate-950 border border-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.35)]"
                           : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
                       }`}
@@ -933,6 +1072,75 @@ export function CustomGarageMenu({
                   ))}
                 </div>
               </div>
+
+              {/* Nastavenie strany a farby okien ak je počet > 0 */}
+              {(typedParams.windowCount ?? 0) > 0 && (
+                <div className="pt-2 border-t border-white/10 space-y-3 bg-white/[0.02] -mx-1 p-2 rounded-lg">
+                  {/* Strana okien */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-300 font-medium">Umiestnenie okien:</span>
+                      <span className="text-emerald-400 font-bold text-xs">
+                        {typedParams.windowSide === "left"
+                          ? "Ľavá stena"
+                          : typedParams.windowSide === "back"
+                          ? "Zadná stena"
+                          : "Pravá stena"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        { id: "left", label: "Vľavo" },
+                        { id: "right", label: "Vpravo" },
+                        { id: "back", label: "Vzadu" },
+                      ].map((s) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => setParams({ windowSide: s.id as any })}
+                          className={`py-1.5 rounded-lg border text-center transition cursor-pointer text-xs ${
+                            (typedParams.windowSide ?? "left") === s.id
+                              ? "border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
+                              : "border-white/15 bg-slate-800/80 text-slate-300 hover:bg-slate-700/80"
+                          }`}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Farba rámu okien */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-300 font-medium">Farba rámu okien:</span>
+                      <span className="text-emerald-400 text-xs font-bold">
+                        {RAL_PALETTE.find((c) => c.hex.toLowerCase() === (typedParams.windowColor ?? "#2b2f36").toLowerCase())?.name ?? typedParams.windowColor ?? "RAL 7016"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-7 gap-1.5 pt-0.5">
+                      {RAL_PALETTE.map((c) => (
+                        <button
+                          key={c.hex}
+                          type="button"
+                          onClick={() => setParams({ windowColor: c.hex })}
+                          title={c.name}
+                          className={`h-7 rounded-lg border-2 transition cursor-pointer relative flex items-center justify-center ${
+                            (typedParams.windowColor ?? "#2b2f36").toLowerCase() === c.hex.toLowerCase()
+                              ? "border-emerald-300 scale-105 ring-2 ring-emerald-400/50 shadow-md"
+                              : "border-white/20 hover:scale-105 hover:border-white/40"
+                          }`}
+                          style={{ backgroundColor: c.hex }}
+                        >
+                          {(typedParams.windowColor ?? "#2b2f36").toLowerCase() === c.hex.toLowerCase() && (
+                            <Check className="h-3.5 w-3.5 text-emerald-400 bg-black/70 rounded-full p-0.5" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1196,24 +1404,24 @@ export function CustomGarageMenu({
         {/* --- TAB 7: SÚHRN KONFIGURÁCIE --- */}
         {activeTab === "summary" && (
           <div className="space-y-4">
-            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-2.5 shadow-md">
-              <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                <span className="text-xs font-bold text-slate-100 uppercase tracking-wide">
+            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-4 space-y-3 shadow-md">
+              <div className="flex justify-between items-center pb-2.5 border-b border-white/10">
+                <span className="text-sm font-bold text-slate-100 uppercase tracking-wide">
                   Súhrn parametrov
                 </span>
-                <span className="text-xs font-extrabold text-emerald-400 font-mono">
+                <span className="text-sm font-extrabold text-emerald-400 font-mono bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg">
                   {area} m²
                 </span>
               </div>
 
-              <div className="rounded-lg bg-black/60 p-3 border border-white/5 space-y-1.5 text-xs text-slate-200">
-                <div className="flex justify-between">
-                  <span className="text-white/50">Model:</span>
-                  <span className="font-bold text-emerald-400">Vlastná garáž</span>
+              <div className="rounded-lg bg-black/60 p-3.5 border border-white/5 space-y-2.5 text-sm text-slate-200">
+                <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                  <span className="text-white/60 font-medium">Model:</span>
+                  <span className="font-bold text-emerald-400">Garáž na mieru</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">Typ garáže:</span>
-                  <span className="text-white font-medium">
+                <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                  <span className="text-white/60 font-medium">Typ garáže:</span>
+                  <span className="text-white font-semibold">
                     {currentGarageType === "single"
                       ? "Samostatná garáž"
                       : currentGarageType === "double"
@@ -1221,17 +1429,17 @@ export function CustomGarageMenu({
                       : "Veľkopriestorová garáž"}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">Rozmery:</span>
-                  <span className="text-white font-medium">{typedParams.width} × {typedParams.length} m</span>
+                <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                  <span className="text-white/60 font-medium">Rozmery (Š × D):</span>
+                  <span className="text-emerald-300 font-bold font-mono text-base">{typedParams.width} × {typedParams.length} m</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">Svetlá výška:</span>
-                  <span className="text-white font-medium">{typedParams.clearHeight ?? 2.6} m</span>
+                <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                  <span className="text-white/60 font-medium">Svetlá výška (Z):</span>
+                  <span className="text-white font-semibold">{typedParams.clearHeight ?? 2.6} m</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">Strecha:</span>
-                  <span className="text-white font-medium">
+                <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                  <span className="text-white/60 font-medium">Strecha:</span>
+                  <span className="text-white font-semibold">
                     {typedParams.roofType === "cubic" || typedParams.hasAttic
                       ? "Atika (Kubická)"
                       : typedParams.roofType === "gable"
@@ -1240,23 +1448,50 @@ export function CustomGarageMenu({
                     ({typedParams.roofPitchDeg}°)
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">Opláštenie:</span>
-                  <span className="text-white font-medium">
+                <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                  <span className="text-white/60 font-medium">Opláštenie:</span>
+                  <span className="text-white font-semibold">
                     Sendvičový panel {typedParams.wallPanelThicknessMm ?? 100}mm
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">Brána:</span>
-                  <span className="text-white font-medium">
-                    {typedParams.gateCount === 2 ? "2x " : "1x "}
-                    {typedParams.doorWidth} × {typedParams.doorHeight}m ({typedParams.gateType ?? "sekčná"})
+                <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                  <span className="text-white/60 font-medium">Brána:</span>
+                  <span className="text-white font-semibold">
+                    {typedParams.gateCount === 2 ? "2× " : "1× "}
+                    {typedParams.doorWidth} × {typedParams.doorHeight} m ({typedParams.gateType === "sectional" ? "Sekčná" : typedParams.gateType === "upAndOver" ? "Výklopná" : "Krídlová"})
                   </span>
                 </div>
+                {typedParams.hasPersonalDoor && (
+                  <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                    <span className="text-white/60 font-medium">Vchodové dvere:</span>
+                    <span className="text-white font-semibold">
+                      {typedParams.personalDoorSide === "front_left"
+                        ? "Vpredu vľavo"
+                        : typedParams.personalDoorSide === "front_right"
+                        ? "Vpredu vpravo"
+                        : typedParams.personalDoorSide === "back"
+                        ? "Vzadu"
+                        : typedParams.personalDoorSide === "left"
+                        ? typedParams.personalDoorPosition === "back" ? "Vľavo vzadu" : "Vľavo vpredu"
+                        : typedParams.personalDoorPosition === "back" ? "Vpravo vzadu" : "Vpravo vpredu"}
+                      {typedParams.doorDecor === "wood_oak"
+                        ? " (Zlatý dub)"
+                        : typedParams.doorDecor === "wood_walnut"
+                        ? " (Tmavý orech)"
+                        : ""}
+                    </span>
+                  </div>
+                )}
+                {(typedParams.windowCount ?? 0) > 0 && (
+                  <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                    <span className="text-white/60 font-medium">Okná:</span>
+                    <span className="text-white font-semibold">{typedParams.windowCount}× okno</span>
+                  </div>
+                )}
                 {typedParams.hasExtension && (
-                  <div className="flex justify-between">
-                    <span className="text-white/50">Prístrešok:</span>
-                    <span className="text-emerald-400 font-medium">
+                  <div className="flex justify-between items-center py-0.5">
+                    <span className="text-white/60 font-medium">Prístrešok:</span>
+                    <span className="text-emerald-400 font-semibold">
                       {typedParams.extensionType ?? "Carport"} ({typedParams.extensionWidth}m)
                     </span>
                   </div>
@@ -1264,8 +1499,10 @@ export function CustomGarageMenu({
               </div>
             </div>
 
-            {/* Výkaz materiálu (BOM) */}
-            <GarageBomTable params={typedParams} accentColor="emerald" />
+            {/* Výkaz materiálu (BOM) pre výrobcu / admin */}
+            {canExportCad && (
+              <GarageBomTable params={typedParams} accentColor="emerald" />
+            )}
 
             <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-2 shadow-md">
               <label className="block text-[11px] text-white/70 uppercase tracking-wider font-semibold">

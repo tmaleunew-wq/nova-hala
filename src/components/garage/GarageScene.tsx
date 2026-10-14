@@ -3,7 +3,7 @@ import { useThree, useFrame } from "@react-three/fiber";
 import { Grid } from "@react-three/drei";
 import * as THREE from "three";
 import type { GarageParams } from "@/lib/garage/types";
-import { Structure } from "./Structure";
+import { Structure, getPersonalDoorZ } from "./Structure";
 import { Cladding } from "./Cladding";
 import { Accessories } from "./Accessories";
 import { Foundation } from "./Foundation";
@@ -152,6 +152,11 @@ export function CameraRig({
 
     const isRoofFocus = focusTab === "roof" && preset === "iso";
     const isDoorsFocus = focusTab === "doors" && preset === "iso";
+    const isPersonalDoorFocus =
+      isDoorsFocus &&
+      params.hasPersonalDoor &&
+      params.doorFocus === "personalDoor";
+    const isGateFocus = isDoorsFocus && !isPersonalDoorFocus;
     const isExtensionFocus = focusTab === "extension" && preset === "iso";
     const extSign = params.extensionSide === "left" ? -1 : 1;
 
@@ -162,32 +167,21 @@ export function CameraRig({
     const margin = isMobileViewport
       ? (isRoofFocus
           ? 0.88
-          : isDoorsFocus
-          ? 0.82
           : isExtensionFocus
           ? 0.72
           : (isSingleGarage ? 1.02 : 1.22))
       : (isRoofFocus
           ? 0.60
-          : isDoorsFocus
-          ? 0.52
           : isExtensionFocus
           ? 0.72
-          : (isCustom ? 0.88 : 1.18));
+          : (isCustom ? 0.92 : 1.18));
     const dist = (maxDimension / effectiveFactor) * margin;
 
-    // Perspective direction: elevated for roof, frontal close-up for doors, side-3/4 for extension
     const isoDir = isRoofFocus
       ? new THREE.Vector3(
           isCustom ? -0.44 : -0.75,
           isCustom ? 0.70 : 0.82,
           isCustom ? -0.88 : -0.85
-        ).normalize()
-      : isDoorsFocus
-      ? new THREE.Vector3(
-          isCustom ? -0.22 : -0.35,
-          isMobileViewport ? 0.28 : 0.18,
-          -1.25
         ).normalize()
       : isExtensionFocus
       ? new THREE.Vector3(
@@ -196,52 +190,110 @@ export function CameraRig({
           -0.95
         ).normalize()
       : new THREE.Vector3(
-          isCustom ? -0.52 : -1.15,
-          isCustom ? 0.36 : 0.70,
-          isCustom ? -1.18 : -1.0
+          isCustom ? -0.65 : -1.15,
+          isCustom ? 0.38 : 0.70,
+          isCustom ? -1.10 : -1.0
         ).normalize();
 
-    // Shifting camera target: on mobile, garage must ALWAYS stay in the elevated visible half
-    const target = new THREE.Vector3(
+    // Shifting camera target: offset to the left of desktop screen so it is never covered by right sidebar
+    let target = new THREE.Vector3(
       isExtensionFocus
         ? (params.extensionWidth ?? 3.5) * 0.3 * extSign
-        : (isCustom && !isMobileViewport && preset === "iso" ? 0.15 : 0),
+        : (isCustom && !isMobileViewport && preset === "iso" ? 0.70 : 0),
       isMobileViewport
-        ? (isRoofFocus
-            ? mobileOffsetY + 0.45
-            : isDoorsFocus
-            ? mobileOffsetY + 0.12
-            : mobileOffsetY)
-        : (isRoofFocus
-            ? H + 0.35
-            : isDoorsFocus
-            ? (params.doorHeight ?? 2.1) * 0.52
-            : (isCustom ? H * 0.42 : H / 2)),
-      isRoofFocus ? 0 : isDoorsFocus ? -L / 2 : (isCustom ? -0.4 : 0)
+        ? (isRoofFocus ? mobileOffsetY + 0.45 : mobileOffsetY)
+        : (isRoofFocus ? H + 0.35 : (isCustom ? H * 0.42 : H / 2)),
+      isRoofFocus ? 0 : (isCustom ? -0.2 : 0)
     );
 
     let pos: THREE.Vector3;
-    switch (preset) {
-      case "plan":
-        pos = new THREE.Vector3(0.001, center.y + (Math.max(W, L) / effectiveFactor) * margin, 0);
-        break;
-      case "front":
-        pos = new THREE.Vector3(0, center.y, center.z - (Math.max(W, H) / effectiveFactor) * margin);
-        break;
-      case "side":
-        pos = new THREE.Vector3(center.x + (Math.max(L, H) / effectiveFactor) * margin, center.y, 0);
-        break;
-      case "iso":
-      default: {
-        pos = target.clone().add(isoDir.multiplyScalar(dist));
-        break;
+    if (preset === "iso" && isGateFocus) {
+      // Pohľad na prednú stenu a celú garážovú bránu s väčším odstupom
+      const frontMax = Math.max(W + 1.2, H * 1.5);
+      const frontDist = (frontMax / effectiveFactor) * (isMobileViewport ? 1.40 : 1.30);
+      const frontTargetY = isMobileViewport ? mobileOffsetY + H * 0.48 : H * 0.48;
+      const frontTargetX = isMobileViewport ? 0 : 0.65;
+      target = new THREE.Vector3(frontTargetX, frontTargetY, -L / 2);
+      const gateDir = new THREE.Vector3(isMobileViewport ? -0.12 : -0.20, 0.16, -1.0).normalize();
+      pos = target.clone().add(gateDir.multiplyScalar(frontDist));
+    } else if (preset === "iso" && isPersonalDoorFocus) {
+      // Pohľad na stenu / stranu, kde sú umiestnené vchodové dvere s väčším odstupom
+      const doorOffsetX = isMobileViewport ? 0 : 0.55;
+      const sideMax = Math.max(L * 0.95 + 1.0, H * 1.5);
+      const sideDist = (sideMax / effectiveFactor) * (isMobileViewport ? 1.40 : 1.30);
+      const sideTargetY = isMobileViewport ? mobileOffsetY + H * 0.48 : H * 0.48;
+
+      let doorDir = new THREE.Vector3();
+      if (params.personalDoorSide === "left") {
+        // Pohľad na ľavú stranu garáže
+        target = new THREE.Vector3(-W / 2 + doorOffsetX, sideTargetY, 0);
+        doorDir = new THREE.Vector3(-1.0, 0.18, -0.15).normalize();
+        pos = target.clone().add(doorDir.multiplyScalar(sideDist));
+      } else if (params.personalDoorSide === "right") {
+        // Pohľad na pravú stranu garáže
+        target = new THREE.Vector3(W / 2 + doorOffsetX, sideTargetY, 0);
+        doorDir = new THREE.Vector3(1.0, 0.18, -0.15).normalize();
+        pos = target.clone().add(doorDir.multiplyScalar(sideDist));
+      } else if (params.personalDoorSide === "front_left") {
+        // Pohľad na prednú stenu vľavo
+        const frontDoorDist = (Math.max(W + 1.2, H * 1.5) / effectiveFactor) * (isMobileViewport ? 1.40 : 1.30);
+        target = new THREE.Vector3(-W * 0.25 + doorOffsetX, sideTargetY, -L / 2);
+        doorDir = new THREE.Vector3(-0.35, 0.18, -1.0).normalize();
+        pos = target.clone().add(doorDir.multiplyScalar(frontDoorDist));
+      } else if (params.personalDoorSide === "front_right") {
+        // Pohľad na prednú stenu vpravo
+        const frontDoorDist = (Math.max(W + 1.2, H * 1.5) / effectiveFactor) * (isMobileViewport ? 1.40 : 1.30);
+        target = new THREE.Vector3(W * 0.25 + doorOffsetX, sideTargetY, -L / 2);
+        doorDir = new THREE.Vector3(0.35, 0.18, -1.0).normalize();
+        pos = target.clone().add(doorDir.multiplyScalar(frontDoorDist));
+      } else {
+        // Pohľad na zadnú stenu garáže
+        const backDist = (Math.max(W + 1.2, H * 1.5) / effectiveFactor) * (isMobileViewport ? 1.40 : 1.30);
+        target = new THREE.Vector3(doorOffsetX, sideTargetY, L / 2);
+        doorDir = new THREE.Vector3(-0.20, 0.18, 1.0).normalize();
+        pos = target.clone().add(doorDir.multiplyScalar(backDist));
+      }
+    } else {
+      switch (preset) {
+        case "plan":
+          pos = new THREE.Vector3(0.001, center.y + (Math.max(W, L) / effectiveFactor) * margin, 0);
+          break;
+        case "front":
+          pos = new THREE.Vector3(0, center.y, center.z - (Math.max(W, H) / effectiveFactor) * margin);
+          break;
+        case "side":
+          pos = new THREE.Vector3(center.x + (Math.max(L, H) / effectiveFactor) * margin, center.y, 0);
+          break;
+        case "iso":
+        default: {
+          pos = target.clone().add(isoDir.multiplyScalar(dist));
+          break;
+        }
       }
     }
 
     targetPos.current.copy(pos);
     targetLook.current.copy(target);
     isTransitioning.current = true;
-  }, [preset, params.width, params.length, params.clearHeight, params.hallType, focusTab, params.extensionSide, params.extensionWidth, params.hasExtension, camera]);
+  }, [
+    preset,
+    params.width,
+    params.length,
+    params.clearHeight,
+    params.hallType,
+    focusTab,
+    params.doorFocus,
+    params.hasPersonalDoor,
+    params.personalDoorSide,
+    params.personalDoorPosition,
+    params.doorWidth,
+    params.doorHeight,
+    params.gateCount,
+    params.extensionSide,
+    params.extensionWidth,
+    params.hasExtension,
+    camera,
+  ]);
 
   useFrame((_, delta) => {
     if (!isTransitioning.current) return;

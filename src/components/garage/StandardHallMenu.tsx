@@ -982,66 +982,68 @@ export function StandardHallMenu({
               {/* --- TAB 6: SÚHRN ŠPECIFIKÁCIE --- */}
               {activeTab === "summary" && (
                 <div className="space-y-4">
-                  <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-2.5 shadow-md">
-                    <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                      <span className="text-xs font-bold text-slate-100 uppercase tracking-wide">
+                  <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-4 space-y-3 shadow-md">
+                    <div className="flex justify-between items-center pb-2.5 border-b border-white/10">
+                      <span className="text-sm font-bold text-slate-100 uppercase tracking-wide">
                         Špecifikácia haly
                       </span>
-                      <span className="text-xs font-extrabold text-cyan-400 font-mono">
+                      <span className="text-sm font-extrabold text-cyan-400 font-mono bg-cyan-500/15 border border-cyan-500/30 px-2.5 py-0.5 rounded-lg">
                         {area} m²
                       </span>
                     </div>
 
-                    <div className="rounded-lg bg-black/60 p-3 border border-white/5 space-y-1.5 text-xs text-slate-200">
-                      <div className="flex justify-between">
-                        <span className="text-white/50">Model haly:</span>
+                    <div className="rounded-lg bg-black/60 p-3.5 border border-white/5 space-y-2.5 text-sm text-slate-200">
+                      <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                        <span className="text-white/60 font-medium">Model haly:</span>
                         <span className="font-bold text-cyan-400">{selectedHall}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/50">Pôdorys:</span>
-                        <span className="text-white font-medium">
+                      <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                        <span className="text-white/60 font-medium">Pôdorys (Š × D):</span>
+                        <span className="text-cyan-300 font-bold font-mono text-base">
                           {typedParams.width} × {currentLength} m ({bayCount} polí)
                         </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/50">Svetlá výška:</span>
-                        <span className="text-white font-medium">{typedParams.clearHeight} m</span>
+                      <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                        <span className="text-white/60 font-medium">Svetlá výška (Z):</span>
+                        <span className="text-white font-semibold">{typedParams.clearHeight} m</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/50">Strecha:</span>
-                        <span className="text-white font-medium">
+                      <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                        <span className="text-white/60 font-medium">Strecha:</span>
+                        <span className="text-white font-semibold">
                           {typedParams.roofType === "gable" ? "Sedlová" : "Pultová"} ({typedParams.roofPitchDeg}°)
                         </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/50">Opláštenie:</span>
-                        <span className="text-white font-medium">
+                      <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                        <span className="text-white/60 font-medium">Opláštenie:</span>
+                        <span className="text-white font-semibold">
                           {typedParams.panelType === "sandwich"
                             ? `Sendvič PIR ${typedParams.wallPanelThicknessMm ?? 100}mm`
                             : "Trapézový plech"}
                         </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/50">Brána:</span>
-                        <span className="text-white font-medium">
+                      <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                        <span className="text-white/60 font-medium">Brána:</span>
+                        <span className="text-white font-semibold">
                           {typedParams.doorWidth} × {typedParams.doorHeight} m (Sekčná)
                           {typedParams.hasBackDoor ? " + zadná" : ""}
                         </span>
                       </div>
                       {(typedParams.hasPersonalDoor || (typedParams.windowCount ?? 0) > 0) && (
-                        <div className="flex justify-between">
-                          <span className="text-white/50">Výplne:</span>
-                          <span className="text-white font-medium">
+                        <div className="flex justify-between items-center py-0.5">
+                          <span className="text-white/60 font-medium">Výplne:</span>
+                          <span className="text-white font-semibold">
                             {typedParams.hasPersonalDoor ? "Dvere" : ""}
                             {typedParams.hasPersonalDoor && (typedParams.windowCount ?? 0) > 0 ? " + " : ""}
-                            {(typedParams.windowCount ?? 0) > 0 ? `${typedParams.windowCount}x okno` : ""}
+                            {(typedParams.windowCount ?? 0) > 0 ? `${typedParams.windowCount}× okno` : ""}
                           </span>
                         </div>
                       )}
                     </div>
 
-                    {/* Výkaz materiálu (BOM) */}
-                    <GarageBomTable params={typedParams} accentColor="cyan" />
+                    {/* Výkaz materiálu (BOM) pre výrobcu / admin */}
+                    {canExportCad && (
+                      <GarageBomTable params={typedParams} accentColor="cyan" />
+                    )}
 
                     <div>
                       <label className="block mb-1 text-[10px] text-white/60 uppercase tracking-wider font-semibold">

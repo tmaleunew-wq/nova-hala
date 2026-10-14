@@ -18,6 +18,7 @@ import { PriceQuoteModal } from "@/components/garage/PriceQuoteModal";
 import { BuildingQrModal } from "@/components/garage/BuildingQrModal";
 import { AdminPricingAdjustment } from "@/components/garage/AdminPricingAdjustment";
 import { AdminPricingTable } from "@/components/garage/AdminPricingTable";
+import { GarageBomTable } from "@/components/garage/GarageBomTable";
 
 export const Route = createFileRoute("/admin")({
   component: () => (
@@ -572,6 +573,11 @@ function AdminDashboard() {
             finalSubtotalBeforeVat={finalSubtotalBeforeVat}
             finalTotalWithVat={finalTotalWithVat}
           />
+
+          {/* Výkaz materiálu a kusovník (BOM) pre výrobcu */}
+          <div className="pt-2">
+            <GarageBomTable params={params} accentColor="emerald" />
+          </div>
 
         </div>
       </div>
