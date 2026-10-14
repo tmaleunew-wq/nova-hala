@@ -40,6 +40,10 @@ export function isMobileDevice(): boolean {
 export async function exportToGlb(object3d: THREE.Object3D): Promise<Blob> {
   const clone = object3d.clone(true);
 
+  // Otočenie o 180° okolo osi Y, aby brána a predné čelo smerovali dopredu k používateľovi (do osi +Z)
+  clone.rotation.y += Math.PI;
+  clone.updateMatrixWorld(true);
+
   // Expand InstancedMesh to individual Mesh nodes for mobile AR compatibility
   const instancedMeshes: THREE.InstancedMesh[] = [];
   clone.traverse((child) => {
@@ -77,8 +81,11 @@ export async function exportToGlb(object3d: THREE.Object3D): Promise<Blob> {
  * Export 3D scény do formátu USDZ (pre Apple Quick Look AR)
  */
 export async function exportToUsdz(object3d: THREE.Object3D): Promise<Blob> {
+  const clone = object3d.clone(true);
+  clone.rotation.y += Math.PI;
+  clone.updateMatrixWorld(true);
   const exporter = new USDZExporter();
-  const buffer = await exporter.parseAsync(object3d, {
+  const buffer = await exporter.parseAsync(clone, {
     quickLookCompatible: true,
     maxTextureSize: 1024,
   });

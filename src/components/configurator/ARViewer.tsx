@@ -151,6 +151,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
                       ar-modes="webxr scene-viewer quick-look"
                       camera-controls
                       auto-rotate
+                      camera-orbit="-20deg 75deg 105%"
                       shadow-intensity="1"
                       touch-action="pan-y"
                       alt="3D Model"
