@@ -42,32 +42,42 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      const u = new URL(window.location.href);
-      // If accessed via localhost / 127.0.0.1, phone cannot access local loopback -> route to live production domain
-      if (u.hostname === 'localhost' || u.hostname === '127.0.0.1' || u.hostname.startsWith('192.168.')) {
-        u.protocol = 'https:';
-        u.host = 'steel-shed-forge-mu.vercel.app';
-        u.port = '';
-      }
+      const sourceUrl = new URL(window.location.href);
+      const cleanParams = new URLSearchParams();
 
-      // Ensure ASCII only: convert diacritics like 'Vlastný' to 'vlastna' so mobile camera recognizes it as a valid URI
-      const hall = u.searchParams.get('hallType');
-      if (hall) {
-        if (hall === 'Vlastný' || hall.toLowerCase().includes('vlastn')) {
-          u.searchParams.set('hallType', 'vlastna');
+      // 1. AR flag so mobile triggers AR on open
+      cleanParams.set('ar', '1');
+
+      // 2. Hall type (pure ASCII)
+      const rawHall = sourceUrl.searchParams.get('hallType');
+      if (rawHall) {
+        if (rawHall === 'Vlastný' || rawHall.toLowerCase().includes('vlastn')) {
+          cleanParams.set('hallType', 'vlastna');
         } else {
-          u.searchParams.set('hallType', hall.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+          cleanParams.set('hallType', rawHall.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
         }
       }
 
-      u.searchParams.set('ar', '1');
-      setTargetWebUrl(u.toString());
+      // 3. Keep only essential dimensions for clean, low-density QR code (scans instantly)
+      const essentialKeys = ['width', 'length', 'clearHeight', 'roofType', 'client'];
+      for (const k of essentialKeys) {
+        const val = sourceUrl.searchParams.get(k);
+        if (val) cleanParams.set(k, val);
+      }
+
+      const host = (sourceUrl.hostname === 'localhost' || sourceUrl.hostname === '127.0.0.1' || sourceUrl.hostname.startsWith('192.168.'))
+        ? 'steel-shed-forge-mu.vercel.app'
+        : sourceUrl.host;
+
+      const cleanUrl = `https://${host}/?${cleanParams.toString()}`;
+      setTargetWebUrl(cleanUrl);
     } catch {
       setTargetWebUrl('https://steel-shed-forge-mu.vercel.app/?ar=1');
     }
   }, [open]);
 
-  const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=2&data=${encodeURIComponent(targetWebUrl)}`;
+  // size=320x320 and margin=4 provides standard quiet zone for instant camera detection
+  const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=4&data=${encodeURIComponent(targetWebUrl)}`;
 
   useEffect(() => {
     if (open) {
@@ -164,16 +174,16 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 
                 {/* QR Code Container (shown only on Desktop) */}
                 {!isMobile && (
-                  <div className="w-full md:w-60 flex flex-col items-center justify-center p-4 bg-background border border-border rounded-2xl shadow-sm gap-3 shrink-0">
+                  <div className="w-full md:w-64 flex flex-col items-center justify-center p-4 bg-background border border-border rounded-2xl shadow-sm gap-3 shrink-0">
                     <div className="flex items-center gap-2 font-bold text-xs text-foreground">
                       <QrCode className="w-4 h-4" style={{ color: primaryColor }} />
                       <span>QR kód pre mobil</span>
                     </div>
-                    <div className="p-2 bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-center">
+                    <div className="p-3 bg-white rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-center">
                       <img
                         src={qrCodeImageUrl}
                         alt="QR kód vizualizácie"
-                        className="w-36 h-36 object-contain"
+                        className="w-44 h-44 object-contain"
                         loading="eager"
                       />
                     </div>
