@@ -855,9 +855,14 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           enableDamping
           dampingFactor={0.08}
           target={[0, typedParams.clearHeight / 2, 0]}
-          maxPolarAngle={Math.PI / 2 - 0.02}
+          maxPolarAngle={Math.PI / 2}
         />
-        <CameraRig preset={preset} params={typedParams} focusTab={customActiveTab} />
+        <CameraRig
+          preset={preset}
+          params={typedParams}
+          focusTab={customActiveTab}
+          onUserInteract={() => setPreset("iso")}
+        />
         {!isMobile && (
           <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
             <GizmoViewport axisColors={["#ef4444", "#22c55e", "#3b82f6"]} labelColor="white" />

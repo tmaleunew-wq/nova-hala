@@ -107,7 +107,7 @@ export function PurPanel({
       return createPBRTileMaterial(activeColorStr, repeatsX, repeatsY);
     }
     if (panelType === "smooth" || panelType === "sandwich") {
-      return createPBRSmoothMaterial(activeColorStr);
+      return createPBRSmoothMaterial(activeColorStr, 3.2, 3.2);
     }
     if (panelType === "wood_oak") {
       return createPBRWoodMaterial("golden_oak", claddingOrientation);

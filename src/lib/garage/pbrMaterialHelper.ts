@@ -11,6 +11,9 @@ import {
   makeWoodTexture,
   makeWoodNormalTexture,
   makeWoodRoughnessTexture,
+  makeStuccoTexture,
+  makeStuccoNormalTexture,
+  makeStuccoRoughnessTexture,
 } from "./textures";
 
 /**
@@ -62,11 +65,20 @@ export function createPBRCladdingMaterial(
 
 export function createPBRSmoothMaterial(
   color: string,
+  repeatsX = 3.2,
+  repeatsY = 3.2,
 ): THREE.MeshStandardMaterial {
+  const map = makeStuccoTexture(color, repeatsX, repeatsY);
+  const normalMap = makeStuccoNormalTexture(repeatsX, repeatsY);
+  const roughnessMap = makeStuccoRoughnessTexture(repeatsX, repeatsY);
+
   return new THREE.MeshStandardMaterial({
-    color: new THREE.Color(color),
-    roughness: 0.72,  // Fine-grain architectural facade stucco/matte finish
-    metalness: 0.08,
+    map,
+    normalMap,
+    normalScale: new THREE.Vector2(2.0, 2.0), // Crisp tactile plaster grain micro-shadows
+    roughnessMap,
+    roughness: 0.90, // Matte architectural plaster / stierka
+    metalness: 0.02, // Non-metallic facade render
     side: THREE.DoubleSide,
   });
 }

@@ -510,3 +510,237 @@ export function makeWoodRoughnessTexture(): THREE.CanvasTexture {
   return tex;
 }
 
+// -------------------------------------------------------------
+// STUCCO / JEMNÁ STIERKA FASÁDNA TEXTÚRA (PBR)
+// -------------------------------------------------------------
+const stuccoNormalCache = new Map<string, THREE.CanvasTexture>();
+const stuccoDiffuseCache = new Map<string, THREE.CanvasTexture>();
+const stuccoRoughnessCache = new Map<string, THREE.CanvasTexture>();
+
+const STUCCO_SIZE = 512;
+let stuccoSharedHeight: Float32Array | null = null;
+
+function getStuccoHeightField(): Float32Array {
+  if (stuccoSharedHeight) return stuccoSharedHeight;
+  const size = STUCCO_SIZE;
+  const cellSize = 5; // ~102 aggregate grains per tile
+  const gridW = Math.ceil(size / cellSize);
+
+  let seed = 918273;
+  function rand() {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  }
+
+  // Jittered 2D grid of grain aggregate centers (seamless periodic wrapping)
+  const grid: Array<Array<{ x: number; y: number; h: number }>> = Array.from({ length: gridW }, () => []);
+  for (let gy = 0; gy < gridW; gy++) {
+    for (let gx = 0; gx < gridW; gx++) {
+      grid[gy].push({
+        x: (gx + 0.15 + rand() * 0.7) * cellSize,
+        y: (gy + 0.15 + rand() * 0.7) * cellSize,
+        h: 0.85 + rand() * 0.3,
+      });
+    }
+  }
+
+  const height = new Float32Array(size * size);
+  for (let y = 0; y < size; y++) {
+    const gy = Math.floor(y / cellSize);
+    for (let x = 0; x < size; x++) {
+      const gx = Math.floor(x / cellSize);
+      let d1 = Infinity;
+      let d2 = Infinity;
+      let closestH = 1.0;
+
+      for (let dy = -1; dy <= 1; dy++) {
+        const cy = (gy + dy + gridW) % gridW;
+        for (let dx = -1; dx <= 1; dx++) {
+          const cx = (gx + dx + gridW) % gridW;
+          const pt = grid[cy][cx];
+          let px = pt.x;
+          let py = pt.y;
+          if (dx === -1 && px > x) px -= size;
+          if (dx === 1 && px < x) px += size;
+          if (dy === -1 && py > y) py -= size;
+          if (dy === 1 && py < y) py += size;
+
+          const dist = Math.hypot(x - px, y - py);
+          if (dist < d1) {
+            d2 = d1;
+            d1 = dist;
+            closestH = pt.h;
+          } else if (dist < d2) {
+            d2 = dist;
+          }
+        }
+      }
+
+      // 1. Hemispherical aggregate grain dome
+      const rad = cellSize * 0.75;
+      const dome = Math.max(0, 1 - d1 / rad);
+      // 2. Inter-granular crevice groove (Voronoi boundary)
+      const crevice = Math.min(1, (d2 - d1) / (cellSize * 0.45));
+      // 3. Micro-sand grit
+      const grit = (rand() - 0.5) * 0.14;
+
+      height[y * size + x] = (dome * 0.62 + crevice * 0.38) * closestH + grit;
+    }
+  }
+
+  // Normalize height field to [0, 1] range
+  let minH = Infinity;
+  let maxH = -Infinity;
+  for (let i = 0; i < size * size; i++) {
+    if (height[i] < minH) minH = height[i];
+    if (height[i] > maxH) maxH = height[i];
+  }
+  const span = maxH - minH || 1;
+  for (let i = 0; i < size * size; i++) {
+    height[i] = (height[i] - minH) / span;
+  }
+
+  stuccoSharedHeight = height;
+  return height;
+}
+
+export function makeStuccoNormalTexture(repeatsX = 3.2, repeatsY = 3.2): THREE.CanvasTexture {
+  const key = `${repeatsX}_${repeatsY}`;
+  if (stuccoNormalCache.has(key)) return stuccoNormalCache.get(key)!;
+
+  const size = STUCCO_SIZE;
+  const height = getStuccoHeightField();
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext("2d")!;
+  const imgData = ctx.createImageData(size, size);
+  const data = imgData.data;
+
+  // Central difference normal calculation with periodic wrapping (100% seamless)
+  const dz = 0.075; // Pronounced tactile relief for granular facade plaster
+  for (let y = 0; y < size; y++) {
+    const yTop = (y - 1 + size) % size;
+    const yBottom = (y + 1) % size;
+    for (let x = 0; x < size; x++) {
+      const xLeft = (x - 1 + size) % size;
+      const xRight = (x + 1) % size;
+
+      const dx = (height[y * size + xRight] - height[y * size + xLeft]) * 0.5;
+      const dy = (height[yBottom * size + x] - height[yTop * size + x]) * 0.5;
+
+      const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      const nx = -dx / len;
+      const ny = -dy / len;
+      const nz = dz / len;
+
+      const idx = (y * size + x) * 4;
+      data[idx] = Math.round((nx * 0.5 + 0.5) * 255);
+      data[idx + 1] = Math.round((ny * 0.5 + 0.5) * 255);
+      data[idx + 2] = Math.round((nz * 0.5 + 0.5) * 255);
+      data[idx + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(repeatsX, repeatsY);
+  tex.anisotropy = 16;
+  stuccoNormalCache.set(key, tex);
+  return tex;
+}
+
+export function makeStuccoTexture(color: string, repeatsX = 3.2, repeatsY = 3.2): THREE.CanvasTexture {
+  const key = `${color.toLowerCase()}_${repeatsX}_${repeatsY}`;
+  if (stuccoDiffuseCache.has(key)) return stuccoDiffuseCache.get(key)!;
+
+  const size = STUCCO_SIZE;
+  const height = getStuccoHeightField();
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext("2d")!;
+
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, size, size);
+
+  const imgData = ctx.getImageData(0, 0, size, size);
+  const data = imgData.data;
+
+  // Base RGB values
+  const r0 = data[0];
+  const g0 = data[1];
+  const b0 = data[2];
+
+  let seed = 44556;
+  function rand() {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  }
+
+  // Modulate diffuse by ambient occlusion in inter-granular pore pits + micro highlights on peaks
+  for (let i = 0; i < size * size; i++) {
+    const h = height[i]; // 0.0 (deep crevice) to 1.0 (grain peak)
+    // Deep cavity darkening in pores to withstand Three.js scene illumination
+    let factor: number;
+    if (h < 0.35) {
+      factor = 0.45 + (h / 0.35) * 0.40; // 0.45 to 0.85
+    } else if (h < 0.75) {
+      factor = 0.85 + ((h - 0.35) / 0.40) * 0.15; // 0.85 to 1.00
+    } else {
+      factor = 1.00 + ((h - 0.75) / 0.25) * 0.08; // 1.00 to 1.08 highlight
+    }
+
+    // Micro mineral scatter
+    factor *= 1.0 + (rand() - 0.5) * 0.04;
+
+    const idx = i * 4;
+    data[idx] = Math.max(0, Math.min(255, Math.round(r0 * factor)));
+    data[idx + 1] = Math.max(0, Math.min(255, Math.round(g0 * factor)));
+    data[idx + 2] = Math.max(0, Math.min(255, Math.round(b0 * factor)));
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(repeatsX, repeatsY);
+  tex.anisotropy = 16;
+  stuccoDiffuseCache.set(key, tex);
+  return tex;
+}
+
+export function makeStuccoRoughnessTexture(repeatsX = 3.2, repeatsY = 3.2): THREE.CanvasTexture {
+  const key = `${repeatsX}_${repeatsY}`;
+  if (stuccoRoughnessCache.has(key)) return stuccoRoughnessCache.get(key)!;
+
+  const size = STUCCO_SIZE;
+  const height = getStuccoHeightField();
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext("2d")!;
+  const imgData = ctx.createImageData(size, size);
+  const data = imgData.data;
+
+  for (let i = 0; i < size * size; i++) {
+    const h = height[i];
+    // Matte architectural plaster (crevice pores ~0.96, grain tops ~0.80)
+    const roughness = 0.96 - h * 0.16;
+    const val = Math.round(Math.max(0, Math.min(255, roughness * 255)));
+    const idx = i * 4;
+    data[idx] = val;
+    data[idx + 1] = val;
+    data[idx + 2] = val;
+    data[idx + 3] = 255;
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(repeatsX, repeatsY);
+  tex.anisotropy = 16;
+  stuccoRoughnessCache.set(key, tex);
+  return tex;
+}
+

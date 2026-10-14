@@ -58,7 +58,7 @@ function PurGableTriangle({
   const pbrMaterial = useMemo(() => {
     if (wireframe) return null;
     if (panelType === "smooth" || panelType === "sandwich") {
-      return createPBRSmoothMaterial(activeColorStr);
+      return createPBRSmoothMaterial(activeColorStr, 3.2, 3.2);
     }
     if (panelType === "wood_oak") {
       return createPBRWoodMaterial("golden_oak", claddingOrientation);
@@ -218,7 +218,7 @@ function PurShedTriangle({
   const pbrMaterial = useMemo(() => {
     if (wireframe) return null;
     if (panelType === "smooth" || panelType === "sandwich") {
-      return createPBRSmoothMaterial(activeColorStr);
+      return createPBRSmoothMaterial(activeColorStr, 3.2, 3.2);
     }
     if (panelType === "wood_oak") {
       return createPBRWoodMaterial("golden_oak", claddingOrientation);

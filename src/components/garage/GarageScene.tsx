@@ -111,10 +111,12 @@ export function CameraRig({
   preset,
   params,
   focusTab,
+  onUserInteract,
 }: {
   preset: ViewPreset;
   params: GarageParams;
   focusTab?: string;
+  onUserInteract?: () => void;
 }) {
   const { camera, controls } = useThree() as {
     camera: THREE.PerspectiveCamera;
@@ -124,6 +126,19 @@ export function CameraRig({
   const targetPos = useRef<THREE.Vector3>(new THREE.Vector3());
   const targetLook = useRef<THREE.Vector3>(new THREE.Vector3());
   const isTransitioning = useRef<boolean>(false);
+  const transitionTimer = useRef<any>(null);
+
+  useEffect(() => {
+    if (!controls) return;
+    const handleStart = () => {
+      isTransitioning.current = false;
+      onUserInteract?.();
+    };
+    (controls as any).addEventListener?.("start", handleStart);
+    return () => {
+      (controls as any).removeEventListener?.("start", handleStart);
+    };
+  }, [controls, onUserInteract]);
 
   useEffect(() => {
     if (!camera) return;
@@ -256,13 +271,14 @@ export function CameraRig({
     } else {
       switch (preset) {
         case "plan":
-          pos = new THREE.Vector3(0.001, center.y + (Math.max(W, L) / effectiveFactor) * margin, 0);
+          // Epsilon offset on Z to prevent gimbal-lock singularity with camera.up
+          pos = new THREE.Vector3(target.x, center.y + (Math.max(W, L) / effectiveFactor) * margin, 0.005);
           break;
         case "front":
-          pos = new THREE.Vector3(0, center.y, center.z - (Math.max(W, H) / effectiveFactor) * margin);
+          pos = new THREE.Vector3(target.x, center.y + 0.08, center.z - (Math.max(W, H) / effectiveFactor) * margin);
           break;
         case "side":
-          pos = new THREE.Vector3(center.x + (Math.max(L, H) / effectiveFactor) * margin, center.y, 0);
+          pos = new THREE.Vector3(center.x + (Math.max(L, H) / effectiveFactor) * margin, center.y + 0.08, 0);
           break;
         case "iso":
         default: {
@@ -272,9 +288,13 @@ export function CameraRig({
       }
     }
 
+    clearTimeout(transitionTimer.current);
     targetPos.current.copy(pos);
     targetLook.current.copy(target);
     isTransitioning.current = true;
+    transitionTimer.current = setTimeout(() => {
+      isTransitioning.current = false;
+    }, 1000);
   }, [
     preset,
     params.width,
@@ -297,7 +317,7 @@ export function CameraRig({
 
   useFrame((_, delta) => {
     if (!isTransitioning.current) return;
-    const speed = Math.min(1, delta * 3.6);
+    const speed = Math.min(1, delta * 4.2);
     camera.position.lerp(targetPos.current, speed);
     if (controls) {
       controls.target.lerp(targetLook.current, speed);
@@ -307,7 +327,7 @@ export function CameraRig({
     }
     camera.updateProjectionMatrix();
 
-    if (camera.position.distanceTo(targetPos.current) < 0.02) {
+    if (camera.position.distanceTo(targetPos.current) < 0.08) {
       camera.position.copy(targetPos.current);
       if (controls) {
         controls.target.copy(targetLook.current);
