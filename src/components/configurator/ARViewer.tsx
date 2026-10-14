@@ -6,8 +6,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Sparkles, Download, Smartphone, QrCode, Loader2 } from 'lucide-react';
+import { Sparkles, Smartphone, QrCode, Loader2 } from 'lucide-react';
 
 interface ARViewerProps {
   open: boolean;
@@ -17,7 +16,6 @@ interface ARViewerProps {
   primaryColor?: string;
   title?: string;
   description?: string;
-  downloadFileName?: string;
 }
 
 declare global {
@@ -36,7 +34,6 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   primaryColor = '#10b981',
   title = 'Zobraziť v AR (Rozšírená realita)',
   description = 'Vizualizujte halu priamo vo vašom priestore',
-  downloadFileName = 'garaz-model',
 }) => {
   const [modelViewerLoaded, setModelViewerLoaded] = useState(false);
   const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -50,14 +47,6 @@ export const ARViewer: React.FC<ARViewerProps> = ({
         .catch((err) => console.error('Failed to load @google/model-viewer:', err));
     }
   }, [open]);
-
-  const handleDownloadGlb = () => {
-    if (!glbUrl) return;
-    const a = document.createElement('a');
-    a.href = glbUrl;
-    a.download = `${downloadFileName}-${Date.now()}.glb`;
-    a.click();
-  };
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -156,30 +145,18 @@ export const ARViewer: React.FC<ARViewerProps> = ({
               </div>
 
               {/* Instructions / Mobile vs Desktop Notice */}
-              <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-background border border-border text-xs">
-                <div className="flex items-center gap-3">
-                  <Smartphone className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                  <div>
-                    <span className="font-bold block">
-                      {isMobile
-                        ? 'Klepnutím na tlačidlo vyššie spustíte AR fotoaparát.'
-                        : 'Pre natívny AR zážitok otvorte túto stránku na mobilnom telefóne (iOS / Android).'}
-                    </span>
-                    <span className="text-muted-foreground text-[11px]">
-                      Model sa automaticky zobrazí v reálnej veľkosti v priestore.
-                    </span>
-                  </div>
+              <div className="w-full flex items-center gap-3 p-4 rounded-2xl bg-background border border-border text-xs">
+                <Smartphone className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                <div>
+                  <span className="font-bold block">
+                    {isMobile
+                      ? 'Klepnutím na tlačidlo vyššie spustíte AR fotoaparát.'
+                      : 'Pre natívny AR zážitok otvorte túto stránku na mobilnom telefóne (iOS / Android).'}
+                  </span>
+                  <span className="text-muted-foreground text-[11px]">
+                    Model sa automaticky zobrazí v reálnej veľkosti v priestore.
+                  </span>
                 </div>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownloadGlb}
-                  className="gap-2 font-bold whitespace-nowrap self-stretch sm:self-auto cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  Stiahnuť 3D GLB
-                </Button>
               </div>
             </div>
           ) : (

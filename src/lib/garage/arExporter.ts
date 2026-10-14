@@ -38,8 +38,35 @@ export function isMobileDevice(): boolean {
  * Export 3D scény / skupiny do formátu GLB (glTF 2.0 binárny)
  */
 export async function exportToGlb(object3d: THREE.Object3D): Promise<Blob> {
+  const clone = object3d.clone(true);
+
+  // Expand InstancedMesh to individual Mesh nodes for mobile AR compatibility
+  const instancedMeshes: THREE.InstancedMesh[] = [];
+  clone.traverse((child) => {
+    if ((child as any).isInstancedMesh) {
+      instancedMeshes.push(child as THREE.InstancedMesh);
+    }
+  });
+
+  instancedMeshes.forEach((instMesh) => {
+    const parent = instMesh.parent || clone;
+    const count = instMesh.count;
+    const matrix = new THREE.Matrix4();
+
+    for (let i = 0; i < count; i++) {
+      instMesh.getMatrixAt(i, matrix);
+      const mesh = new THREE.Mesh(instMesh.geometry, instMesh.material);
+      mesh.applyMatrix4(matrix);
+      mesh.castShadow = instMesh.castShadow;
+      mesh.receiveShadow = instMesh.receiveShadow;
+      parent.add(mesh);
+    }
+
+    parent.remove(instMesh);
+  });
+
   const exporter = new GLTFExporter();
-  const buffer = await exporter.parseAsync(object3d, {
+  const buffer = await exporter.parseAsync(clone, {
     binary: true,
     embedImages: true,
   });

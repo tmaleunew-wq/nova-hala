@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import * as THREE from "three";
 import { ARViewer } from "@/components/configurator/ARViewer";
-import { exportGroupToGlb } from "@/utils/glbExporter";
+import { exportToGlb } from "@/lib/garage/arExporter";
 
 interface ArModalProps {
   isOpen: boolean;
@@ -19,7 +19,7 @@ export function ArModal({ isOpen, onClose, exportRef, hallName = "Garáž" }: Ar
     let active = true;
     setIsGenerating(true);
 
-    exportGroupToGlb(exportRef.current)
+    exportToGlb(exportRef.current)
       .then((blob) => {
         if (!active) return;
         const url = URL.createObjectURL(blob);
@@ -46,7 +46,6 @@ export function ArModal({ isOpen, onClose, exportRef, hallName = "Garáž" }: Ar
       primaryColor="#10b981"
       title={`Zobraziť v AR — ${hallName}`}
       description={`Vizualizujte halu ${hallName} priamo vo vašom priestore`}
-      downloadFileName={hallName.replace(/\s+/g, "-").toLowerCase()}
     />
   );
 }
