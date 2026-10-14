@@ -71,9 +71,20 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 
   useEffect(() => {
     if (open) {
+      if (customElements.get('model-viewer')) {
+        setModelViewerLoaded(true);
+        return;
+      }
       import('@google/model-viewer')
         .then(() => setModelViewerLoaded(true))
-        .catch((err) => console.error('Failed to load @google/model-viewer:', err));
+        .catch((err) => {
+          if (customElements.get('model-viewer')) {
+            setModelViewerLoaded(true);
+          } else {
+            console.error('Failed to load @google/model-viewer:', err);
+            customElements.whenDefined('model-viewer').then(() => setModelViewerLoaded(true));
+          }
+        });
     }
   }, [open]);
 
