@@ -216,7 +216,7 @@ function CustomerPriceOffer() {
           subtotalBeforeVat,
           vatAmount,
           totalWithVat,
-          hidePrices: false,
+          hidePrices: true,
         },
         imageDataUrl,
         evaluationUrl: typeof window !== "undefined" ? window.location.href : "",
@@ -421,13 +421,13 @@ function CustomerPriceOffer() {
                 >
                   <div className="relative z-10">
                     <p className="text-[11px] font-black uppercase tracking-[0.2em] mb-1" style={{ color: accentColor }}>
-                      Odhadovaná cena
+                      Cenová ponuka
                     </p>
-                    <h2 className="text-4xl font-black tracking-tight mb-2 text-slate-900">
-                      {fmt(totalWithVat)}
+                    <h2 className="text-3xl font-black tracking-tight mb-2 text-slate-900">
+                      Na vypracovanie
                     </h2>
                     <p className="text-xs opacity-60 text-slate-600">
-                      Uvedená cena je vrátane DPH 20%
+                      Presná kalkulácia na mieru vrátane dopravy a montáže vám bude zaslaná obchodným zástupcom.
                     </p>
 
                     <div className="mt-8 pt-6 border-t" style={{ borderColor: `${accentColor}1a` }}>

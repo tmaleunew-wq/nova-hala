@@ -356,11 +356,10 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
         },
       }).catch((e) => console.warn("[Resend] Notice:", e));
 
-      // 2. Send via EmailJS as parallel backup
+      // 2. Send via EmailJS as admin backup
       const adminPromise = emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, adminTemplateParams, EMAILJS_PUBLIC_KEY).catch(() => null);
-      const clientPromise = emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, clientTemplateParams, EMAILJS_PUBLIC_KEY).catch(() => null);
 
-      await Promise.allSettled([resendPromise, adminPromise, clientPromise]);
+      await Promise.allSettled([resendPromise, adminPromise]);
 
       toast.success("Dopyt bol odoslaný. Odkaz na vašu ponuku nájdete v e-maile.");
       setSubmittedQuote({ orderId, name, email, phone, message, quoteUrl });

@@ -410,62 +410,73 @@ export function generateGarageQuotePDF({
     ) + 3;
   }
 
-  // Page 2: Rekapitulácia cien a položiek
-  pdf.addPage();
-  y = margin;
-
-  pdf.setFont("Roboto", "bold").setFontSize(10).setTextColor(16, 24, 40);
-  pdf.text("CENOVÁ REKAPITULÁCIA A ROZPIS POLOŽIEK", margin, y);
-  y += 5;
-
-  const priceWidth = 42;
-  pdf.setFillColor(16, 24, 40);
-  pdf.rect(margin, y, usableWidth, 7, "F");
-  pdf.setFont("Roboto", "bold").setFontSize(8).setTextColor(255, 255, 255);
-  pdf.text("Položka špecifikácie", margin + 4, y + 4.8);
-  pdf.text("Suma", margin + usableWidth - priceWidth + 4, y + 4.8);
-  y += 8;
-
-  y = drawPricingRow(
-    pdf,
+  // Footer notice on Page 1
+  const bottomY = Math.max(ty, ry) + 4;
+  pdf.setFont("Roboto", "normal");
+  pdf.setFontSize(8);
+  pdf.setTextColor(100, 116, 139);
+  pdf.text(
+    "Cenová ponuka je platná 30 dní od vygenerovania. V prípade otázok nás neváhajte kontaktovať.",
     margin,
-    y,
-    usableWidth,
-    `Oceľová nosná konštrukcia (stĺpy, priehradové nosníky, väznice, paždíky)`,
-    pricing.hidePrices ? "V cene" : fmt(pricing.steelCost),
-    { emphasize: true, fillColor: [248, 250, 252] }
+    Math.min(285, bottomY)
   );
 
-  y = drawPricingRow(
-    pdf,
-    margin,
-    y,
-    usableWidth,
-    `Opláštenie stien a strechy (${params.panelType === "sandwich" ? "Sendvičové panely" : "Trapézový plech"}, lemovanie, spojovací materiál)`,
-    pricing.hidePrices ? "V cene" : fmt(pricing.claddingCost)
-  );
-
-  y = drawPricingRow(
-    pdf,
-    margin,
-    y,
-    usableWidth,
-    `Výplne otvorov (Sekčná garážová brána, osobné dvere, okná)`,
-    pricing.hidePrices ? "V cene" : fmt(pricing.componentsSubtotal)
-  );
-
-  y = drawPricingRow(
-    pdf,
-    margin,
-    y,
-    usableWidth,
-    `Doprava na miesto stavby a odborná montáž`,
-    pricing.hidePrices ? "V cene" : fmt(pricing.laborAndTransport)
-  );
-
-  y += 4;
-
+  // Page 2: Rekapitulácia cien a položiek (iba ak sú ceny zverejnené)
   if (!pricing.hidePrices) {
+    pdf.addPage();
+    y = margin;
+
+    pdf.setFont("Roboto", "bold").setFontSize(10).setTextColor(16, 24, 40);
+    pdf.text("CENOVÁ REKAPITULÁCIA A ROZPIS POLOŽIEK", margin, y);
+    y += 5;
+
+    const priceWidth = 42;
+    pdf.setFillColor(16, 24, 40);
+    pdf.rect(margin, y, usableWidth, 7, "F");
+    pdf.setFont("Roboto", "bold").setFontSize(8).setTextColor(255, 255, 255);
+    pdf.text("Položka špecifikácie", margin + 4, y + 4.8);
+    pdf.text("Suma", margin + usableWidth - priceWidth + 4, y + 4.8);
+    y += 8;
+
+    y = drawPricingRow(
+      pdf,
+      margin,
+      y,
+      usableWidth,
+      `Oceľová nosná konštrukcia (stĺpy, priehradové nosníky, väznice, paždíky)`,
+      fmt(pricing.steelCost),
+      { emphasize: true, fillColor: [248, 250, 252] }
+    );
+
+    y = drawPricingRow(
+      pdf,
+      margin,
+      y,
+      usableWidth,
+      `Opláštenie stien a strechy (${params.panelType === "sandwich" ? "Sendvičové panely" : "Trapézový plech"}, lemovanie, spojovací materiál)`,
+      fmt(pricing.claddingCost)
+    );
+
+    y = drawPricingRow(
+      pdf,
+      margin,
+      y,
+      usableWidth,
+      `Výplne otvorov (Sekčná garážová brána, osobné dvere, okná)`,
+      fmt(pricing.componentsSubtotal)
+    );
+
+    y = drawPricingRow(
+      pdf,
+      margin,
+      y,
+      usableWidth,
+      `Doprava na miesto stavby a odborná montáž`,
+      fmt(pricing.laborAndTransport)
+    );
+
+    y += 4;
+
     y = drawPricingRow(
       pdf,
       margin,
@@ -483,31 +494,31 @@ export function generateGarageQuotePDF({
       "DPH 20%",
       fmt(pricing.vatAmount)
     );
+
+    y = drawPricingRow(
+      pdf,
+      margin,
+      y,
+      usableWidth,
+      "Celková suma s DPH",
+      displayTotal,
+      {
+        emphasize: true,
+        priceColor: primaryRGB,
+        fillColor: [236, 253, 245],
+      }
+    );
+
+    y += 8;
+    pdf.setFont("Roboto", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(100, 116, 139);
+    pdf.text(
+      "Cenová ponuka je platná 30 dní od vygenerovania. V prípade otázok nás neváhajte kontaktovať.",
+      margin,
+      y
+    );
   }
-
-  y = drawPricingRow(
-    pdf,
-    margin,
-    y,
-    usableWidth,
-    "Celková suma s DPH",
-    displayTotal,
-    {
-      emphasize: true,
-      priceColor: primaryRGB,
-      fillColor: [236, 253, 245],
-    }
-  );
-
-  y += 8;
-  pdf.setFont("Roboto", "normal");
-  pdf.setFontSize(8);
-  pdf.setTextColor(100, 116, 139);
-  pdf.text(
-    "Cenová ponuka je platná 30 dní od vygenerovania. V prípade otázok nás neváhajte kontaktovať.",
-    margin,
-    y
-  );
 
   return pdf.output("blob");
 }

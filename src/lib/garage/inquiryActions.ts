@@ -18,7 +18,7 @@ export const sendInquiry = createServerFn({ method: "POST" })
     const { name, email, phone, message, params, origin, totalPrice } = data;
 
     const resendApiKey = process.env.RESEND_API_KEY;
-    const adminEmail = process.env.ADMIN_EMAIL || "info@steelshedforge.com";
+    const adminEmail = process.env.ADMIN_EMAIL || "tmal.eu.new@gmail.com";
     const senderEmail = process.env.SENDER_EMAIL || "onboarding@resend.dev";
 
     // Build the query parameters for both the admin evaluation and customer online offer
@@ -42,9 +42,9 @@ export const sendInquiry = createServerFn({ method: "POST" })
     const primaryColor = "#10b981";
     const companyName = "VBAU s.r.o.";
 
-    // Construct email content for admin matching Pergola Pro
+    // Construct email content for admin
     const adminHtml = `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
         <h1 style="color: #0f172a; font-size: 24px;">Nový dopyt prijatý</h1>
         <p>Dostali ste novú konfiguráciu od zákazníka.</p>
         
@@ -62,7 +62,6 @@ export const sendInquiry = createServerFn({ method: "POST" })
           ${params.hasExtension ? `<p><strong>Bočný prístrešok:</strong> ${params.extensionType === "garage" ? "2. garáž" : params.extensionType === "storage" ? "Sklad" : "Carport"} (${params.extensionWidth ?? 3.5}m, ${params.extensionSide === "left" ? "vľavo" : "vpravo"})</p>` : ""}
           <p><strong>Osobné dvere:</strong> ${params.hasPersonalDoor ? `Áno (${resolveColorName(params.doorColor)})` : "Nie"}</p>
           <p><strong>Okná:</strong> ${params.hasWindows ? `${params.windowCount}x (${params.windowWidth}x${params.windowHeight}m)` : "Žiadne"}</p>
-          <p><strong>Odhadovaná cena:</strong> <span style="font-size: 18px; font-weight: bold; color: ${primaryColor};">${totalPrice || "Bude upresnená"}</span></p>
         </div>
 
         <div style="text-align: center; margin: 30px 0;">
@@ -75,33 +74,34 @@ export const sendInquiry = createServerFn({ method: "POST" })
       </div>
     `;
 
-    // Construct email content for client matching Pergola Pro
+    // Construct email content for client matching Pergola Pro attachment exactly
     const clientHtml = `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
-        <h1 style="color: #0f172a; font-size: 24px;">Ďakujeme za váš dopyt</h1>
-        <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: ${primaryColor}; font-weight: bold;">${companyName}</p>
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b;">
+        <h1 style="color: #0f172a; font-size: 24px; font-weight: 800; margin: 0 0 6px 0;">Ďakujeme za váš dopyt</h1>
+        <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: ${primaryColor}; font-weight: 800; margin: 0 0 20px 0;">${companyName.toUpperCase()}</p>
         
-        <p>Dobrý deň ${name || "zákazník"}, váš dopyt sme úspešne prijali do nášho systému.</p>
+        <p style="color: #334155; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">Dobrý deň ${name || "zákazník"}, váš dopyt sme úspešne prijali do nášho systému.</p>
         
-        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #e2e8f0;">
-          <p><strong>Váš model:</strong> ${modelName}</p>
-          <p><strong>Rozmery:</strong> ${params.width} x ${params.length} x ${params.clearHeight} m</p>
-          <p><strong>Odhadovaná cena:</strong> <span style="font-size: 18px; font-weight: bold; color: ${primaryColor};">${totalPrice || "Bude upresnená"}</span></p>
+        <div style="background-color: #f8fafc; border-radius: 16px; padding: 22px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
+          <p style="margin: 0 0 10px 0; font-size: 14px; color: #1e293b;"><strong>Váš model:</strong> ${modelName}</p>
+          <p style="margin: 0; font-size: 14px; color: #1e293b;"><strong>Rozmery:</strong> ${params.width} x ${params.length} x ${params.clearHeight} m</p>
         </div>
 
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${quoteUrl}" style="background: ${primaryColor}; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="${quoteUrl}" style="background-color: ${primaryColor}; color: #ffffff; padding: 16px 36px; border-radius: 10px; font-weight: 800; text-decoration: none; display: inline-block; font-size: 14px;">
             Zobraziť moju ponuku online
           </a>
-          <p style="margin-top: 15px; font-size: 13px; color: #64748b;">Cez tento odkaz si môžete ponuku kedykoľvek otvoriť a stiahnuť ako PDF.</p>
+          <p style="margin-top: 14px; font-size: 12px; color: #64748b;">Cez tento odkaz si môžete ponuku kedykoľvek otvoriť a stiahnuť ako PDF.</p>
         </div>
 
-        <p>Náš obchodný zástupca vás bude čoskoro kontaktovať pre dohodnutie ďalšieho postupu.</p>
+        <p style="color: #334155; font-size: 13px; line-height: 1.5; margin: 0 0 24px 0;">Náš obchodný zástupca vás bude čoskoro kontaktovať pre dohodnutie ďalšieho postupu.</p>
         
-        <div style="font-size: 13px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 20px;">
-          <p style="margin: 0 0 5px 0; font-weight: bold; color: #1e293b;">${companyName}</p>
-          <p style="margin: 0 0 3px 0;">✆ +421 900 000 000</p>
-          <p style="margin: 0;">✉ <a href="mailto:${adminEmail}" style="color: ${primaryColor}; text-decoration: none;">${adminEmail}</a></p>
+        <div style="border-top: 1px solid #e2e8f0; margin-bottom: 20px;"></div>
+        
+        <div style="font-size: 13px; color: #64748b; line-height: 1.6;">
+          <p style="margin: 0 0 4px 0; font-weight: 800; color: #0f172a;">${companyName}</p>
+          <p style="margin: 0 0 4px 0;"><a href="tel:+421900000000" style="color: #0284c7; text-decoration: none;">✆ +421 900 000 000</a></p>
+          <p style="margin: 0;"><a href="mailto:${adminEmail}" style="color: ${primaryColor}; text-decoration: none;">✉ ${adminEmail}</a></p>
         </div>
       </div>
     `;
@@ -191,12 +191,33 @@ export const sendInquiry = createServerFn({ method: "POST" })
         }
 
         console.log(`[SMTP] Sending inquiry emails via Gmail (${gmailUser})...`);
-        const pAdmin = sendOneMail(adminEmail, `Nový dopyt - ${companyName}`, adminHtml);
-        const pClient = email ? sendOneMail(email, `Potvrdenie dopytu - ${companyName}`, clientHtml) : Promise.resolve();
+        let anySent = false;
 
-        await Promise.all([pAdmin, pClient]);
-        gmailSent = true;
-        console.log("[SMTP] Both emails sent successfully via Gmail!");
+        // 1. Send to Admin
+        if (adminEmail) {
+          try {
+            await sendOneMail(adminEmail, `Nový dopyt: ${name || "Zákazník"} - ${companyName}`, adminHtml);
+            anySent = true;
+            console.log("[SMTP] Admin email sent successfully!");
+          } catch (e) {
+            console.error("[SMTP] Failed to send admin email:", e);
+          }
+        }
+
+        // 2. Send to Customer
+        if (email) {
+          try {
+            await sendOneMail(email, `Ďakujeme za váš dopyt - ${companyName}`, clientHtml);
+            anySent = true;
+            console.log(`[SMTP] Customer email sent successfully to ${email}!`);
+          } catch (e) {
+            console.error(`[SMTP] Failed to send customer email to ${email}:`, e);
+          }
+        }
+
+        if (anySent) {
+          gmailSent = true;
+        }
       } catch (smtpErr) {
         console.warn("[SMTP] Gmail SMTP error, falling back to Resend:", smtpErr);
       }
