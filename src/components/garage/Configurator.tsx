@@ -143,6 +143,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     const sp = new URLSearchParams(window.location.search);
     return !sp.has("hallType") && !sp.has("type") && !sp.has("hall") && !sp.has("model");
   });
+  const [pickerMode, setPickerMode] = useState<"default" | "variant2">("default");
   const [showEnvironment, setShowEnvironment] = useState(true);
   const [showArModal, setShowArModal] = useState(false);
   const configWithCladding = getCatalogWithCladding(activeVariant);
@@ -874,13 +875,18 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         <ProductPicker
           halls={hallsConfig}
           selectedHall={selectedHall}
-          imageCatalog={imageCatalog}
-          pickerLayout={pickerLayout}
+          imageCatalog={pickerMode === "variant2" ? "/catalog_variant2" : imageCatalog}
+          pickerLayout={pickerMode === "variant2" ? "grid" : pickerLayout}
+          hallsOnly={pickerMode === "variant2"}
           onSelect={(v) => {
             applyHallType(v);
             setShowPicker(false);
+            setPickerMode("default");
           }}
-          onClose={() => setShowPicker(false)}
+          onClose={() => {
+            setShowPicker(false);
+            setPickerMode("default");
+          }}
         />
       )}
 
@@ -917,7 +923,10 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
             setSelectedLength={setSelectedLength}
             onSetParams={(p) => (setParams as any)(p)}
             onOpenCatalogModal={() => setShowCatalogModal(true)}
-            onOpenPicker={() => setShowPicker(true)}
+            onOpenPicker={() => {
+              setPickerMode("variant2");
+              setShowPicker(true);
+            }}
           />
         )}
       </div>
@@ -989,7 +998,10 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           selectedLength={selectedLength}
           setSelectedLength={setSelectedLength}
           onSelectHall={applyHallType}
-          onOpenPicker={() => setShowPicker(true)}
+          onOpenPicker={() => {
+            setPickerMode("variant2");
+            setShowPicker(true);
+          }}
         />
       )}
 

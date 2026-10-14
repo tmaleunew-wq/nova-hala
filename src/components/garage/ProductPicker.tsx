@@ -7,6 +7,7 @@ export function ProductPicker({
   onClose,
   imageCatalog = "/catalog",
   pickerLayout = "grid",
+  hallsOnly = false,
 }: {
   halls: Record<string, HallConfig>;
   selectedHall?: string;
@@ -14,6 +15,7 @@ export function ProductPicker({
   onClose?: () => void;
   imageCatalog?: string;
   pickerLayout?: "grid" | "binary";
+  hallsOnly?: boolean;
 }) {
   const names = Object.keys(halls);
   return (
@@ -149,55 +151,57 @@ export function ProductPicker({
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {/* Vlastná garáž */}
-            <button
-              id="pick-vlastny"
-              onClick={() => onSelect("Vlastný")}
-              className={`group cursor-pointer overflow-hidden rounded-xl border text-left transition hover:-translate-y-1 hover:border-emerald-400 hover:shadow-[0_0_30px_rgba(52,211,153,0.25)] ${
-                selectedHall === "Vlastný"
-                  ? "border-emerald-400 bg-gradient-to-br from-emerald-500/25 to-[#0e1116] ring-2 ring-emerald-400/50"
-                  : "border-emerald-500/30 bg-gradient-to-br from-emerald-500/15 to-[#0e1116]"
-              }`}
-            >
-              <div className="h-40 overflow-hidden bg-[#ececec] flex items-center justify-center">
-                <img
-                  src={`${imageCatalog}/vlastna_garaz.png?v=3`}
-                  alt="Vlastná garáž"
-                  loading="lazy"
-                  className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
-                />
-              </div>
-              <div className="border-t border-white/10 p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <span className="font-mono text-sm font-bold text-emerald-400">
-                      Vlastná garáž
+            {!hallsOnly && (
+              <button
+                id="pick-vlastny"
+                onClick={() => onSelect("Vlastný")}
+                className={`group cursor-pointer overflow-hidden rounded-xl border text-left transition hover:-translate-y-1 hover:border-emerald-400 hover:shadow-[0_0_30px_rgba(52,211,153,0.25)] ${
+                  selectedHall === "Vlastný"
+                    ? "border-emerald-400 bg-gradient-to-br from-emerald-500/25 to-[#0e1116] ring-2 ring-emerald-400/50"
+                    : "border-emerald-500/30 bg-gradient-to-br from-emerald-500/15 to-[#0e1116]"
+                }`}
+              >
+                <div className="h-40 overflow-hidden bg-[#ececec] flex items-center justify-center">
+                  <img
+                    src={`${imageCatalog}/vlastna_garaz.png?v=3`}
+                    alt="Vlastná garáž"
+                    loading="lazy"
+                    className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
+                  />
+                </div>
+                <div className="border-t border-white/10 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-mono text-sm font-bold text-emerald-400">
+                        Vlastná garáž
+                      </span>
+                      <div className="text-xs font-semibold text-white/90 mt-0.5">
+                        Individuálna garáž na mieru
+                      </div>
+                    </div>
+                    <span className="rounded bg-emerald-400/20 border border-emerald-400/30 px-2 py-0.5 font-mono text-[10px] text-emerald-300 whitespace-nowrap shrink-0">
+                      {selectedHall === "Vlastný" ? "✓ Aktívne" : "Na mieru"}
                     </span>
-                    <div className="text-xs font-semibold text-white/90 mt-0.5">
-                      Individuálna garáž na mieru
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 font-mono">
+                    <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">Šírka</div>
+                      <div className="text-sm font-bold text-white">Voliteľná</div>
+                    </div>
+                    <div className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1.5">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-cyan-400">Modul</div>
+                      <div className="text-sm font-bold text-white">Na mieru</div>
                     </div>
                   </div>
-                  <span className="rounded bg-emerald-400/20 border border-emerald-400/30 px-2 py-0.5 font-mono text-[10px] text-emerald-300 whitespace-nowrap shrink-0">
-                    {selectedHall === "Vlastný" ? "✓ Aktívne" : "Na mieru"}
-                  </span>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 font-mono">
-                  <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5">
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">Šírka</div>
-                    <div className="text-sm font-bold text-white">Voliteľná</div>
+                  <div className="mt-2 font-mono text-[10px] text-white/50">
+                    Štandard · voliteľné rozmery, opláštenie, brána, okná
                   </div>
-                  <div className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1.5">
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-cyan-400">Modul</div>
-                    <div className="text-sm font-bold text-white">Na mieru</div>
-                  </div>
+                  <p className="mt-2 text-[11px] leading-relaxed text-white/70 min-h-[36px]">
+                    Individuálna garáž na mieru s voliteľnými rozmermi, sklonom strechy, opláštením sendvičovým panelom, bránou, dverami a oknami.
+                  </p>
                 </div>
-                <div className="mt-2 font-mono text-[10px] text-white/50">
-                  Štandard · voliteľné rozmery, opláštenie, brána, okná
-                </div>
-                <p className="mt-2 text-[11px] leading-relaxed text-white/70 min-h-[36px]">
-                  Individuálna garáž na mieru s voliteľnými rozmermi, sklonom strechy, opláštením sendvičovým panelom, bránou, dverami a oknami.
-                </p>
-              </div>
-            </button>
+              </button>
+            )}
 
             {names.map((name) => {
               const h = halls[name];
