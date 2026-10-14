@@ -1055,10 +1055,7 @@ export function StandardHallMenu({
                       )}
                     </div>
 
-                    {/* Výkaz materiálu (BOM) pre výrobcu / admin */}
-                    {canExportCad && (
-                      <GarageBomTable params={typedParams} accentColor="cyan" />
-                    )}
+
 
                     <div>
                       <label className="block mb-1 text-[10px] text-white/60 uppercase tracking-wider font-semibold">

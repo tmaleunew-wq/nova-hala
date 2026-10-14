@@ -509,46 +509,5 @@ export function generateGarageQuotePDF({
     y
   );
 
-  // Technical BOM Section on Page 2
-  y += 9;
-  pdf.setFont("Roboto", "bold").setFontSize(9.5).setTextColor(16, 24, 40);
-  pdf.text("TECHNICKÝ VÝKAZ MATERIÁLU (BOM / KUSOVNÍK)", margin, y);
-  y += 4;
-
-  const bom = calculateGarageBom(params);
-  pdf.setFillColor(241, 245, 249);
-  pdf.rect(margin, y, usableWidth, 6, "F");
-  pdf.setFont("Roboto", "bold").setFontSize(7).setTextColor(71, 85, 105);
-  pdf.text("POLOŽKA", margin + 3, y + 4.2);
-  pdf.text("ŠPECIFIKÁCIA", margin + 45, y + 4.2);
-  pdf.text("MNOŽSTVO", margin + usableWidth - 34, y + 4.2);
-  pdf.text("HMOTNOSŤ", margin + usableWidth - 14, y + 4.2);
-  y += 6;
-
-  bom.items.forEach((item, idx) => {
-    const rowH = 5.2;
-    if (idx % 2 === 1) {
-      pdf.setFillColor(248, 250, 252);
-      pdf.rect(margin, y, usableWidth, rowH, "F");
-    }
-    pdf.setDrawColor(241, 245, 249);
-    pdf.line(margin, y + rowH, margin + usableWidth, y + rowH);
-
-    pdf.setFont("Roboto", "bold").setFontSize(7).setTextColor(15, 23, 42);
-    pdf.text(item.name, margin + 3, y + 3.6);
-
-    pdf.setFont("Roboto", "normal").setFontSize(6.8).setTextColor(100, 116, 139);
-    const specLines = pdf.splitTextToSize(item.spec, usableWidth - 85);
-    pdf.text(specLines[0] || "", margin + 45, y + 3.6);
-
-    pdf.setFont("Roboto", "bold").setFontSize(7).setTextColor(15, 23, 42);
-    pdf.text(`${item.quantity} ${item.unit}`, margin + usableWidth - 34, y + 3.6);
-
-    pdf.setFont("Roboto", "normal").setFontSize(7).setTextColor(100, 116, 139);
-    pdf.text(item.weightKg ? `${item.weightKg} kg` : "-", margin + usableWidth - 14, y + 3.6);
-
-    y += rowH;
-  });
-
   return pdf.output("blob");
 }

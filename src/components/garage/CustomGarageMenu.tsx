@@ -1499,10 +1499,7 @@ export function CustomGarageMenu({
               </div>
             </div>
 
-            {/* Výkaz materiálu (BOM) pre výrobcu / admin */}
-            {canExportCad && (
-              <GarageBomTable params={typedParams} accentColor="emerald" />
-            )}
+
 
             <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-2 shadow-md">
               <label className="block text-[11px] text-white/70 uppercase tracking-wider font-semibold">
