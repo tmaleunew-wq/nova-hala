@@ -6,7 +6,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Sparkles, Smartphone, QrCode, Loader2 } from 'lucide-react';
+import { Sparkles, Smartphone, QrCode, Loader2, ExternalLink } from 'lucide-react';
 
 interface ARViewerProps {
   open: boolean;
@@ -37,8 +37,37 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 }) => {
   const [modelViewerLoaded, setModelViewerLoaded] = useState(false);
   const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
-  const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(currentUrl)}`;
+  const [targetWebUrl, setTargetWebUrl] = useState('https://steel-shed-forge-mu.vercel.app/?ar=1');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const u = new URL(window.location.href);
+      // If accessed via localhost / 127.0.0.1, phone cannot access local loopback -> route to live production domain
+      if (u.hostname === 'localhost' || u.hostname === '127.0.0.1' || u.hostname.startsWith('192.168.')) {
+        u.protocol = 'https:';
+        u.host = 'steel-shed-forge-mu.vercel.app';
+        u.port = '';
+      }
+
+      // Ensure ASCII only: convert diacritics like 'Vlastný' to 'vlastna' so mobile camera recognizes it as a valid URI
+      const hall = u.searchParams.get('hallType');
+      if (hall) {
+        if (hall === 'Vlastný' || hall.toLowerCase().includes('vlastn')) {
+          u.searchParams.set('hallType', 'vlastna');
+        } else {
+          u.searchParams.set('hallType', hall.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+        }
+      }
+
+      u.searchParams.set('ar', '1');
+      setTargetWebUrl(u.toString());
+    } catch {
+      setTargetWebUrl('https://steel-shed-forge-mu.vercel.app/?ar=1');
+    }
+  }, [open]);
+
+  const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=2&data=${encodeURIComponent(targetWebUrl)}`;
 
   useEffect(() => {
     if (open) {
@@ -140,6 +169,15 @@ export const ARViewer: React.FC<ARViewerProps> = ({
                     <p className="text-[11px] text-center text-muted-foreground leading-tight">
                       Naskenujte fotoaparátom mobilu pre okamžité zobrazenie tejto vizualizácie v AR.
                     </p>
+                    <a
+                      href={targetWebUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-bold flex items-center gap-1.5 text-emerald-500 hover:text-emerald-400 hover:underline transition mt-1"
+                    >
+                      <span>Priamy odkaz</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                   </div>
                 )}
               </div>
