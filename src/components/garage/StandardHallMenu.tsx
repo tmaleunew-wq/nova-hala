@@ -841,6 +841,21 @@ export function StandardHallMenu({
                         />
                       </div>
                     )}
+
+                    {(typedParams.hasPersonalDoor || typedParams.hasWindows) && (
+                      <div className="pt-2.5 border-t border-white/10 space-y-1.5">
+                        <label className="block text-xs font-semibold text-slate-200">
+                          Poznámka k umiestneniu:
+                        </label>
+                        <textarea
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          rows={2}
+                          className="w-full rounded-lg border border-white/15 bg-slate-800/80 px-2.5 py-1.5 text-white/90 focus:border-cyan-400 focus:outline-none resize-none text-xs placeholder:text-white/40"
+                          placeholder="Napíšte presné alebo vaše približné umiestnenie..."
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

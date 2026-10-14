@@ -1,5 +1,5 @@
 {
-  "imageCatalog": "/catalog_variant4",
+  "imageCatalog": "/catalog_variant2",
   "catalogWithCladding": false,
-  "pickerLayout": "binary"
+  "pickerLayout": "grid"
 }

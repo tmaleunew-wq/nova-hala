@@ -27,14 +27,10 @@ export function BuildingQrModal({
 
   const isLocalhost = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
-  const docUrl = useMemo(() => {
+  const localDocUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
 
     const url = new URL("/dokumentacia", window.location.origin);
-    if (isLocalhost && networkIp.trim()) {
-      url.hostname = networkIp.trim();
-    }
-
     if (orderId) url.searchParams.set("id", orderId);
     if (clientName) url.searchParams.set("client", clientName);
     if (clientEmail) url.searchParams.set("email", clientEmail);
@@ -48,14 +44,27 @@ export function BuildingQrModal({
     }
 
     return url.toString();
-  }, [params, orderId, clientName, clientEmail, clientPhone, isLocalhost, networkIp]);
+  }, [params, orderId, clientName, clientEmail, clientPhone]);
+
+  const qrDocUrl = useMemo(() => {
+    if (!localDocUrl) return "";
+    try {
+      const url = new URL(localDocUrl);
+      if (isLocalhost && networkIp.trim()) {
+        url.hostname = networkIp.trim();
+      }
+      return url.toString();
+    } catch {
+      return localDocUrl;
+    }
+  }, [localDocUrl, isLocalhost, networkIp]);
 
   if (!isOpen) return null;
 
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(docUrl)}&margin=8`;
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrDocUrl)}&margin=8`;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(docUrl);
+    navigator.clipboard.writeText(localDocUrl);
     setCopied(true);
     toast.success("Odkaz na dokumentáciu bol skopírovaný!");
     setTimeout(() => setCopied(false), 2000);
@@ -223,7 +232,7 @@ export function BuildingQrModal({
           </button>
 
           <a
-            href={docUrl}
+            href={localDocUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-900 px-3.5 py-2 text-xs font-bold transition cursor-pointer shadow-lg shadow-emerald-400/20"
