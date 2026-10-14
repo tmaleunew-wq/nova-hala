@@ -1,9 +1,11 @@
 import React from 'react';
-import { CheckCircle2, RefreshCw, Edit3, MapPin, Mail, Phone, X } from 'lucide-react';
+import { CheckCircle2, RefreshCw, Edit3, MapPin, Mail, Phone, X, FileText, ExternalLink } from 'lucide-react';
 
 interface Props {
   onReset: () => void;
   onClose: () => void;
+  onOpenQuote?: () => void;
+  quoteUrl?: string;
   dealer?: {
     name?: string;
     email?: string;
@@ -16,13 +18,15 @@ interface Props {
 export const SuccessModal: React.FC<Props> = ({
   onReset,
   onClose,
+  onOpenQuote,
+  quoteUrl,
   dealer = {
     name: 'VBAU s.r.o.',
     email: 'tmal.eu.new@gmail.com',
     phone: '+421 900 123 456',
     address: 'Bratislava, Slovensko',
   },
-  primaryColor = '#00c8ff',
+  primaryColor = '#10b981',
 }) => {
   const contactEmail = dealer.email || 'tmal.eu.new@gmail.com';
 
@@ -103,19 +107,41 @@ export const SuccessModal: React.FC<Props> = ({
           </div>
           
           <div className="flex flex-col gap-3">
+            {onOpenQuote && (
+              <button 
+                type="button"
+                className="w-full h-14 rounded-2xl font-extrabold uppercase tracking-widest text-slate-950 bg-emerald-400 hover:bg-emerald-300 shadow-xl shadow-emerald-500/25 active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer text-xs gap-2"
+                onClick={onOpenQuote}
+              >
+                <FileText className="w-4 h-4" />
+                ZOBRAZIŤ CENOVÚ PONUKU (PDF)
+              </button>
+            )}
+
+            {quoteUrl && (
+              <a
+                href={quoteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline flex items-center justify-center gap-1.5 py-1 text-center"
+              >
+                <span>Otvoriť samostatnú webovú ponuku</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
+
             <button 
               type="button"
-              className="w-full h-14 rounded-2xl font-extrabold uppercase tracking-widest text-white shadow-lg active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer text-xs"
-              style={{ backgroundColor: primaryColor }}
+              className="w-full h-12 rounded-xl font-bold uppercase tracking-widest text-white/90 bg-slate-900 hover:bg-slate-800 border border-slate-800 shadow-sm active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer text-[11px]"
               onClick={onReset}
             >
-              <RefreshCw className="w-4 h-4 mr-2" />
+              <RefreshCw className="w-3.5 h-3.5 mr-2" />
               NOVÁ KONFIGURÁCIA
             </button>
             
             <button 
               type="button"
-              className="w-full h-12 rounded-xl font-bold uppercase tracking-widest text-[10px] text-slate-400 hover:text-slate-900 transition-all flex items-center justify-center cursor-pointer"
+              className="w-full h-10 rounded-xl font-bold uppercase tracking-widest text-[10px] text-slate-400 hover:text-slate-900 transition-all flex items-center justify-center cursor-pointer"
               onClick={onClose}
             >
               <Edit3 className="w-3 h-3 mr-2" />

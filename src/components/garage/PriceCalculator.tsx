@@ -7,6 +7,7 @@ import emailjs from "@emailjs/browser";
 import { saveInquiryToSupabase } from "@/lib/supabase";
 import { sendInquiry } from "@/lib/garage/inquiryActions";
 import { SuccessModal } from "./SuccessModal";
+import { PriceQuoteModal } from "./PriceQuoteModal";
 
 interface PriceCalculatorProps {
   p: GarageParams;
@@ -19,6 +20,15 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
 
   const [showForm, setShowForm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [submittedQuote, setSubmittedQuote] = useState<{
+    orderId: string;
+    name: string;
+    email: string;
+    phone: string;
+    message: string;
+    quoteUrl: string;
+  } | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -350,6 +360,7 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
       await Promise.allSettled([resendPromise, adminPromise, clientPromise]);
 
       toast.success("Dopyt bol odoslaný. Odkaz na vašu ponuku nájdete v e-maile.");
+      setSubmittedQuote({ orderId, name, email, phone, message, quoteUrl });
       setShowForm(false);
       setShowSuccess(true);
       setName("");
@@ -597,8 +608,39 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
             phone: "+421 900 123 456",
             address: "Bratislava, Slovensko",
           }}
+          quoteUrl={submittedQuote?.quoteUrl}
+          onOpenQuote={() => {
+            setShowSuccess(false);
+            setShowQuoteModal(true);
+          }}
           onReset={() => window.location.reload()}
           onClose={() => setShowSuccess(false)}
+        />
+      )}
+
+      {showQuoteModal && submittedQuote && (
+        <PriceQuoteModal
+          isOpen={showQuoteModal}
+          onClose={() => setShowQuoteModal(false)}
+          clientName={submittedQuote.name}
+          clientEmail={submittedQuote.email}
+          clientPhone={submittedQuote.phone}
+          clientNote={submittedQuote.message}
+          p={p}
+          pricing={{
+            steelPricePerKg: 1.85,
+            steelWeightPerMeter: 6.2,
+            sandwichPricePerSqM: claddingConfig.sandwichPricePerSqM,
+            trapezoidPricePerSqM: claddingConfig.trapezoidPricePerSqM,
+            basePlateCost: 12.0,
+            garageDoorCost: 550.0,
+            personalDoorCost: 220.0,
+            windowCost: 140.0,
+            foundationPricePerSqM: 65.0,
+            transportCost: 150.0,
+            laborCost: 650.0,
+            marginPercent: 0,
+          }}
         />
       )}
     </>
