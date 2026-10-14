@@ -7,7 +7,6 @@ import emailjs from "@emailjs/browser";
 import { saveInquiryToSupabase } from "@/lib/supabase";
 import { sendInquiry } from "@/lib/garage/inquiryActions";
 import { SuccessModal } from "./SuccessModal";
-import { PriceQuoteModal } from "./PriceQuoteModal";
 
 interface PriceCalculatorProps {
   p: GarageParams;
@@ -20,7 +19,6 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
 
   const [showForm, setShowForm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [submittedQuote, setSubmittedQuote] = useState<{
     orderId: string;
     name: string;
@@ -194,6 +192,11 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
       searchParams.set(key, val);
     }
     searchParams.set("client", name);
+    searchParams.set("name", name);
+    searchParams.set("email", email);
+    searchParams.set("phone", phone);
+    if (city) searchParams.set("city", city);
+    if (message) searchParams.set("notes", message);
     const evaluationUrl = `${window.location.origin}/vyhodnotenie?${searchParams.toString()}`;
 
     // Generate simple order ID
@@ -610,37 +613,12 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
           }}
           quoteUrl={submittedQuote?.quoteUrl}
           onOpenQuote={() => {
-            setShowSuccess(false);
-            setShowQuoteModal(true);
+            if (submittedQuote?.quoteUrl) {
+              window.open(submittedQuote.quoteUrl, "_blank");
+            }
           }}
           onReset={() => window.location.reload()}
           onClose={() => setShowSuccess(false)}
-        />
-      )}
-
-      {showQuoteModal && submittedQuote && (
-        <PriceQuoteModal
-          isOpen={showQuoteModal}
-          onClose={() => setShowQuoteModal(false)}
-          clientName={submittedQuote.name}
-          clientEmail={submittedQuote.email}
-          clientPhone={submittedQuote.phone}
-          clientNote={submittedQuote.message}
-          p={p}
-          pricing={{
-            steelPricePerKg: 1.85,
-            steelWeightPerMeter: 6.2,
-            sandwichPricePerSqM: claddingConfig.sandwichPricePerSqM,
-            trapezoidPricePerSqM: claddingConfig.trapezoidPricePerSqM,
-            basePlateCost: 12.0,
-            garageDoorCost: 550.0,
-            personalDoorCost: 220.0,
-            windowCost: 140.0,
-            foundationPricePerSqM: 65.0,
-            transportCost: 150.0,
-            laborCost: 650.0,
-            marginPercent: 0,
-          }}
         />
       )}
     </>

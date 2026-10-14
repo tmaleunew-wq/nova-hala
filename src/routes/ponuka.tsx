@@ -52,11 +52,11 @@ function CustomerPriceOffer() {
     }
 
     setParams({ ...DEFAULT_PARAMS, ...parsed });
-    setClientName(searchParams.get("client_name") || searchParams.get("name") || "Vážený zákazník");
+    setClientName(searchParams.get("client_name") || searchParams.get("name") || searchParams.get("client") || "Vážený zákazník");
     setClientEmail(searchParams.get("client_email") || searchParams.get("email") || "");
     setClientPhone(searchParams.get("client_phone") || searchParams.get("phone") || "");
     setClientCity(searchParams.get("client_city") || searchParams.get("city") || "Slovensko");
-    setClientNote(searchParams.get("client_note") || searchParams.get("notes") || "");
+    setClientNote(searchParams.get("client_note") || searchParams.get("notes") || searchParams.get("message") || "");
 
     const idFromUrl = searchParams.get("id") || searchParams.get("order_id");
     const activeId = idFromUrl || `CP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
