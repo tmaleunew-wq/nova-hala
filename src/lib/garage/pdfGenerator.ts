@@ -274,7 +274,7 @@ export function generateGarageQuotePDF({
   pdf.setFont("Roboto", "bold");
   pdf.setFontSize(7.5);
   pdf.setTextColor(primaryRGB[0], primaryRGB[1], primaryRGB[2]);
-  pdf.text("OFICIÁLNA CENOVÁ PONUKA — OCEĽOVÉ GARÁŽE", margin, y + 2);
+  pdf.text("SÚHRN OBJEDNÁVKY (CENOVÁ PONUKA VÁM PRÍDE NA MAIL)", margin, y + 2);
 
   pdf.setFont("Roboto", "bold");
   pdf.setFontSize(16);
