@@ -51,7 +51,10 @@ export async function exportToGlb(object3d: THREE.Object3D): Promise<Blob> {
  */
 export async function exportToUsdz(object3d: THREE.Object3D): Promise<Blob> {
   const exporter = new USDZExporter();
-  const buffer = await exporter.parseAsync(object3d);
+  const buffer = await exporter.parseAsync(object3d, {
+    quickLookCompatible: true,
+    maxTextureSize: 1024,
+  });
   return new Blob([buffer as any], { type: "model/vnd.usdz+zip" });
 }
 
@@ -59,7 +62,9 @@ export async function exportToUsdz(object3d: THREE.Object3D): Promise<Blob> {
  * Spustí priamy AR Quick Look na iOS
  */
 export function launchIosAr(usdzBlob: Blob, filename = "garaz.usdz"): void {
-  const url = URL.createObjectURL(usdzBlob);
+  const rawUrl = URL.createObjectURL(usdzBlob);
+  // Apple Quick Look requires the URL to end with .usdz
+  const url = `${rawUrl}#model.usdz`;
   const anchor = document.createElement("a");
   anchor.setAttribute("rel", "ar");
   anchor.setAttribute("href", url);
@@ -75,8 +80,8 @@ export function launchIosAr(usdzBlob: Blob, filename = "garaz.usdz"): void {
 
   setTimeout(() => {
     document.body.removeChild(anchor);
-    URL.revokeObjectURL(url);
-  }, 10000);
+    URL.revokeObjectURL(rawUrl);
+  }, 30000);
 }
 
 /**

@@ -145,7 +145,10 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   });
   const [pickerMode, setPickerMode] = useState<"default" | "variant2">("default");
   const [showEnvironment, setShowEnvironment] = useState(true);
-  const [showArModal, setShowArModal] = useState(false);
+  const [showArModal, setShowArModal] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("ar") === "1";
+  });
   const configWithCladding = getCatalogWithCladding(activeVariant);
   const [catalogWithCladding, setCatalogWithCladding] = useState(() => initialUrlParams.showCladding ?? configWithCladding);
   const catalogWithCladdingRef = useRef(initialUrlParams.showCladding ?? configWithCladding);
