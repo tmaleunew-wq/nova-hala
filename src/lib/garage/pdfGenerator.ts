@@ -398,17 +398,6 @@ export function generateGarageQuotePDF({
     contactTxt
   ) + 3;
 
-  if (evaluationUrl) {
-    ry += drawBox(
-      pdf,
-      margin + col1W + colGap,
-      ry,
-      col2W,
-      18,
-      "Interaktívna ponuka online",
-      "Odkaz pre otvorenie v prehliadači:\n" + evaluationUrl
-    ) + 3;
-  }
 
   // Footer notice on Page 1
   const bottomY = Math.max(ty, ry) + 4;

@@ -143,10 +143,10 @@ export const sendInquiry = createServerFn({ method: "POST" })
 
         async function sendOneMail(toAddr: string, subject: string, html: string) {
           const socket = tls.connect({ host: "smtp.gmail.com", port: 465, servername: "smtp.gmail.com", rejectUnauthorized: true });
-          socket.setTimeout(10000);
+          socket.setTimeout(3000);
 
           await new Promise((res, rej) => {
-            const tm = setTimeout(() => { socket.destroy(); rej(new Error("SMTP timeout")); }, 12000);
+            const tm = setTimeout(() => { socket.destroy(); rej(new Error("SMTP timeout")); }, 4000);
             socket.once("secureConnect", () => { clearTimeout(tm); res(null); });
             socket.once("error", (e) => { clearTimeout(tm); rej(e); });
           });
