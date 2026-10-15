@@ -341,19 +341,12 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
       console.error("Chyba pri ukladaní objednávky:", e);
     }
     try {
-      // 1. Send customer confirmation email via EmailJS (delivered directly to entered email)
-      const clientPromise = emailjs
-        .send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, clientTemplateParams, EMAILJS_PUBLIC_KEY)
-        .catch((e) => {
-          console.error("Chyba pri odosielaní potvrdzovacieho e-mailu zákazníkovi:", e);
-        });
-
-      // 2. Send admin notification via EmailJS
+      // 1. Send admin notification via EmailJS as backup
       const adminPromise = emailjs
         .send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, adminTemplateParams, EMAILJS_PUBLIC_KEY)
         .catch(() => null);
 
-      // 3. Send server inquiry as additional channel
+      // 2. Send official confirmation email with quote link via server action
       const resendPromise = sendInquiry({
         data: {
           name,
@@ -367,7 +360,7 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
         },
       }).catch((e) => console.warn("[Resend] Notice:", e));
 
-      await Promise.allSettled([clientPromise, adminPromise, resendPromise]);
+      await Promise.allSettled([adminPromise, resendPromise]);
 
       toast.success("Dopyt bol odoslaný. Odkaz na vašu ponuku nájdete v e-maile.");
       setSubmittedQuote({ orderId, name, email, phone, message, quoteUrl });
