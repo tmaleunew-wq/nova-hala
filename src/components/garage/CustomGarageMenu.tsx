@@ -60,6 +60,39 @@ const DEFAULT_RAL_PALETTE = [
 export const RAL_PALETTE: Array<{ name: string; hex: string }> =
   (defaultConfig as any)?.palette ?? DEFAULT_RAL_PALETTE;
 
+export function RalSwatchButton({
+  color,
+  isSelected,
+  onClick,
+  size = "h-8",
+}: {
+  color: { name: string; hex: string };
+  isSelected: boolean;
+  onClick: () => void;
+  size?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={color.name}
+      className={`${size} rounded-lg border transition-all duration-200 cursor-pointer relative flex items-center justify-center overflow-hidden shadow-sm ${
+        isSelected
+          ? "border-emerald-300 scale-105 ring-2 ring-emerald-400/50 shadow-[0_0_12px_rgba(52,211,153,0.35)] z-10"
+          : "border-white/20 hover:scale-105 hover:border-white/50"
+      }`}
+      style={{ backgroundColor: color.hex }}
+    >
+      <div className="absolute inset-0 bg-gradient-to-tr from-black/25 via-transparent to-white/25 pointer-events-none" />
+      {isSelected && (
+        <span className="relative z-10 flex h-4 w-4 items-center justify-center rounded-full bg-black/75 shadow-sm">
+          <Check className="h-2.5 w-2.5 text-emerald-400 stroke-[3]" />
+        </span>
+      )}
+    </button>
+  );
+}
+
 export function RalColorPicker({
   label,
   value,
@@ -79,27 +112,14 @@ export function RalColorPicker({
         </span>
       </div>
       <div className="grid grid-cols-7 gap-2 pt-1">
-        {RAL_PALETTE.map((c) => {
-          const isSelected = value?.toLowerCase() === c.hex.toLowerCase();
-          return (
-            <button
-              key={c.hex}
-              type="button"
-              onClick={() => onChange(c.hex)}
-              title={c.name}
-              className={`h-8 rounded-lg border-2 transition cursor-pointer relative flex items-center justify-center ${
-                isSelected
-                  ? "border-emerald-300 scale-105 ring-2 ring-emerald-400/50 shadow-md"
-                  : "border-white/20 hover:scale-105 hover:border-white/40"
-              }`}
-              style={{ backgroundColor: c.hex }}
-            >
-              {isSelected && (
-                <Check className="h-4 w-4 text-emerald-400 bg-black/70 rounded-full p-0.5" />
-              )}
-            </button>
-          );
-        })}
+        {RAL_PALETTE.map((c) => (
+          <RalSwatchButton
+            key={c.hex}
+            color={c}
+            isSelected={value?.toLowerCase() === c.hex.toLowerCase()}
+            onClick={() => onChange(c.hex)}
+          />
+        ))}
       </div>
     </div>
   );
@@ -445,7 +465,7 @@ export function CustomGarageMenu({
             </div>
 
             {/* Šírka */}
-            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
+            <div className="rounded-xl bg-[#121824]/90 backdrop-blur-sm border border-white/10 p-3.5 space-y-3 shadow-md hover:border-white/15 transition-colors">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-semibold text-slate-200 tracking-wide">Šírka X:</span>
                 <span className="text-emerald-400 font-extrabold text-base font-mono">
@@ -459,7 +479,7 @@ export function CustomGarageMenu({
                 step="0.1"
                 value={typedParams.width}
                 onChange={(e) => setParams({ width: parseFloat(e.target.value) })}
-                className="w-full accent-emerald-400 cursor-pointer h-2 bg-slate-700 rounded-lg"
+                className="w-full accent-emerald-400 cursor-pointer h-2 bg-slate-700/80 rounded-lg transition hover:brightness-110"
               />
               <div className="flex gap-2 pt-0.5">
                 {[3.0, 4.0, 5.0, 6.0, 7.0].map((w) => (
@@ -467,10 +487,10 @@ export function CustomGarageMenu({
                     key={w}
                     type="button"
                     onClick={() => setParams({ width: w })}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-mono transition cursor-pointer ${
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-mono transition-all duration-150 cursor-pointer active:scale-95 ${
                       typedParams.width === w
-                        ? "bg-emerald-400 text-slate-950 font-extrabold border border-emerald-300 shadow-[0_0_10px_rgba(52,211,153,0.35)]"
-                        : "bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-white/15 font-medium"
+                        ? "bg-gradient-to-r from-emerald-400 to-teal-400 text-slate-950 font-black border border-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.35)] scale-102"
+                        : "bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-white/10 hover:border-white/25 font-semibold"
                     }`}
                   >
                     {w}m
@@ -480,7 +500,7 @@ export function CustomGarageMenu({
             </div>
 
             {/* Dĺžka */}
-            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
+            <div className="rounded-xl bg-[#121824]/90 backdrop-blur-sm border border-white/10 p-3.5 space-y-3 shadow-md hover:border-white/15 transition-colors">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-semibold text-slate-200 tracking-wide">Dĺžka Y:</span>
                 <span className="text-emerald-400 font-extrabold text-base font-mono">
@@ -494,7 +514,7 @@ export function CustomGarageMenu({
                 step="0.5"
                 value={typedParams.length}
                 onChange={(e) => setParams({ length: parseFloat(e.target.value) })}
-                className="w-full accent-emerald-400 cursor-pointer h-2 bg-slate-700 rounded-lg"
+                className="w-full accent-emerald-400 cursor-pointer h-2 bg-slate-700/80 rounded-lg transition hover:brightness-110"
               />
               <div className="flex gap-2 pt-0.5">
                 {[5.0, 6.0, 7.0, 8.0, 10.0].map((l) => (
@@ -502,10 +522,10 @@ export function CustomGarageMenu({
                     key={l}
                     type="button"
                     onClick={() => setParams({ length: l })}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-mono transition cursor-pointer ${
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-mono transition-all duration-150 cursor-pointer active:scale-95 ${
                       typedParams.length === l
-                        ? "bg-emerald-400 text-slate-950 font-extrabold border border-emerald-300 shadow-[0_0_10px_rgba(52,211,153,0.35)]"
-                        : "bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-white/15 font-medium"
+                        ? "bg-gradient-to-r from-emerald-400 to-teal-400 text-slate-950 font-black border border-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.35)] scale-102"
+                        : "bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-white/10 hover:border-white/25 font-semibold"
                     }`}
                   >
                     {l}m
@@ -515,7 +535,7 @@ export function CustomGarageMenu({
             </div>
 
             {/* Svetlá výška */}
-            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
+            <div className="rounded-xl bg-[#121824]/90 backdrop-blur-sm border border-white/10 p-3.5 space-y-3 shadow-md hover:border-white/15 transition-colors">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-semibold text-slate-200 tracking-wide">Svetlá výška Z:</span>
                 <span className="text-emerald-400 font-extrabold text-base font-mono">
@@ -529,7 +549,7 @@ export function CustomGarageMenu({
                 step="0.1"
                 value={typedParams.clearHeight}
                 onChange={(e) => setParams({ clearHeight: parseFloat(e.target.value) })}
-                className="w-full accent-emerald-400 cursor-pointer h-2 bg-slate-700 rounded-lg"
+                className="w-full accent-emerald-400 cursor-pointer h-2 bg-slate-700/80 rounded-lg transition hover:brightness-110"
               />
               <div className="flex gap-2 pt-0.5">
                 {[2.2, 2.4, 2.6, 2.8, 3.0].map((h) => (
@@ -537,10 +557,10 @@ export function CustomGarageMenu({
                     key={h}
                     type="button"
                     onClick={() => setParams({ clearHeight: h })}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-mono transition cursor-pointer ${
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-mono transition-all duration-150 cursor-pointer active:scale-95 ${
                       typedParams.clearHeight === h
-                        ? "bg-emerald-400 text-slate-950 font-extrabold border border-emerald-300 shadow-[0_0_10px_rgba(52,211,153,0.35)]"
-                        : "bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-white/15 font-medium"
+                        ? "bg-gradient-to-r from-emerald-400 to-teal-400 text-slate-950 font-black border border-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.35)] scale-102"
+                        : "bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-white/10 hover:border-white/25 font-semibold"
                     }`}
                   >
                     {h}m
@@ -1196,22 +1216,12 @@ export function CustomGarageMenu({
               </div>
               <div className="grid grid-cols-7 gap-2 pt-1">
                 {RAL_PALETTE.map((c) => (
-                  <button
+                  <RalSwatchButton
                     key={c.hex}
-                    type="button"
+                    color={c}
+                    isSelected={typedParams.claddingColor?.toLowerCase() === c.hex.toLowerCase()}
                     onClick={() => setParams({ claddingColor: c.hex })}
-                    title={c.name}
-                    className={`h-8 rounded-lg border-2 transition cursor-pointer relative flex items-center justify-center ${
-                      typedParams.claddingColor?.toLowerCase() === c.hex.toLowerCase()
-                        ? "border-emerald-300 scale-105 ring-2 ring-emerald-400/50 shadow-md"
-                        : "border-white/20 hover:scale-105 hover:border-white/40"
-                    }`}
-                    style={{ backgroundColor: c.hex }}
-                  >
-                    {typedParams.claddingColor?.toLowerCase() === c.hex.toLowerCase() && (
-                      <Check className="h-4 w-4 text-emerald-400 bg-black/70 rounded-full p-0.5" />
-                    )}
-                  </button>
+                  />
                 ))}
               </div>
             </div>
@@ -1226,22 +1236,12 @@ export function CustomGarageMenu({
               </div>
               <div className="grid grid-cols-7 gap-2 pt-1">
                 {RAL_PALETTE.map((c) => (
-                  <button
+                  <RalSwatchButton
                     key={c.hex}
-                    type="button"
+                    color={c}
+                    isSelected={typedParams.roofColor?.toLowerCase() === c.hex.toLowerCase()}
                     onClick={() => setParams({ roofColor: c.hex })}
-                    title={c.name}
-                    className={`h-8 rounded-lg border-2 transition cursor-pointer relative flex items-center justify-center ${
-                      typedParams.roofColor?.toLowerCase() === c.hex.toLowerCase()
-                        ? "border-emerald-300 scale-105 ring-2 ring-emerald-400/50 shadow-md"
-                        : "border-white/20 hover:scale-105 hover:border-white/40"
-                    }`}
-                    style={{ backgroundColor: c.hex }}
-                  >
-                    {typedParams.roofColor?.toLowerCase() === c.hex.toLowerCase() && (
-                      <Check className="h-4 w-4 text-emerald-400 bg-black/70 rounded-full p-0.5" />
-                    )}
-                  </button>
+                  />
                 ))}
               </div>
             </div>
@@ -1256,22 +1256,12 @@ export function CustomGarageMenu({
               </div>
               <div className="grid grid-cols-7 gap-2 pt-1">
                 {RAL_PALETTE.map((c) => (
-                  <button
+                  <RalSwatchButton
                     key={c.hex}
-                    type="button"
+                    color={c}
+                    isSelected={typedParams.sectionalDoorColor?.toLowerCase() === c.hex.toLowerCase()}
                     onClick={() => setParams({ sectionalDoorColor: c.hex, sectionalDoor2Color: c.hex })}
-                    title={c.name}
-                    className={`h-8 rounded-lg border-2 transition cursor-pointer relative flex items-center justify-center ${
-                      typedParams.sectionalDoorColor?.toLowerCase() === c.hex.toLowerCase()
-                        ? "border-emerald-300 scale-105 ring-2 ring-emerald-400/50 shadow-md"
-                        : "border-white/20 hover:scale-105 hover:border-white/40"
-                    }`}
-                    style={{ backgroundColor: c.hex }}
-                  >
-                    {typedParams.sectionalDoorColor?.toLowerCase() === c.hex.toLowerCase() && (
-                      <Check className="h-4 w-4 text-emerald-400 bg-black/70 rounded-full p-0.5" />
-                    )}
-                  </button>
+                  />
                 ))}
               </div>
             </div>
@@ -1309,22 +1299,12 @@ export function CustomGarageMenu({
                   </div>
                   <div className="grid grid-cols-7 gap-2 pt-1">
                     {RAL_PALETTE.map((c) => (
-                      <button
+                      <RalSwatchButton
                         key={c.hex}
-                        type="button"
+                        color={c}
+                        isSelected={typedParams.trimmingColor?.toLowerCase() === c.hex.toLowerCase()}
                         onClick={() => setParams({ trimmingColor: c.hex })}
-                        title={c.name}
-                        className={`h-8 rounded-lg border-2 transition cursor-pointer relative flex items-center justify-center ${
-                          typedParams.trimmingColor?.toLowerCase() === c.hex.toLowerCase()
-                            ? "border-emerald-300 scale-105 ring-2 ring-emerald-400/50 shadow-md"
-                            : "border-white/20 hover:scale-105 hover:border-white/40"
-                        }`}
-                        style={{ backgroundColor: c.hex }}
-                      >
-                        {typedParams.trimmingColor?.toLowerCase() === c.hex.toLowerCase() && (
-                          <Check className="h-4 w-4 text-emerald-400 bg-black/70 rounded-full p-0.5" />
-                        )}
-                      </button>
+                      />
                     ))}
                   </div>
                 </>
@@ -1587,7 +1567,7 @@ export function CustomGarageMenu({
               const idx = WIZARD_STEPS.findIndex((s) => s.id === activeTab);
               if (idx < WIZARD_STEPS.length - 1) setActiveTab(WIZARD_STEPS[idx + 1].id);
             }}
-            className="px-4 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold shadow-md shadow-emerald-500/20 transition flex items-center gap-1.5 cursor-pointer ml-auto active:scale-95"
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-slate-950 font-bold shadow-lg shadow-emerald-500/25 transition-all flex items-center gap-1.5 cursor-pointer ml-auto active:scale-95"
           >
             <span>Ďalej: {WIZARD_STEPS[WIZARD_STEPS.findIndex((s) => s.id === activeTab) + 1]?.title}</span>
             <span>➔</span>
@@ -1596,7 +1576,7 @@ export function CustomGarageMenu({
           <button
             type="button"
             onClick={() => setQuoteRequestSignal((v) => v + 1)}
-            className="px-4 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold shadow-lg shadow-emerald-500/25 transition flex items-center gap-1.5 cursor-pointer ml-auto active:scale-95"
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-slate-950 font-bold shadow-lg shadow-emerald-500/30 transition-all flex items-center gap-1.5 cursor-pointer ml-auto active:scale-95"
           >
             <span>Odoslať dopyt</span>
             <span>✓</span>

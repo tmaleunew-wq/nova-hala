@@ -127,6 +127,7 @@ export function CameraRig({
   const targetLook = useRef<THREE.Vector3>(new THREE.Vector3());
   const isTransitioning = useRef<boolean>(false);
   const transitionTimer = useRef<any>(null);
+  const isInitialMount = useRef<boolean>(true);
 
   useEffect(() => {
     if (!controls) return;
@@ -291,6 +292,21 @@ export function CameraRig({
     clearTimeout(transitionTimer.current);
     targetPos.current.copy(pos);
     targetLook.current.copy(target);
+
+    if (isInitialMount.current) {
+      camera.position.copy(pos);
+      if (controls) {
+        controls.target.copy(target);
+        controls.update();
+      } else {
+        camera.lookAt(target);
+      }
+      camera.updateProjectionMatrix();
+      isInitialMount.current = false;
+      isTransitioning.current = false;
+      return;
+    }
+
     isTransitioning.current = true;
     transitionTimer.current = setTimeout(() => {
       isTransitioning.current = false;

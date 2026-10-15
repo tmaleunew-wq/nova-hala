@@ -96,18 +96,18 @@ export function TopNavigation({
         </div>
       </div>
 
-      <div className="flex items-center justify-between md:justify-end gap-1 w-full md:w-auto">
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+      <div className="flex items-center justify-between md:justify-end gap-1.5 w-full md:w-auto">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar bg-black/40 p-0.5 rounded-lg border border-white/10">
           {(["iso", "plan", "front", "side"] as const).map((v) => (
             <button
               key={v}
               onClick={() => setPreset(v)}
-              className={`rounded px-2 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider transition ${
+              className={`rounded-md px-2.5 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer ${
                 preset === v
                   ? isCustom
-                    ? "bg-emerald-400/20 text-emerald-300 ring-1 ring-emerald-400/40"
-                    : "bg-cyan-400/20 text-cyan-300 ring-1 ring-cyan-400/40"
-                  : "text-white/60 hover:bg-white/5 hover:text-white"
+                    ? "bg-emerald-400/25 text-emerald-300 font-bold shadow-[0_0_12px_rgba(52,211,153,0.3)] border border-emerald-400/50"
+                    : "bg-cyan-400/25 text-cyan-300 font-bold shadow-[0_0_12px_rgba(34,211,238,0.3)] border border-cyan-400/50"
+                  : "text-white/70 hover:bg-white/10 hover:text-white"
               }`}
             >
               {v === "iso"
@@ -131,12 +131,12 @@ export function TopNavigation({
         <button
           onClick={() => setShowEnvironment((v) => !v)}
           title={showEnvironment ? "Vypnúť okolie haly" : "Zapnúť okolie haly"}
-          className={`ml-1 md:ml-2 rounded px-2 py-1 font-mono text-[10px] md:text-xs transition shrink-0 ring-1 ${
+          className={`ml-1 rounded-lg px-2.5 py-1 font-mono text-[10px] md:text-xs transition-all duration-200 shrink-0 border cursor-pointer ${
             showEnvironment
               ? isCustom
-                ? "bg-emerald-400/20 text-emerald-300 ring-emerald-400/40"
-                : "bg-cyan-400/20 text-cyan-300 ring-cyan-400/40"
-              : "text-white/60 ring-white/10 hover:bg-white/5"
+                ? "bg-emerald-400/20 text-emerald-300 border-emerald-400/50 shadow-[0_0_10px_rgba(52,211,153,0.25)]"
+                : "bg-cyan-400/20 text-cyan-300 border-cyan-400/50 shadow-[0_0_10px_rgba(34,211,238,0.25)]"
+              : "text-white/70 border-white/10 bg-white/[0.03] hover:bg-white/10 hover:text-white"
           }`}
         >
           🌳{!isMobile && " Okolie"}
@@ -144,30 +144,34 @@ export function TopNavigation({
         <button
           onClick={() => setShowArModal(true)}
           title="Zobraziť v rozšírenej realite (AR) alebo stiahnuť 3D model"
-          className={`ml-1 md:ml-2 flex items-center gap-1 rounded px-2 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider ring-1 transition shrink-0 cursor-pointer ${
+          className={`ml-1 flex items-center gap-1 rounded-lg px-2.5 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider border transition-all duration-200 shrink-0 cursor-pointer ${
             isCustom
-              ? "bg-emerald-400/20 text-emerald-300 ring-emerald-400/40 hover:bg-emerald-400/30"
-              : "bg-cyan-400/20 text-cyan-300 ring-cyan-400/40 hover:bg-cyan-400/30"
+              ? "bg-emerald-400/15 text-emerald-300 border-emerald-400/40 hover:bg-emerald-400/25"
+              : "bg-cyan-400/15 text-cyan-300 border-cyan-400/40 hover:bg-cyan-400/25"
           }`}
         >
           📱 AR
         </button>
         <button
           onClick={handleShare}
-          className={`ml-1 md:ml-2 flex items-center gap-1 rounded px-2 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider ring-1 transition shrink-0 ${
+          className={`ml-1 flex items-center gap-1 rounded-lg px-2.5 md:px-3 py-1 font-mono text-[10px] md:text-xs uppercase tracking-wider border transition-all duration-200 shrink-0 cursor-pointer ${
             isCustom
-              ? "bg-emerald-400/20 text-emerald-300 ring-emerald-400/40 hover:bg-emerald-400/30"
-              : "bg-cyan-400/20 text-cyan-300 ring-cyan-400/40 hover:bg-cyan-400/30"
+              ? "bg-emerald-400/15 text-emerald-300 border-emerald-400/40 hover:bg-emerald-400/25"
+              : "bg-cyan-400/15 text-cyan-300 border-cyan-400/40 hover:bg-cyan-400/25"
           }`}
         >
           Zdieľať
         </button>
       </div>
       {!isMobile && (
-        <div className="font-mono text-[10px] text-white/40">
-          {(typedParams.width ?? DEFAULT_PARAMS.width).toFixed(1)} ×{" "}
-          {(typedParams.length ?? DEFAULT_PARAMS.length).toFixed(1)} ×{" "}
-          {(typedParams.clearHeight ?? DEFAULT_PARAMS.clearHeight).toFixed(1)} m
+        <div className="flex items-center gap-2 rounded-lg border border-white/15 bg-black/50 px-3 py-1 font-mono text-[11px] text-white/90 shadow-inner">
+          <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${isCustom ? "bg-emerald-400" : "bg-cyan-400"}`} />
+          <span className="text-white/40 text-[10px] uppercase tracking-wider">Rozmery:</span>
+          <span className="font-bold text-white tracking-wide">
+            {(typedParams.width ?? DEFAULT_PARAMS.width).toFixed(1)} ×{" "}
+            {(typedParams.length ?? DEFAULT_PARAMS.length).toFixed(1)} ×{" "}
+            {(typedParams.clearHeight ?? DEFAULT_PARAMS.clearHeight).toFixed(1)} m
+          </span>
         </div>
       )}
     </div>

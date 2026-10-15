@@ -840,7 +840,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       <Canvas
         shadows
         dpr={[1, 2]}
-        camera={{ position: [10, 8, -10], fov: 35, near: 0.4, far: 350 }}
+        camera={{ position: [-7.5, 6.0, -14.0], fov: 35, near: 0.4, far: 350 }}
         gl={{ antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance" }}
       >
         <color attach="background" args={["#f5f5f5"]} />
@@ -858,7 +858,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           makeDefault
           enableDamping
           dampingFactor={0.08}
-          target={[0, typedParams.clearHeight / 2, 0]}
+          target={[0.7, (typedParams.clearHeight ?? 2.6) * 0.42, -0.2]}
           maxPolarAngle={Math.PI / 2}
         />
         <CameraRig
@@ -935,8 +935,15 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       </div>
 
       {/* Dimensions strip */}
-      <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 max-w-[92vw] truncate rounded border border-white/10 bg-black/50 px-2 py-1 md:px-3 md:py-1.5 font-mono text-[9px] md:text-[10px] text-white/60 backdrop-blur text-center">
-        {isMobile ? "Ťahanie = rotácia · Profily " + ((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0) + " mm" : "Ťahanie = rotácia · Koliesko = priblíženie · Pravé tlačidlo = posun · Profily " + ((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0) + "×" + ((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0) + "×" + ((typedParams.profileThickness ?? DEFAULT_PARAMS.profileThickness) * 1000).toFixed(0) + " mm"}
+      <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 max-w-[92vw] truncate rounded-full border border-white/15 bg-black/60 px-3.5 py-1.5 font-mono text-[9px] md:text-[11px] text-white/80 backdrop-blur-md shadow-lg text-center flex items-center gap-1.5">
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400/80 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+        {isMobile ? (
+          <span>Ťahanie = rotácia · Profily {((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0)} mm</span>
+        ) : (
+          <span>
+            <span className="text-white/50">3D CAD:</span> Ťahanie = rotácia <span className="text-white/30">•</span> Koliesko = priblíženie <span className="text-white/30">•</span> Pravé tlačidlo = posun <span className="text-white/30">•</span> <span className="text-emerald-400 font-semibold">Profily {((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0)}×{((typedParams.profileSize ?? DEFAULT_PARAMS.profileSize) * 1000).toFixed(0)}×{((typedParams.profileThickness ?? DEFAULT_PARAMS.profileThickness) * 1000).toFixed(0)} mm</span>
+          </span>
+        )}
       </div>
 
       {/* Controls Toggle Button */}

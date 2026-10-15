@@ -4,11 +4,17 @@ import type { GarageParams } from "@/lib/garage/types";
 
 const noRaycast = () => null;
 
+let cachedPaverTex: THREE.CanvasTexture | null = null;
+let cachedAnthraciteTex: THREE.CanvasTexture | null = null;
+let cachedGravelTex: THREE.CanvasTexture | null = null;
+let cachedGrassTex: THREE.CanvasTexture | null = null;
+
 /**
  * Creates a procedural large-format concrete paver texture
  * with subtle surface variation and clean joints.
  */
 function makePaverTexture(): THREE.CanvasTexture {
+  if (cachedPaverTex) return cachedPaverTex;
   if (typeof document === "undefined") return new THREE.CanvasTexture({} as HTMLCanvasElement);
   const size = 1024;
   const canvas = document.createElement("canvas");
@@ -60,6 +66,7 @@ function makePaverTexture(): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.anisotropy = 8;
+  cachedPaverTex = tex;
   return tex;
 }
 
@@ -67,6 +74,7 @@ function makePaverTexture(): THREE.CanvasTexture {
  * Creates dark anthracite basalt paver texture
  */
 function makeAnthraciteTexture(): THREE.CanvasTexture {
+  if (cachedAnthraciteTex) return cachedAnthraciteTex;
   if (typeof document === "undefined") return new THREE.CanvasTexture({} as HTMLCanvasElement);
   const size = 512;
   const canvas = document.createElement("canvas");
@@ -103,6 +111,7 @@ function makeAnthraciteTexture(): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.anisotropy = 8;
+  cachedAnthraciteTex = tex;
   return tex;
 }
 
@@ -110,6 +119,7 @@ function makeAnthraciteTexture(): THREE.CanvasTexture {
  * Creates natural river pebble / gravel texture
  */
 function makeGravelTexture(): THREE.CanvasTexture {
+  if (cachedGravelTex) return cachedGravelTex;
   if (typeof document === "undefined") return new THREE.CanvasTexture({} as HTMLCanvasElement);
   const size = 512;
   const canvas = document.createElement("canvas");
@@ -140,6 +150,7 @@ function makeGravelTexture(): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.anisotropy = 8;
+  cachedGravelTex = tex;
   return tex;
 }
 
@@ -147,6 +158,7 @@ function makeGravelTexture(): THREE.CanvasTexture {
  * Creates manicured grass turf texture
  */
 function makeGrassTexture(): THREE.CanvasTexture {
+  if (cachedGrassTex) return cachedGrassTex;
   if (typeof document === "undefined") return new THREE.CanvasTexture({} as HTMLCanvasElement);
   const size = 512;
   const canvas = document.createElement("canvas");
@@ -170,6 +182,7 @@ function makeGrassTexture(): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.anisotropy = 8;
+  cachedGrassTex = tex;
   return tex;
 }
 

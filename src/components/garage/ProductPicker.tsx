@@ -56,16 +56,16 @@ export function ProductPicker({
             <button
               id="pick-vlastny"
               onClick={() => onSelect("Vlastný")}
-              className={`group cursor-pointer overflow-hidden rounded-2xl border text-left transition duration-300 hover:-translate-y-2 hover:border-emerald-300 hover:shadow-[0_0_45px_rgba(52,211,153,0.45)] border-emerald-400 bg-gradient-to-br from-emerald-500/20 to-[#0e1116] ring-2 ring-emerald-400/50 shadow-[0_0_30px_rgba(52,211,153,0.25)]`}
+              className={`group cursor-pointer overflow-hidden rounded-2xl border text-left transition-all duration-300 hover:-translate-y-2 hover:border-emerald-300 hover:shadow-[0_0_45px_rgba(52,211,153,0.45)] border-emerald-400 bg-gradient-to-br from-emerald-500/20 via-[#0e141c] to-[#080b10] ring-2 ring-emerald-400/50 shadow-[0_0_30px_rgba(52,211,153,0.25)]`}
             >
-              <div className="h-44 sm:h-64 md:h-96 overflow-hidden bg-[#ececec] flex items-center justify-center relative">
+              <div className="h-48 sm:h-64 md:h-80 overflow-hidden bg-[#ececec] flex items-center justify-center relative border-b border-white/10 shadow-[inset_0_2px_10px_rgba(0,0,0,0.08)]">
                 <img
                   src={`${imageCatalog}/vlastna_garaz.png?v=3`}
                   alt="Vlastná garáž"
                   loading="lazy"
-                  className="h-full w-full object-contain p-4 transition duration-500 group-hover:scale-105"
+                  className="h-full w-full object-cover sm:object-contain transition duration-500 group-hover:scale-105"
                 />
-                <span className="absolute top-4 right-4 rounded-full bg-emerald-500 text-slate-950 font-mono text-xs font-bold px-3.5 py-1.5 shadow-lg">
+                <span className="absolute top-4 right-4 z-20 rounded-full bg-emerald-400 text-slate-950 font-mono text-xs font-bold px-3.5 py-1.5 shadow-lg shadow-emerald-500/30">
                   Na mieru
                 </span>
               </div>
@@ -73,18 +73,18 @@ export function ProductPicker({
                 <div>
                   <h3 className="font-mono text-lg sm:text-xl md:text-2xl font-bold text-white group-hover:text-emerald-400 transition flex items-center justify-between">
                     <span>Vlastná garáž</span>
-                    <span className="text-emerald-400 text-lg font-normal">→</span>
+                    <span className="text-emerald-400 text-lg font-normal transition-transform group-hover:translate-x-1">→</span>
                   </h3>
                   <p className="text-xs md:text-sm font-mono text-emerald-400/90 mt-1">
                     Individuálny návrh garáže podľa vašich rozmerov
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:gap-3 font-mono">
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-2.5 sm:p-3">
+                  <div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5 sm:p-3 transition-colors group-hover:border-emerald-500/30">
                     <div className="text-[10px] sm:text-[11px] text-white/50 uppercase tracking-wider">Rozmery</div>
                     <div className="text-xs sm:text-base font-bold text-white mt-0.5">Voliteľné na mieru</div>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-2.5 sm:p-3">
+                  <div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5 sm:p-3 transition-colors group-hover:border-emerald-500/30">
                     <div className="text-[10px] sm:text-[11px] text-white/50 uppercase tracking-wider">Opláštenie</div>
                     <div className="text-xs sm:text-base font-bold text-white mt-0.5">Sendvič / Trapéz</div>
                   </div>
@@ -93,7 +93,7 @@ export function ProductPicker({
                   Navrhnite si vlastnú garáž s voliteľnou šírkou, dĺžkou a výškou, sedlovou či pultovou strechou, sekčnou bránou, dverami, oknami a prístreškom.
                 </p>
                 <div className="pt-1 sm:pt-2">
-                  <div className="w-full py-2.5 sm:py-3.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-mono text-xs md:text-sm font-bold text-center transition shadow-lg shadow-emerald-500/20">
+                  <div className="w-full py-2.5 sm:py-3.5 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 group-hover:from-emerald-300 group-hover:to-teal-300 text-slate-950 font-mono text-xs md:text-sm font-bold text-center transition shadow-lg shadow-emerald-500/25">
                     Konfigurovať vlastnú garáž
                   </div>
                 </div>
@@ -104,16 +104,16 @@ export function ProductPicker({
             <button
               id="pick-hala"
               onClick={() => onSelect(names.find((n) => n.includes("10")) || names[0] || "Hala S-10")}
-              className={`group cursor-pointer overflow-hidden rounded-2xl border text-left transition duration-300 hover:-translate-y-2 hover:border-cyan-300 hover:shadow-[0_0_45px_rgba(34,211,238,0.45)] border-cyan-400 bg-gradient-to-br from-cyan-500/20 to-[#0e1116] ring-2 ring-cyan-400/50 shadow-[0_0_30px_rgba(34,211,238,0.25)]`}
+              className={`group cursor-pointer overflow-hidden rounded-2xl border text-left transition-all duration-300 hover:-translate-y-2 hover:border-cyan-300 hover:shadow-[0_0_45px_rgba(34,211,238,0.45)] border-cyan-400 bg-gradient-to-br from-cyan-500/20 via-[#0e141c] to-[#080b10] ring-2 ring-cyan-400/50 shadow-[0_0_30px_rgba(34,211,238,0.25)]`}
             >
-              <div className="h-44 sm:h-64 md:h-96 overflow-hidden bg-[#ececec] flex items-center justify-center relative">
+              <div className="h-48 sm:h-64 md:h-80 overflow-hidden bg-[#ececec] flex items-center justify-center relative border-b border-white/10 shadow-[inset_0_2px_10px_rgba(0,0,0,0.08)]">
                 <img
                   src={`${imageCatalog}/${halls[names.find((n) => n.includes("10")) || names[0]]?.imageKey || names.find((n) => n.includes("10")) || names[0] || "Hala S-10"}_render.png?v=3`}
                   alt="Oceľová hala"
                   loading="lazy"
-                  className="h-full w-full object-contain p-4 transition duration-500 group-hover:scale-105"
+                  className="h-full w-full object-cover sm:object-contain transition duration-500 group-hover:scale-105"
                 />
-                <span className="absolute top-4 right-4 rounded-full bg-cyan-400 text-slate-950 font-mono text-xs font-bold px-3.5 py-1.5 shadow-lg">
+                <span className="absolute top-4 right-4 z-20 rounded-full bg-cyan-400 text-slate-950 font-mono text-xs font-bold px-3.5 py-1.5 shadow-lg shadow-cyan-500/30">
                   Typová hala
                 </span>
               </div>
@@ -121,18 +121,18 @@ export function ProductPicker({
                 <div>
                   <h3 className="font-mono text-lg sm:text-xl md:text-2xl font-bold text-white group-hover:text-cyan-400 transition flex items-center justify-between">
                     <span>Oceľová hala</span>
-                    <span className="text-cyan-400 text-lg font-normal">→</span>
+                    <span className="text-cyan-400 text-lg font-normal transition-transform group-hover:translate-x-1">→</span>
                   </h3>
                   <p className="text-xs md:text-sm font-mono text-cyan-400/90 mt-1">
                     Typové priemyselné, skladové a hospodárske haly
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:gap-3 font-mono">
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-2.5 sm:p-3">
+                  <div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5 sm:p-3 transition-colors group-hover:border-cyan-500/30">
                     <div className="text-[10px] sm:text-[11px] text-white/50 uppercase tracking-wider">Rozpon / Šírka</div>
                     <div className="text-xs sm:text-base font-bold text-white mt-0.5">8 m – 20 m</div>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-2.5 sm:p-3">
+                  <div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5 sm:p-3 transition-colors group-hover:border-cyan-500/30">
                     <div className="text-[10px] sm:text-[11px] text-white/50 uppercase tracking-wider">Konštrukcia</div>
                     <div className="text-xs sm:text-base font-bold text-white mt-0.5">Rámová oceľ S355</div>
                   </div>
@@ -141,7 +141,7 @@ export function ProductPicker({
                   Vyberte si z certifikovaných typových oceľových hál s overenou statikou, modulovou dĺžkou a možnosťou opláštenia či kót A-B-C.
                 </p>
                 <div className="pt-1 sm:pt-2">
-                  <div className="w-full py-2.5 sm:py-3.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-mono text-xs md:text-sm font-bold text-center transition shadow-lg shadow-cyan-500/20">
+                  <div className="w-full py-2.5 sm:py-3.5 rounded-xl bg-gradient-to-r from-cyan-400 to-sky-400 group-hover:from-cyan-300 group-hover:to-sky-300 text-slate-950 font-mono text-xs md:text-sm font-bold text-center transition shadow-lg shadow-cyan-500/25">
                     Konfigurovať halu
                   </div>
                 </div>
