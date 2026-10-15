@@ -57,6 +57,7 @@ function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"list" | "detail">("list");
 
   // Active selected order params & pricing
   const [params, setParams] = useState<GarageParams>(DEFAULT_PARAMS);
@@ -147,6 +148,7 @@ function AdminDashboard() {
     const config = getCladdingConfig(ord.name);
     setSandwichPricePerSqM(config.sandwichPricePerSqM);
     setTrapezoidPricePerSqM(config.trapezoidPricePerSqM);
+    setMobileTab("detail");
   };
 
   const handleDeleteOrder = async (id: string, e: React.MouseEvent) => {
@@ -330,47 +332,77 @@ function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#070a0e] text-slate-100 font-mono select-text">
       {/* Header bar */}
-      <header className="border-b border-white/10 bg-black/60 px-6 py-3.5 flex items-center justify-between sticky top-0 z-30 backdrop-blur-md">
-        <div className="flex items-center gap-3">
+      <header className="border-b border-white/10 bg-black/60 px-3.5 sm:px-6 py-2.5 sm:py-3.5 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sticky top-0 z-30 backdrop-blur-md">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             to="/"
-            className="flex items-center gap-1.5 rounded border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80 transition hover:bg-white/10"
+            className="flex items-center gap-1.5 rounded border border-white/10 bg-white/5 px-2.5 sm:px-3 py-1.5 text-xs text-white/80 transition hover:bg-white/10"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Konfigurátor
+            <span className="hidden xs:inline">Konfigurátor</span>
           </Link>
           <div className="h-4 w-px bg-white/10" />
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-emerald-400" />
-            <h1 className="text-sm font-bold tracking-widest text-white">
-              BAUBOX ADMIN DASHBOARD
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0" />
+            <h1 className="text-xs sm:text-sm font-bold tracking-wider sm:tracking-widest text-white truncate max-w-[150px] sm:max-w-none">
+              ADMIN DASHBOARD
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={loadOrders}
-            className="flex items-center gap-1.5 rounded bg-white/5 border border-white/10 px-3 py-1.5 text-xs hover:bg-white/10 transition"
+            className="flex items-center gap-1.5 rounded bg-white/5 border border-white/10 px-2.5 sm:px-3 py-1.5 text-xs hover:bg-white/10 transition"
+            title="Obnoviť dáta"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-            Obnoviť dáta
+            <span className="hidden sm:inline">Obnoviť dáta</span>
           </button>
           <button
             onClick={handleExportExcel}
-            className="flex items-center gap-1.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3.5 py-1.5 text-xs font-bold hover:bg-emerald-500/30 transition"
+            className="flex items-center gap-1.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 sm:px-3.5 py-1.5 text-xs font-bold hover:bg-emerald-500/30 transition"
           >
             <FileSpreadsheet className="h-3.5 w-3.5" />
-            Export do Excelu (.xls)
+            <span>Excel <span className="hidden sm:inline">(.xls)</span></span>
           </button>
         </div>
       </header>
 
       {/* Main Container - Dual Pane Layout */}
-      <div className="max-w-[1600px] mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="max-w-[1600px] mx-auto p-3 sm:p-6">
         
-        {/* LEFT PANE: Orders List & Search (5 Cols) */}
-        <div className="lg:col-span-4 space-y-4">
+        {/* Mobile View Tab Switcher (Visible only on mobile/tablet) */}
+        <div className="lg:hidden flex rounded-lg border border-white/10 bg-[#0e1218] p-1 mb-4 gap-1">
+          <button
+            type="button"
+            onClick={() => setMobileTab("list")}
+            className={`flex-1 py-2 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition ${
+              mobileTab === "list"
+                ? "bg-emerald-500 text-black shadow font-bold"
+                : "text-white/60 hover:text-white"
+            }`}
+          >
+            <Layers className="h-3.5 w-3.5" />
+            Zoznam dopytov ({filteredOrders.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab("detail")}
+            className={`flex-1 py-2 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition ${
+              mobileTab === "detail"
+                ? "bg-emerald-500 text-black shadow font-bold"
+                : "text-white/60 hover:text-white"
+            }`}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Detail & Kalkulácia
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+          {/* LEFT PANE: Orders List & Search (5 Cols) */}
+          <div className={`lg:col-span-4 space-y-4 ${mobileTab === "list" ? "block" : "hidden lg:block"}`}>
           
           {/* KPI Stats Bar */}
           <div className="grid grid-cols-2 gap-3">
@@ -467,33 +499,45 @@ function AdminDashboard() {
         </div>
 
         {/* RIGHT PANE: Selected Order Editor & Calculator (8 Cols) */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className={`lg:col-span-8 space-y-4 sm:space-y-6 ${mobileTab === "detail" ? "block" : "hidden lg:block"}`}>
           
           {/* Customer Header Info */}
-          <div className="rounded-lg border border-white/10 bg-[#0e1218] p-5">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+          <div className="rounded-lg border border-white/10 bg-[#0e1218] p-4 sm:p-5">
+            {/* Mobile Back Button */}
+            <div className="lg:hidden mb-3">
+              <button
+                type="button"
+                onClick={() => setMobileTab("list")}
+                className="w-full py-2 px-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-white/80 text-xs font-bold flex items-center justify-center gap-2 transition"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 text-emerald-400" />
+                Späť na zoznam dopytov ({filteredOrders.length})
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-3 mb-4 gap-3">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Detail Zákazníka</span>
-                <h2 className="text-lg font-bold text-white">{clientName || "Vyberte dopyt zo zoznamu"}</h2>
+                <h2 className="text-base sm:text-lg font-bold text-white">{clientName || "Vyberte dopyt zo zoznamu"}</h2>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => setIsQrModalOpen(true)}
-                  className="flex items-center gap-1.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3.5 py-1.5 text-xs font-bold hover:bg-emerald-500/30 transition shadow-sm cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-2 sm:py-1.5 text-xs font-bold hover:bg-emerald-500/30 transition shadow-sm cursor-pointer"
                 >
                   <QrCode className="h-3.5 w-3.5" />
                   QR Kód stavby (PDF + AR)
                 </button>
                 <button
                   onClick={() => setIsQuoteModalOpen(true)}
-                  className="flex items-center gap-1.5 rounded bg-emerald-400 font-bold text-black border border-emerald-300 px-3.5 py-1.5 text-xs hover:bg-emerald-300 transition shadow-lg shadow-emerald-400/20 cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 rounded bg-emerald-400 font-bold text-black border border-emerald-300 px-3 py-2 sm:py-1.5 text-xs hover:bg-emerald-300 transition shadow-lg shadow-emerald-400/20 cursor-pointer"
                 >
                   <FileText className="h-3.5 w-3.5" />
-                  Vytvoriť Cenovú Ponuku (PDF/E-mail)
+                  Vytvoriť Cenovú Ponuku
                 </button>
                 <button
                   onClick={handleCopyShareLink}
-                  className="flex items-center gap-1.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 text-xs hover:bg-emerald-500/30 transition cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-2 sm:py-1.5 text-xs hover:bg-emerald-500/30 transition cursor-pointer"
                 >
                   <LinkIcon className="h-3.5 w-3.5" />
                   Kopírovať odkaz
@@ -580,6 +624,7 @@ function AdminDashboard() {
           </div>
 
         </div>
+      </div>
       </div>
 
       {/* Price Quote Modal */}

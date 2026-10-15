@@ -63,16 +63,17 @@ export function AdminPricingTable({
         <h3 className="text-xs uppercase font-bold tracking-widest">Podrobný Rozpis Kalkulácie pre {clientName}</h3>
       </div>
 
-      <table className="w-full text-left text-xs border-collapse">
-        <thead>
-          <tr className="border-b border-white/10 text-white/40">
-            <th className="py-2 font-normal">Položka špecifikácie</th>
-            <th className="py-2 text-right font-normal">Množstvo</th>
-            <th className="py-2 text-right font-normal">Jedn. cena</th>
-            <th className="py-2 text-right font-normal">Cena bez DPH</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-white/5">
+      <div className="overflow-x-auto -mx-2 px-2">
+        <table className="w-full min-w-[500px] text-left text-xs border-collapse">
+          <thead>
+            <tr className="border-b border-white/10 text-white/40">
+              <th className="py-2 font-normal">Položka špecifikácie</th>
+              <th className="py-2 text-right font-normal">Množstvo</th>
+              <th className="py-2 text-right font-normal">Jedn. cena</th>
+              <th className="py-2 text-right font-normal">Cena bez DPH</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
           <tr>
             <td className="py-2 pr-2">
               <div className="font-bold text-slate-200">Oceľová nosná konštrukcia (jakl)</div>
@@ -170,13 +171,14 @@ export function AdminPricingTable({
           )}
         </tbody>
       </table>
+      </div>
 
       {/* Totals Summary */}
-      <div className="mt-4 border-t border-white/20 pt-3 flex items-center justify-between text-sm">
+      <div className="mt-4 border-t border-white/20 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm">
         <div className="text-white/60">
           Spolu bez DPH: <span className="font-bold text-white font-mono">{finalSubtotalBeforeVat.toFixed(2)} €</span>
         </div>
-        <div className="text-lg font-bold text-emerald-400 font-mono">
+        <div className="text-base sm:text-lg font-bold text-emerald-400 font-mono">
           CELKOVÁ CENA S DPH: {finalTotalWithVat.toFixed(2)} €
         </div>
       </div>
