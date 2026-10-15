@@ -303,7 +303,7 @@ export function PriceQuoteModal({
           <div className="grid grid-cols-2 gap-6 text-xs font-mono">
             <div className="rounded-lg border border-white/10 bg-black/30 p-4 print:border-slate-300 print:bg-slate-50 print:text-black">
               <h3 className="font-bold text-emerald-400 print:text-slate-700 uppercase tracking-wider mb-2">Dodávateľ:</h3>
-              <div className="font-bold text-white print:text-black">BAUBOX s.r.o.</div>
+              <div className="font-bold text-white print:text-black">Vbau1 s.r.o.</div>
               <div className="text-white/70 print:text-slate-600">Oceľové konštrukcie & Sendvičové opláštenie</div>
               <div className="text-white/70 print:text-slate-600">E-mail: info@steelshedforge.com</div>
               <div className="text-white/70 print:text-slate-600">Web: https://steel-shed-forge.vercel.app</div>
