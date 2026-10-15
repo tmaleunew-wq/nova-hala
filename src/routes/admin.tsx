@@ -7,7 +7,7 @@ import {
   ArrowLeft, Printer, Link as LinkIcon, DollarSign, RefreshCw, 
   Calculator, FileText, FileSpreadsheet, Search, User, Phone, 
   Mail, Calendar, ShieldCheck, CheckCircle, Trash2, Plus, Eye,
-  Layers, Package, ChevronRight, Sliders, QrCode
+  Layers, Package, ChevronRight, Sliders, QrCode, MessageCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateOrderExcelXml } from "@/lib/garage/excelGenerator";
@@ -329,6 +329,17 @@ function AdminDashboard() {
     toast.success("Odkaz na cenovú ponuku bol skopírovaný!");
   };
 
+  const handleOpenIn3D = () => {
+    const currentParams = new URLSearchParams();
+    const keys = Object.keys(params) as (keyof GarageParams)[];
+    for (const key of keys) {
+      let val = String(params[key]);
+      if (val.startsWith("#")) val = val.substring(1);
+      currentParams.set(key, val);
+    }
+    window.open(`/?${currentParams.toString()}`, "_blank");
+  };
+
   return (
     <div className="min-h-screen bg-[#070a0e] text-slate-100 font-mono select-text">
       {/* Header bar */}
@@ -542,21 +553,65 @@ function AdminDashboard() {
                   <LinkIcon className="h-3.5 w-3.5" />
                   Kopírovať odkaz
                 </button>
+                <button
+                  onClick={handleOpenIn3D}
+                  className="flex items-center justify-center gap-1.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-2 sm:py-1.5 text-xs hover:bg-blue-500/30 transition cursor-pointer"
+                  title="Otvoriť 3D konfiguráciu v novom okne"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  Otvoriť v 3D
+                </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs bg-black/40 border border-white/5 rounded-lg p-3">
               <div>
-                <span className="text-white/40 block mb-0.5">E-mail zákazníka:</span>
-                <span className="text-white font-bold">{clientEmail || "—"}</span>
+                <span className="text-white/40 block mb-1">E-mail zákazníka:</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-white font-bold break-all">{clientEmail || "—"}</span>
+                  {clientEmail && (
+                    <a
+                      href={`mailto:${clientEmail}?subject=${encodeURIComponent(`Cenová ponuka BAUBOX - Garáž ${W}x${L}m`)}`}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 text-[11px] font-sans"
+                      title="Napísať e-mail"
+                    >
+                      <Mail className="h-3 w-3" />
+                      Písať
+                    </a>
+                  )}
+                </div>
               </div>
               <div>
-                <span className="text-white/40 block mb-0.5">Telefón:</span>
-                <span className="text-white font-bold">{clientPhone || "—"}</span>
+                <span className="text-white/40 block mb-1">Telefón:</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-white font-bold">{clientPhone || "—"}</span>
+                  {clientPhone && (
+                    <div className="flex items-center gap-1.5">
+                      <a
+                        href={`tel:${clientPhone.replace(/[^0-9+]/g, "")}`}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 text-[11px] font-sans"
+                        title="Zavolať"
+                      >
+                        <Phone className="h-3 w-3" />
+                        Volať
+                      </a>
+                      <a
+                        href={`https://wa.me/${clientPhone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Dobrý deň ${clientName ? clientName : ""}, ohľadom Vašej cenovej ponuky na garáž BAUBOX:`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-500/20 text-green-300 border border-green-500/30 hover:bg-green-500/30 text-[11px] font-sans"
+                        title="WhatsApp chat"
+                      >
+                        <MessageCircle className="h-3 w-3" />
+                        WhatsApp
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
               <div>
-                <span className="text-white/40 block mb-0.5">Poznámka z dopytu:</span>
-                <span className="text-amber-200/90 italic">{clientNote || "Bez poznámky"}</span>
+                <span className="text-white/40 block mb-1">Poznámka z dopytu:</span>
+                <span className="text-amber-200/90 italic block break-words">{clientNote || "Bez poznámky"}</span>
               </div>
             </div>
           </div>
