@@ -27,16 +27,16 @@ export function createPBRCladdingMaterial(
   repeats = 40,
 ): THREE.MeshStandardMaterial {
   // 1. Generate Albedo (Diffuse) texture for base color
-  const map = makeTrapezoidTexture(color, repeats);
+  const map = makeTrapezoidTexture(color, repeats, orientation);
 
   // 2. Generate high-resolution Normal map to simulate 3D corrugation (prevents Z-fighting)
-  const normalMap = makeTrapezoidNormalTexture(repeats, "vertical", 0.15, 60);
+  const normalMap = makeTrapezoidNormalTexture(repeats, orientation, 0.14, 75);
 
   // 3. Generate Roughness map for realistic micro-surface reflection variations
-  const roughnessMap = makeTrapezoidRoughnessTexture(repeats, "vertical", 0.45);
+  const roughnessMap = makeTrapezoidRoughnessTexture(repeats, orientation, 0.46);
 
   // 4. Generate Metalness map representing a sheet-metal panel
-  const metalnessMap = makeTrapezoidMetalnessTexture(repeats, "vertical", 0.85);
+  const metalnessMap = makeTrapezoidMetalnessTexture(repeats, orientation, 0.22);
 
   // Configure wrapping, repeats, and filters for all texture layers
   const textures = [map, normalMap, roughnessMap, metalnessMap];
@@ -52,7 +52,7 @@ export function createPBRCladdingMaterial(
   const material = new THREE.MeshStandardMaterial({
     map,
     normalMap,
-    normalScale: new THREE.Vector2(1.2, 1.2), // controls depth of corrugation shadows
+    normalScale: new THREE.Vector2(1.5, 1.5), // controls depth of corrugation shadows
     roughnessMap,
     metalnessMap,
     roughness: 1.0, // multiplier for roughnessMap (1.0 means use roughnessMap as-is)

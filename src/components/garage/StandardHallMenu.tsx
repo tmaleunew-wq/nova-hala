@@ -17,6 +17,7 @@ import {
   Minus,
   Download,
   ArrowRightLeft,
+  X,
 } from "lucide-react";
 import { downloadGarageDxf } from "@/lib/garage/dxfGenerator";
 import { downloadGarageFloorPlanPdf } from "@/lib/garage/floorPlanPdfGenerator";
@@ -43,6 +44,7 @@ export interface StandardHallMenuProps {
   onOpenComparison?: () => void;
   onSelectHall?: (hall: string) => void;
   onOpenPicker?: () => void;
+  onClose?: () => void;
 }
 
 type TabType = "dimensions" | "roof" | "doors" | "colors" | "view" | "summary";
@@ -122,6 +124,7 @@ export function StandardHallMenu({
   onOpenComparison,
   onSelectHall,
   onOpenPicker,
+  onClose,
 }: StandardHallMenuProps) {
   const [internalActiveTab, setInternalActiveTab] = useState<TabType>("view");
   const [isMobileMinimized, setIsMobileMinimized] = useState<boolean>(false);
@@ -210,6 +213,16 @@ export function StandardHallMenu({
               >
                 Dopyt
               </button>
+              {onClose && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  title="Zavrieť menu (zobraziť celú 3D halu)"
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer border border-white/10"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setIsMobileMinimized((v) => !v)}

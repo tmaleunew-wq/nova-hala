@@ -15,6 +15,7 @@ import {
   ChevronUp,
   Download,
   ArrowRightLeft,
+  X,
 } from "lucide-react";
 import { downloadGarageDxf } from "@/lib/garage/dxfGenerator";
 import { downloadGarageFloorPlanPdf } from "@/lib/garage/floorPlanPdfGenerator";
@@ -34,6 +35,7 @@ export interface CustomGarageMenuProps {
   onTabChange?: (tab: string) => void;
   onOpenComparison?: () => void;
   onOpenPicker?: () => void;
+  onClose?: () => void;
 }
 
 type TabType = "dimensions" | "roof" | "doors" | "colors" | "view" | "summary";
@@ -139,6 +141,7 @@ export function CustomGarageMenu({
   onTabChange,
   onOpenComparison,
   onOpenPicker,
+  onClose,
 }: CustomGarageMenuProps) {
   const [internalActiveTab, setInternalActiveTab] = useState<TabType>("view");
   const [isMobileMinimized, setIsMobileMinimized] = useState<boolean>(false);
@@ -212,6 +215,16 @@ export function CustomGarageMenu({
           >
             Dopyt
           </button>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              title="Zavrieť menu (zobraziť celú 3D garáž)"
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer border border-white/10"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setIsMobileMinimized((v) => !v)}
@@ -1321,6 +1334,7 @@ export function CustomGarageMenu({
               { key: "showCladding", label: "Opláštenie & steny" },
               { key: "showAccessories", label: "Príslušenstvo & lemovanie" },
               { key: "showFoundation", label: "Základová doska" },
+              { key: "showCatalogDimensions", label: "Kótovacie čiary A-B-C" },
               { key: "wireframe", label: "Drôtený model (Wireframe)" },
             ].map((v) => (
               <div

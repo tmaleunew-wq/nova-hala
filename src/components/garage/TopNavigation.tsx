@@ -36,7 +36,7 @@ export function TopNavigation({
   const isCustom = selectedHall === "Vlastný" || selectedHall === "vlastna_garaz";
 
   return (
-    <div className="absolute left-0 right-0 top-0 z-20 flex flex-col md:flex-row items-start md:items-center justify-between gap-1.5 md:gap-2 border-b border-white/10 bg-black/60 md:bg-black/40 px-2.5 md:px-6 py-1.5 md:py-3 backdrop-blur-md">
+    <div className="absolute left-0 right-0 top-0 z-20 flex flex-col md:flex-row items-start md:items-center justify-between gap-1.5 md:gap-2 border-b border-white/10 bg-black/60 md:bg-black/40 px-2.5 md:px-4 lg:px-6 md:pr-32 lg:pr-36 py-1.5 md:py-2.5 backdrop-blur-md">
       <div className="flex items-center justify-between w-full md:w-auto gap-2 md:gap-3">
         <div className="flex items-center gap-2.5">
           <div className="inline-flex items-center justify-center rounded-lg bg-white/95 px-2 py-1 shadow-sm">
@@ -110,21 +110,25 @@ export function TopNavigation({
                   : "text-white/70 hover:bg-white/10 hover:text-white"
               }`}
             >
-              {v === "iso"
-                ? isMobile
-                  ? "ISO"
-                  : "Axonometria"
-                : v === "plan"
-                ? isMobile
-                  ? "PÔD"
-                  : "Pôdorys"
-                : v === "front"
-                ? isMobile
-                  ? "Čelo"
-                  : "Čelo"
-                : isMobile
-                ? "Bok"
-                : "Bok"}
+              {v === "iso" ? (
+                isMobile ? "ISO" : (
+                  <>
+                    <span className="xl:inline hidden">Axonometria</span>
+                    <span className="xl:hidden inline">Axo</span>
+                  </>
+                )
+              ) : v === "plan" ? (
+                isMobile ? "PÔD" : (
+                  <>
+                    <span className="xl:inline hidden">Pôdorys</span>
+                    <span className="xl:hidden inline">Pôd</span>
+                  </>
+                )
+              ) : v === "front" ? (
+                "Čelo"
+              ) : (
+                "Bok"
+              )}
             </button>
           ))}
         </div>
@@ -164,7 +168,7 @@ export function TopNavigation({
         </button>
       </div>
       {!isMobile && (
-        <div className="flex items-center gap-2 rounded-lg border border-white/15 bg-black/50 px-3 py-1 font-mono text-[11px] text-white/90 shadow-inner">
+        <div className="hidden xl:flex items-center gap-2 rounded-lg border border-white/15 bg-black/50 px-3 py-1 font-mono text-[11px] text-white/90 shadow-inner shrink-0">
           <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${isCustom ? "bg-emerald-400" : "bg-cyan-400"}`} />
           <span className="text-white/40 text-[10px] uppercase tracking-wider">Rozmery:</span>
           <span className="font-bold text-white tracking-wide">

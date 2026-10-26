@@ -1,6 +1,10 @@
 import * as THREE from "three";
 
-export function makeTrapezoidTexture(color: string, repeats = 40): THREE.CanvasTexture {
+export function makeTrapezoidTexture(
+  color: string,
+  repeats = 40,
+  orientation: "vertical" | "horizontal" = "vertical",
+): THREE.CanvasTexture {
   const size = 512;
   const c = document.createElement("canvas");
   c.width = size;
@@ -8,21 +12,56 @@ export function makeTrapezoidTexture(color: string, repeats = 40): THREE.CanvasT
   const ctx = c.getContext("2d")!;
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, size, size);
-  const step = size / repeats;
-  for (let i = 0; i < repeats; i++) {
-    const x = i * step;
-    const g = ctx.createLinearGradient(x, 0, x + step, 0);
-    g.addColorStop(0, "rgba(0,0,0,0.32)");
-    g.addColorStop(0.18, "rgba(255,255,255,0.05)");
-    g.addColorStop(0.5, "rgba(255,255,255,0.12)");
-    g.addColorStop(0.82, "rgba(255,255,255,0.05)");
-    g.addColorStop(1, "rgba(0,0,0,0.32)");
-    ctx.fillStyle = g;
-    ctx.fillRect(x, 0, step, size);
+
+  // Micro-grain coil-coating texture (simulates architectural fine-matte / polyester structure)
+  const imgData = ctx.getImageData(0, 0, size, size);
+  const d = imgData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const grain = (Math.random() - 0.5) * 8;
+    d[i] = Math.max(0, Math.min(255, d[i] + grain));
+    d[i + 1] = Math.max(0, Math.min(255, d[i + 1] + grain));
+    d[i + 2] = Math.max(0, Math.min(255, d[i + 2] + grain));
   }
+  ctx.putImageData(imgData, 0, 0);
+
+  const step = size / repeats;
+  const isVert = orientation === "vertical";
+
+  for (let i = 0; i < repeats; i++) {
+    const start = i * step;
+    const g = isVert
+      ? ctx.createLinearGradient(start, 0, start + step, 0)
+      : ctx.createLinearGradient(0, start, 0, start + step);
+
+    // Realistic trapezoid profile:
+    // 0.00 - 0.38: Valley / trough with inner corner contact shadow
+    // 0.38 - 0.48: Sloped shoulder
+    // 0.48 - 0.52: Beveled top edge with specular highlight
+    // 0.52 - 0.88: Top crest (direct daylight illumination)
+    // 0.88 - 0.92: Beveled top edge with specular highlight
+    // 0.92 - 1.00: Sloped shoulder down to trough
+    g.addColorStop(0.0, "rgba(0,0,0,0.30)");        // trough shadow
+    g.addColorStop(0.20, "rgba(0,0,0,0.16)");       // bottom flat trough
+    g.addColorStop(0.38, "rgba(0,0,0,0.28)");       // inner corner shadow
+    g.addColorStop(0.44, "rgba(0,0,0,0.06)");       // rising slope
+    g.addColorStop(0.49, "rgba(255,255,255,0.18)"); // stamped bevel highlight
+    g.addColorStop(0.55, "rgba(255,255,255,0.08)"); // top crest
+    g.addColorStop(0.85, "rgba(255,255,255,0.08)"); // top crest
+    g.addColorStop(0.90, "rgba(255,255,255,0.18)"); // stamped bevel highlight
+    g.addColorStop(0.95, "rgba(0,0,0,0.06)");       // descending slope
+    g.addColorStop(1.0, "rgba(0,0,0,0.30)");        // trough shadow
+
+    ctx.fillStyle = g;
+    if (isVert) {
+      ctx.fillRect(start, 0, step, size);
+    } else {
+      ctx.fillRect(0, start, size, step);
+    }
+  }
+
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = 8;
+  tex.anisotropy = 16;
   return tex;
 }
 
@@ -49,8 +88,8 @@ export function makeConcreteTexture(): THREE.CanvasTexture {
 export function makeTrapezoidNormalTexture(
   repeats = 40,
   orientation: "vertical" | "horizontal" = "vertical",
-  slopeWidth = 0.15,
-  slopeIntensity = 60,
+  slopeWidth = 0.14,
+  slopeIntensity = 75,
 ): THREE.CanvasTexture {
   const size = 512;
   const c = document.createElement("canvas");
@@ -58,47 +97,64 @@ export function makeTrapezoidNormalTexture(
   c.height = size;
   const ctx = c.getContext("2d")!;
 
-  // Fill default flat surface color (normal pointing straight out: 128, 128, 255)
-  ctx.fillStyle = "rgb(128, 128, 255)";
-  ctx.fillRect(0, 0, size, size);
-
+  const imgData = ctx.createImageData(size, size);
+  const data = imgData.data;
   const step = size / repeats;
-  const sW = step * slopeWidth;
+  const isVert = orientation === "vertical";
 
-  for (let i = 0; i < repeats; i++) {
-    const start = i * step;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const coord = isVert ? x : y;
+      const l = coord % step;
+      const t = l / step; // 0.0 to 1.0 within profile wave
 
-    if (orientation === "vertical") {
-      // Slopes tilt left and right (affecting Red channel)
-      // Left slope
-      ctx.fillStyle = `rgb(${128 - slopeIntensity}, 128, 220)`;
-      ctx.fillRect(start, 0, sW, size);
+      // Trapezoid profile gradient (dz/du) with smooth fillet rounding at bends
+      let slope = 0;
+      if (t >= 0.38 && t < 0.48) {
+        // Ascending slope with cosine fillet roundness
+        const prog = (t - 0.38) / 0.10;
+        slope = Math.sin(prog * Math.PI) * (slopeIntensity / 40);
+      } else if (t >= 0.88 && t < 0.98) {
+        // Descending slope with cosine fillet roundness
+        const prog = (t - 0.88) / 0.10;
+        slope = -Math.sin(prog * Math.PI) * (slopeIntensity / 40);
+      }
 
-      // Right slope
-      ctx.fillStyle = `rgb(${128 + slopeIntensity}, 128, 220)`;
-      ctx.fillRect(start + step - sW, 0, sW, size);
-    } else {
-      // Slopes tilt up and down (affecting Green channel)
-      // Up slope
-      ctx.fillStyle = `rgb(128, ${128 - slopeIntensity}, 220)`;
-      ctx.fillRect(0, start, size, sW);
+      // Micro-roughness scatter on normal map (subtle fine coil-coating stipple)
+      const microGrain = (Math.random() - 0.5) * 0.06;
 
-      // Down slope
-      ctx.fillStyle = `rgb(128, ${128 + slopeIntensity}, 220)`;
-      ctx.fillRect(0, start + step - sW, size, sW);
+      const du = slope + microGrain;
+      const dv = (Math.random() - 0.5) * 0.03;
+
+      let nx = isVert ? -du : -dv;
+      let ny = isVert ? -dv : -du;
+      let nz = 1.0;
+
+      const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
+      nx /= len;
+      ny /= len;
+      nz /= len;
+
+      const idx = (y * size + x) * 4;
+      data[idx] = Math.round((nx * 0.5 + 0.5) * 255);
+      data[idx + 1] = Math.round((ny * 0.5 + 0.5) * 255);
+      data[idx + 2] = Math.round((nz * 0.5 + 0.5) * 255);
+      data[idx + 3] = 255;
     }
   }
 
+  ctx.putImageData(imgData, 0, 0);
+
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = 8;
+  tex.anisotropy = 16;
   return tex;
 }
 
 export function makeTrapezoidRoughnessTexture(
   repeats = 40,
   orientation: "vertical" | "horizontal" = "vertical",
-  baseRoughness = 0.45,
+  baseRoughness = 0.46,
 ): THREE.CanvasTexture {
   const size = 512;
   const c = document.createElement("canvas");
@@ -106,38 +162,51 @@ export function makeTrapezoidRoughnessTexture(
   c.height = size;
   const ctx = c.getContext("2d")!;
 
-  // Base roughness color (monochrome, e.g. 0.45 maps to rgb(115, 115, 115))
-  const baseColor = Math.round(baseRoughness * 255);
-  ctx.fillStyle = `rgb(${baseColor}, ${baseColor}, ${baseColor})`;
-  ctx.fillRect(0, 0, size, size);
-
+  const imgData = ctx.createImageData(size, size);
+  const data = imgData.data;
   const step = size / repeats;
-  const sW = step * 0.15;
-  const slopeColor = Math.round(Math.min(1.0, baseRoughness * 1.25) * 255);
+  const isVert = orientation === "vertical";
 
-  for (let i = 0; i < repeats; i++) {
-    const start = i * step;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const coord = isVert ? x : y;
+      const l = coord % step;
+      const t = l / step;
 
-    ctx.fillStyle = `rgb(${slopeColor}, ${slopeColor}, ${slopeColor})`;
-    if (orientation === "vertical") {
-      ctx.fillRect(start, 0, sW, size);
-      ctx.fillRect(start + step - sW, 0, sW, size);
-    } else {
-      ctx.fillRect(0, start, size, sW);
-      ctx.fillRect(0, start + step - sW, size, sW);
+      let rVal = baseRoughness;
+      // Stamped fold shoulders are slightly more polished/specular (lower roughness)
+      if ((t >= 0.46 && t <= 0.50) || (t >= 0.86 && t <= 0.90)) {
+        rVal = baseRoughness - 0.10;
+      } else if (t < 0.38) {
+        // Trough crevices have slightly higher diffuse scattering
+        rVal = baseRoughness + 0.05;
+      }
+
+      // Micro-grain coating texture
+      rVal += (Math.random() - 0.5) * 0.04;
+      rVal = Math.max(0.15, Math.min(0.95, rVal));
+
+      const byteVal = Math.round(rVal * 255);
+      const idx = (y * size + x) * 4;
+      data[idx] = byteVal;
+      data[idx + 1] = byteVal;
+      data[idx + 2] = byteVal;
+      data[idx + 3] = 255;
     }
   }
 
+  ctx.putImageData(imgData, 0, 0);
+
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = 8;
+  tex.anisotropy = 16;
   return tex;
 }
 
 export function makeTrapezoidMetalnessTexture(
   repeats = 40,
   orientation: "vertical" | "horizontal" = "vertical",
-  baseMetalness = 0.8,
+  baseMetalness = 0.22,
 ): THREE.CanvasTexture {
   const size = 512;
   const c = document.createElement("canvas");
@@ -145,31 +214,39 @@ export function makeTrapezoidMetalnessTexture(
   c.height = size;
   const ctx = c.getContext("2d")!;
 
-  // Base metalness color (monochrome, e.g. 0.8 maps to rgb(204, 204, 204))
-  const baseColor = Math.round(baseMetalness * 255);
-  ctx.fillStyle = `rgb(${baseColor}, ${baseColor}, ${baseColor})`;
-  ctx.fillRect(0, 0, size, size);
-
+  const imgData = ctx.createImageData(size, size);
+  const data = imgData.data;
   const step = size / repeats;
-  const sW = step * 0.15;
-  const slopeColor = Math.round(baseMetalness * 0.9 * 255); // Slightly less metallic on slopes
+  const isVert = orientation === "vertical";
 
-  for (let i = 0; i < repeats; i++) {
-    const start = i * step;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const coord = isVert ? x : y;
+      const l = coord % step;
+      const t = l / step;
 
-    ctx.fillStyle = `rgb(${slopeColor}, ${slopeColor}, ${slopeColor})`;
-    if (orientation === "vertical") {
-      ctx.fillRect(start, 0, sW, size);
-      ctx.fillRect(start + step - sW, 0, sW, size);
-    } else {
-      ctx.fillRect(0, start, size, sW);
-      ctx.fillRect(0, start + step - sW, size, sW);
+      let mVal = baseMetalness;
+      // Stamped edges show slightly higher specular sheen
+      if ((t >= 0.46 && t <= 0.50) || (t >= 0.86 && t <= 0.90)) {
+        mVal = baseMetalness + 0.05;
+      }
+      mVal += (Math.random() - 0.5) * 0.02;
+      mVal = Math.max(0.05, Math.min(0.95, mVal));
+
+      const byteVal = Math.round(mVal * 255);
+      const idx = (y * size + x) * 4;
+      data[idx] = byteVal;
+      data[idx + 1] = byteVal;
+      data[idx + 2] = byteVal;
+      data[idx + 3] = 255;
     }
   }
 
+  ctx.putImageData(imgData, 0, 0);
+
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = 8;
+  tex.anisotropy = 16;
   return tex;
 }
 

@@ -712,7 +712,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       ...typedParams,
       ...customParams,
       hallType: CUSTOM_HALL,
-      showCatalogDimensions: false,
+      showCatalogDimensions: customParams.showCatalogDimensions ?? (cleanParams.showCatalogDimensions !== undefined ? cleanParams.showCatalogDimensions : false),
       showCladding: customParams.showCladding ?? (cleanParams.showCladding !== undefined ? cleanParams.showCladding : true),
       showAccessories: customParams.showAccessories ?? (cleanParams.showAccessories !== undefined ? cleanParams.showAccessories : true),
       showStructure: customParams.showStructure ?? (cleanParams.showStructure !== undefined ? cleanParams.showStructure : true),
@@ -756,7 +756,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       showStructure: cleanParams.showStructure ?? (initialUrlParams.showStructure ?? true),
       showCladding: cleanParams.showCladding !== undefined ? cleanParams.showCladding : (configWithCladding || (initialUrlParams.showCladding ?? false)),
       showAccessories: cleanParams.showAccessories !== undefined ? cleanParams.showAccessories : (configWithCladding || (initialUrlParams.showAccessories ?? false)),
-      showCatalogDimensions: cleanParams.showCatalogDimensions !== undefined ? cleanParams.showCatalogDimensions : (!configWithCladding && (initialUrlParams.showCatalogDimensions ?? true)),
+      showCatalogDimensions: customParams.showCatalogDimensions !== undefined ? customParams.showCatalogDimensions : (cleanParams.showCatalogDimensions !== undefined ? cleanParams.showCatalogDimensions : (!configWithCladding && (initialUrlParams.showCatalogDimensions ?? true))),
       hasPersonalDoor: cleanParams.hasPersonalDoor !== undefined ? cleanParams.hasPersonalDoor : configWithCladding,
       hasWindows: cleanParams.hasWindows !== undefined ? cleanParams.hasWindows : configWithCladding,
     };
@@ -947,26 +947,17 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       </div>
 
       {/* Controls Toggle Button */}
-      {!showPicker && (
+      {!showPicker && !showControls && (
         <button
-          onClick={() => setShowControls(v => !v)}
+          onClick={() => setShowControls(true)}
           className={`absolute right-2 md:right-3 top-16 md:top-14 z-30 flex items-center gap-1 md:gap-1.5 rounded-full px-2.5 py-1.5 md:px-3 md:py-2 text-[11px] md:text-xs font-mono font-bold shadow-lg transition-all active:scale-95 cursor-pointer ${
             isCustom
               ? "bg-emerald-400 text-slate-900 hover:bg-emerald-300 shadow-emerald-500/20"
               : "bg-cyan-400 text-slate-950 hover:bg-cyan-300 shadow-cyan-500/20"
           }`}
         >
-          {showControls ? (
-            <>
-              <X className="h-4 w-4" />
-              <span>Zavrieť</span>
-            </>
-          ) : (
-            <>
-              <SlidersHorizontal className="h-4 w-4" />
-              <span>Parametre</span>
-            </>
-          )}
+          <SlidersHorizontal className="h-4 w-4" />
+          <span>Parametre</span>
         </button>
       )}
 
@@ -986,6 +977,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           onTabChange={setCustomActiveTab}
           onOpenComparison={() => setShowComparisonModal(true)}
           onOpenPicker={() => setShowPicker(true)}
+          onClose={() => setShowControls(false)}
         />
       ) : (
         <StandardHallMenu
@@ -1012,6 +1004,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
             setPickerMode("variant2");
             setShowPicker(true);
           }}
+          onClose={() => setShowControls(false)}
         />
       )}
 
