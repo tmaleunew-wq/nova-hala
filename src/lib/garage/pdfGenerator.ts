@@ -191,9 +191,9 @@ export function showSuccessModal({
         <span class="ssf-dealer-label">KONTAKT NA PREDAJCU</span>
         <div class="ssf-dealer-info">
           <div class="ssf-dealer-name">VBAU s.r.o.</div>
-          <div class="ssf-dealer-row">&#9993; tmal.eu.new@gmail.com</div>
-          <div class="ssf-dealer-row">&#9990; +421 900 000 000</div>
-          <div class="ssf-dealer-row">&#9679; Slovenská republika</div>
+          <div class="ssf-dealer-row">&#9993; info@vbau.eu</div>
+          <div class="ssf-dealer-row">&#9990; (+421) 902 565 100</div>
+          <div class="ssf-dealer-row">&#9679; Karpatská 5358, 058 01 Poprad, Slovensko</div>
         </div>
       </div>
 

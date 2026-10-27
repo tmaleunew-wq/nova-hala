@@ -18,6 +18,12 @@
   "pickerLayout": "grid",
   "gdprConsentText": "Súhlasím so spracovaním osobných údajov za účelom vypracovania cenovej ponuky.",
   "privacyPolicyUrl": "/gdpr",
+  "dealer": {
+    "name": "VBAU s.r.o.",
+    "address": "Karpatská 5358, 058 01 Poprad, Slovensko",
+    "email": "info@vbau.eu",
+    "phone": "(+421) 902 565 100"
+  },
   "defaultGarage": {
     "width": 4.0,
     "length": 6.0,

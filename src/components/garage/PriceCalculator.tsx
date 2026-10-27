@@ -605,11 +605,11 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
 
       {showSuccess && (
         <SuccessModal
-          dealer={{
+          dealer={claddingConfig.dealer || {
             name: "VBAU s.r.o.",
-            email: "tmal.eu.new@gmail.com",
-            phone: "+421 900 123 456",
-            address: "Bratislava, Slovensko",
+            email: "info@vbau.eu",
+            phone: "(+421) 902 565 100",
+            address: "Karpatská 5358, 058 01 Poprad, Slovensko",
           }}
           quoteUrl={submittedQuote?.quoteUrl}
           onOpenQuote={() => {

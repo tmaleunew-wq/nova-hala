@@ -69,6 +69,12 @@ export interface CladdingConfig {
   pickerLayout?: "grid" | "binary";
   gdprConsentText?: string;
   privacyPolicyUrl?: string;
+  dealer?: {
+    name?: string;
+    address?: string;
+    email?: string;
+    phone?: string;
+  };
 }
 
 export function getCladdingConfig(clientName?: string | null): CladdingConfig {

@@ -22,13 +22,13 @@ export const SuccessModal: React.FC<Props> = ({
   quoteUrl,
   dealer = {
     name: 'VBAU s.r.o.',
-    email: 'tmal.eu.new@gmail.com',
-    phone: '+421 900 123 456',
-    address: 'Bratislava, Slovensko',
+    email: 'info@vbau.eu',
+    phone: '(+421) 902 565 100',
+    address: 'Karpatská 5358, 058 01 Poprad, Slovensko',
   },
   primaryColor = '#10b981',
 }) => {
-  const contactEmail = dealer.email || 'tmal.eu.new@gmail.com';
+  const contactEmail = dealer.email || 'info@vbau.eu';
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
