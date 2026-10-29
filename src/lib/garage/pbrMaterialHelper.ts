@@ -100,6 +100,7 @@ export function createPBRSandwichMaterial(
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
     tex.generateMipmaps = true;
+    tex.anisotropy = 16;
     tex.minFilter = THREE.LinearMipmapLinearFilter;
     tex.magFilter = THREE.LinearFilter;
   }
@@ -107,7 +108,7 @@ export function createPBRSandwichMaterial(
   return new THREE.MeshStandardMaterial({
     map,
     normalMap,
-    normalScale: new THREE.Vector2(1.5, 1.5),
+    normalScale: new THREE.Vector2(2.5, 2.5),
     roughnessMap,
     roughness: 0.45,
     metalness: 0.18,

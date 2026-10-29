@@ -569,7 +569,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         doorHeight: gateH,
         doorOpen: false,
         steelColor: "#9aa1ab",
-        ...(h.claddingVersion === "ZU" ? { claddingOrientation: "vertical" } : {}),
+        claddingOrientation: "horizontal",
         ...(isCubic ? {
           panelType: "smooth",
           claddingColor: "#f4f5f7",

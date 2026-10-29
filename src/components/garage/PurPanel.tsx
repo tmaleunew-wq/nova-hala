@@ -43,7 +43,7 @@ export function PurPanel({
   visible = true,
   onToggle,
   isSandwich = true,
-  claddingOrientation = "vertical",
+  claddingOrientation = "horizontal",
   panelType,
   isSkylight = false,
 }: PurPanelProps) {

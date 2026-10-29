@@ -20,7 +20,7 @@ function PurGableTriangle({
   visible = true,
   onToggle,
   isSandwich = true,
-  claddingOrientation = "vertical",
+  claddingOrientation = "horizontal",
   panelType,
 }: {
   p: GarageParams;
@@ -182,7 +182,7 @@ function PurShedTriangle({
   onToggle,
   isSandwich = true,
   slopeDirection = "left-to-right",
-  claddingOrientation = "vertical",
+  claddingOrientation = "horizontal",
   panelType,
 }: {
   p: GarageParams;

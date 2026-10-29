@@ -859,28 +859,28 @@ export function makeSandwichTexture(
     const start = i * step;
 
     // Realistic sandwich panel shadow joint (jemná pero-drážka / priznaná škára):
-    // 1. Subtle upper shadow line (3px)
-    ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+    // 1. Subtle upper shadow line (4px)
+    ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
     if (isHoriz) {
-      ctx.fillRect(0, start, size, 3);
+      ctx.fillRect(0, start, size, 4);
     } else {
-      ctx.fillRect(start, 0, 3, size);
+      ctx.fillRect(start, 0, 4, size);
     }
 
-    // 2. Crisp dark joint recess (4px)
-    ctx.fillStyle = "rgba(0, 0, 0, 0.70)";
+    // 2. Crisp dark joint recess (8px)
+    ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
     if (isHoriz) {
-      ctx.fillRect(0, start + 3, size, 4);
+      ctx.fillRect(0, start + 4, size, 8);
     } else {
-      ctx.fillRect(start + 3, 0, 4, size);
+      ctx.fillRect(start + 4, 0, 8, size);
     }
 
-    // 3. Delicate beveled highlight on lower joint edge (3px)
-    ctx.fillStyle = "rgba(255, 255, 255, 0.40)";
+    // 3. Delicate beveled highlight on lower joint edge (6px)
+    ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
     if (isHoriz) {
-      ctx.fillRect(0, start + 7, size, 3);
+      ctx.fillRect(0, start + 12, size, 6);
     } else {
-      ctx.fillRect(start + 7, 0, 3, size);
+      ctx.fillRect(start + 12, 0, 6, size);
     }
 
     // 4. Soft ambient gradient across the panel face (gives realistic panel flatness & curvature)
@@ -895,9 +895,9 @@ export function makeSandwichTexture(
 
     ctx.fillStyle = g;
     if (isHoriz) {
-      ctx.fillRect(0, start + 10, size, step - 10);
+      ctx.fillRect(0, start + 18, size, step - 18);
     } else {
-      ctx.fillRect(start + 10, 0, step - 10, size);
+      ctx.fillRect(start + 18, 0, step - 18, size);
     }
   }
 
@@ -937,15 +937,15 @@ export function makeSandwichNormalTexture(
 
   for (let i = 0; i < repeats; i++) {
     const startY = Math.round(i * step);
-    const grooveH = 8;
+    const grooveH = 16;
 
     for (let g = 0; g < grooveH; g++) {
       const pos = (startY + g) % size;
       let ny = 128;
-      if (g < 4) {
-        ny = 70 + g * 14; // downward slope
+      if (g < 8) {
+        ny = 40 + g * 11; // steep downward slope
       } else {
-        ny = 186 - (g - 4) * 14; // upward slope
+        ny = 216 - (g - 8) * 11; // steep upward slope
       }
 
       for (let x = 0; x < size; x++) {
@@ -955,7 +955,7 @@ export function makeSandwichNormalTexture(
         } else {
           data[idx] = ny;
         }
-        data[idx + 2] = 230;
+        data[idx + 2] = 215;
       }
     }
   }
@@ -988,13 +988,13 @@ export function makeSandwichRoughnessTexture(
   const step = size / repeats;
   const isHoriz = orientation === "horizontal";
 
-  ctx.fillStyle = "rgb(160, 160, 160)";
+  ctx.fillStyle = "rgb(180, 180, 180)";
   for (let i = 0; i < repeats; i++) {
     const start = i * step;
     if (isHoriz) {
-      ctx.fillRect(0, start, size, 8);
+      ctx.fillRect(0, start, size, 14);
     } else {
-      ctx.fillRect(start, 0, 8, size);
+      ctx.fillRect(start, 0, 14, size);
     }
   }
 
