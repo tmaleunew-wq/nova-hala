@@ -103,7 +103,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
 
   const hallsConfig = getHallsConfig();
   const urlVariant = typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("variant") || new URLSearchParams(window.location.search).get("client")) : null;
-  const activeVariant = variant || (urlVariant === "2" ? "variant2" : urlVariant === "3" ? "variant3" : urlVariant === "4" ? "variant4" : urlVariant) || "default";
+  const activeVariant = variant || urlVariant || "default";
   const imageCatalog = getImageCatalog(activeVariant);
   const pickerLayout = getPickerLayout(activeVariant);
   const hallOptions = [CUSTOM_HALL, ...Object.keys(hallsConfig)];
@@ -510,7 +510,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     if (isApplyingRef.current) return;
     isApplyingRef.current = true;
     const isCustomHall = v === CUSTOM_HALL || v === "Vlastný" || v === "vlastna_garaz";
-    const useCladding = isCustomHall ? true : (withCladding !== undefined ? withCladding : (catalogWithCladdingRef.current || configWithCladding));
+    const useCladding = withCladding !== undefined ? withCladding : (configWithCladding ?? true);
     catalogWithCladdingRef.current = useCladding;
     setCatalogWithCladding(useCladding);
     setSelectedHall(isCustomHall ? CUSTOM_HALL : v);
@@ -553,13 +553,13 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
         showStructure: true,
         showCladding: useCladding,
         showAccessories: useCladding,
-        showCatalogDimensions: !useCladding,
+        showCatalogDimensions: initialUrlParams.showCatalogDimensions ?? false,
         width: h.width,
         roofType: h.type as any,
         roofPitchDeg: h.roofPitchDeg,
         clearHeight: defaultH,
         hallHeight: defaultPole,
-        length: `${defaultLen}m`,
+        length: defaultLen,
         bayCount: defaultBays,
         profileSize: profSize,
         profileThickness: profThick,
@@ -839,7 +839,8 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     <div className="relative h-screen w-screen bg-[oklch(0.16_0.01_240)] select-none overflow-hidden">
       <Canvas
         shadows
-        dpr={[1, 2]}
+        frameloop={showPicker || showCatalogModal || showArModal ? "never" : "always"}
+        dpr={[1, isMobile ? 1.5 : 2]}
         camera={{ position: [-7.5, 6.0, -14.0], fov: 35, near: 0.4, far: 350 }}
         gl={{ antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance" }}
       >

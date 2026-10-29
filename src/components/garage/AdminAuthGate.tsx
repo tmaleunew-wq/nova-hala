@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Lock, KeyRound, ShieldAlert } from "lucide-react";
+import { Lock, KeyRound, ShieldAlert, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { verifyAdminPassword } from "@/lib/garage/inquiryActions";
 
 interface AdminAuthGateProps {
   children: React.ReactNode;
@@ -11,9 +12,7 @@ export function AdminAuthGate({ children }: AdminAuthGateProps) {
   const [passwordInput, setPasswordInput] = useState("");
   const [error, setError] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
-
-  // Expected password (from ENV or fallback default)
-  const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "admin123";
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -25,16 +24,25 @@ export function AdminAuthGate({ children }: AdminAuthGateProps) {
     setIsChecking(false);
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordInput === ADMIN_PASSWORD) {
-      sessionStorage.setItem("ssf_admin_authed", "true");
-      setIsAuthenticated(true);
-      setError(false);
-      toast.success("Prihlásenie úspešné! Vitajte v Admin paneli.");
-    } else {
+    setIsSubmitting(true);
+    try {
+      const res = await verifyAdminPassword({ data: { password: passwordInput } });
+      if (res?.success) {
+        sessionStorage.setItem("ssf_admin_authed", "true");
+        setIsAuthenticated(true);
+        setError(false);
+        toast.success("Prihlásenie úspešné! Vitajte v Admin paneli.");
+      } else {
+        setError(true);
+        toast.error("Nesprávne heslo. Skúste to znova.");
+      }
+    } catch (err) {
       setError(true);
-      toast.error("Nespravné heslo. Skúste to znova.");
+      toast.error("Chyba pri overovaní hesla.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -92,24 +100,26 @@ export function AdminAuthGate({ children }: AdminAuthGateProps) {
               {error && (
                 <div className="flex items-center gap-1 text-[10px] text-red-400 mt-1">
                   <ShieldAlert className="h-3 w-3" />
-                  <span>Nesprávne heslo (predvolené: admin123)</span>
+                  <span>Nesprávne heslo</span>
                 </div>
               )}
             </div>
 
             <button
               type="submit"
-              className="w-full rounded-lg bg-emerald-400 py-2.5 text-center text-xs font-bold text-black transition hover:bg-emerald-300 shadow-lg shadow-emerald-400/20"
+              disabled={isSubmitting}
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-400 py-2.5 text-center text-xs font-bold text-black transition hover:bg-emerald-300 disabled:opacity-50 shadow-lg shadow-emerald-400/20"
             >
-              Prihlásiť sa do Adminu
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Overujem...</span>
+                </>
+              ) : (
+                <span>Prihlásiť sa do Adminu</span>
+              )}
             </button>
           </form>
-
-          <div className="mt-6 pt-4 border-t border-white/5 text-center">
-            <span className="text-[10px] text-white/30">
-              Predvolené heslo: <code className="text-emerald-400">admin123</code> (možné zmeniť cez VITE_ADMIN_PASSWORD)
-            </span>
-          </div>
         </div>
       </div>
     );

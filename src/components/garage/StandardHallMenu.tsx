@@ -433,7 +433,7 @@ export function StandardHallMenu({
                           onClick={() => {
                             const newL = Math.max(minLength, currentLength - moduleLength);
                             setSelectedLength(newL);
-                            setParams({ length: `${newL}m`, bayCount: Math.round(newL / moduleLength) });
+                            setParams({ length: newL, bayCount: Math.round(newL / moduleLength) });
                           }}
                           disabled={currentLength <= minLength}
                           className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 transition"
@@ -449,7 +449,7 @@ export function StandardHallMenu({
                           onClick={() => {
                             const newL = Math.min(60, currentLength + moduleLength);
                             setSelectedLength(newL);
-                            setParams({ length: `${newL}m`, bayCount: Math.round(newL / moduleLength) });
+                            setParams({ length: newL, bayCount: Math.round(newL / moduleLength) });
                           }}
                           disabled={currentLength >= 60}
                           className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 transition"
@@ -469,7 +469,7 @@ export function StandardHallMenu({
                       onChange={(e) => {
                         const val = parseFloat(e.target.value);
                         setSelectedLength(val);
-                        setParams({ length: `${val}m`, bayCount: Math.round(val / moduleLength) });
+                        setParams({ length: val, bayCount: Math.round(val / moduleLength) });
                       }}
                       className="w-full accent-cyan-400 cursor-pointer h-2 bg-slate-700 rounded-lg"
                     />
@@ -481,7 +481,7 @@ export function StandardHallMenu({
                           type="button"
                           onClick={() => {
                             setSelectedLength(l);
-                            setParams({ length: `${l}m`, bayCount: Math.round(l / moduleLength) });
+                            setParams({ length: l, bayCount: Math.round(l / moduleLength) });
                           }}
                           className={`flex-1 min-w-[44px] py-1.5 rounded-lg text-xs font-mono transition cursor-pointer text-center ${
                             currentLength === l

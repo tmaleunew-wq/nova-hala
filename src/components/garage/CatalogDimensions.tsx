@@ -88,7 +88,7 @@ function DimensionBadge({
 export function CatalogDimensions({ p }: { p: GarageParams }) {
   const hallsCfg = getHallsConfig();
   const isCustom = !p.hallType || p.hallType === "Vlastný" || p.hallType === "vlastna_garaz";
-  const currentHall = !isCustom ? hallsCfg[p.hallType] : null;
+  const currentHall = !isCustom && p.hallType ? hallsCfg[p.hallType] : null;
   const modLen = currentHall?.moduleLength ?? (p.bayCount > 0 ? p.length / p.bayCount : p.length / 2);
 
   const halfW = p.width / 2;

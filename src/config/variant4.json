@@ -1,5 +1,5 @@
 {
   "imageCatalog": "/catalog_variant4",
-  "catalogWithCladding": false,
+  "catalogWithCladding": true,
   "pickerLayout": "binary"
 }

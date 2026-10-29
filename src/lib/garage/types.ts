@@ -70,6 +70,9 @@ export interface GarageParams {
   doorOpen: boolean;
   showCatalogDimensions?: boolean;
   notes?: string;
+  slopeDirection?: "left" | "right" | "front" | "back" | "left-to-right" | "right-to-left" | string;
+  hallHeight?: string | number;
+  poleHeightSelect?: string;
   // cubic attic & modular extension
   hasAttic?: boolean;
   atticHeight?: number;

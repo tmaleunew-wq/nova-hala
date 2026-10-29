@@ -1,5 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { type GarageParams, resolveColorName } from "./types";
+import { getCladdingConfig } from "./configHelper";
+
+function escapeHtml(str?: string): string {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
 interface InquiryData {
   name: string;
@@ -17,9 +28,18 @@ export const sendInquiry = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { name, email, phone, message, params, origin, totalPrice } = data;
 
+    const claddingCfg = getCladdingConfig();
+    const dealerInfo = claddingCfg.dealer || {};
+    const companyName = dealerInfo.name || "VBAU s.r.o.";
+    const companyPhone = dealerInfo.phone || "(+421) 902 565 100";
     const resendApiKey = process.env.RESEND_API_KEY;
-    const adminEmail = process.env.ADMIN_EMAIL || "tmal.eu.new@gmail.com";
+    const adminEmail = process.env.ADMIN_EMAIL || dealerInfo.email || "tmal.eu.new@gmail.com";
     const senderEmail = process.env.SENDER_EMAIL || "onboarding@resend.dev";
+
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safePhone = escapeHtml(phone);
+    const safeMessage = escapeHtml(message);
 
     // Build the query parameters for both the admin evaluation and customer online offer
     const searchParams = new URLSearchParams();
@@ -40,7 +60,6 @@ export const sendInquiry = createServerFn({ method: "POST" })
     const quoteUrl = data.quoteUrl || `${origin}/ponuka?${searchParams.toString()}`;
     const modelName = params.roofType === "gable" ? "Garáž so sedlovou strechou" : "Garáž s pultovou strechou";
     const primaryColor = "#10b981";
-    const companyName = "VBAU s.r.o.";
 
     // Construct email content for admin
     const adminHtml = `
@@ -49,10 +68,10 @@ export const sendInquiry = createServerFn({ method: "POST" })
         <p>Dostali ste novú konfiguráciu od zákazníka.</p>
         
         <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #e2e8f0;">
-          <p><strong>Zákazník:</strong> ${name}</p>
-          <p><strong>E-mail:</strong> <a href="mailto:${email}" style="color: ${primaryColor}; text-decoration: none;">${email}</a></p>
-          <p><strong>Telefón:</strong> ${phone}</p>
-          <p><strong>Poznámka:</strong> ${message || "Bez poznámky"}</p>
+          <p><strong>Zákazník:</strong> ${safeName}</p>
+          <p><strong>E-mail:</strong> <a href="mailto:${safeEmail}" style="color: ${primaryColor}; text-decoration: none;">${safeEmail}</a></p>
+          <p><strong>Telefón:</strong> ${safePhone}</p>
+          <p><strong>Poznámka:</strong> ${safeMessage || "Bez poznámky"}</p>
           <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
           <p><strong>Model:</strong> ${modelName}</p>
           <p><strong>Rozmery:</strong> ${params.width} x ${params.length} x ${params.clearHeight} m</p>
@@ -70,7 +89,7 @@ export const sendInquiry = createServerFn({ method: "POST" })
           </a>
         </div>
         
-        <p style="font-size: 12px; color: #64748b;">Tento dopyt bol vygenerovaný konfigurátorom ${companyName}</p>
+        <p style="font-size: 12px; color: #64748b;">Tento dopyt bol vygenerovaný konfigurátorom ${escapeHtml(companyName)}</p>
       </div>
     `;
 
@@ -78,9 +97,9 @@ export const sendInquiry = createServerFn({ method: "POST" })
     const clientHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b;">
         <h1 style="color: #0f172a; font-size: 24px; font-weight: 800; margin: 0 0 6px 0;">Ďakujeme za váš dopyt</h1>
-        <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: ${primaryColor}; font-weight: 800; margin: 0 0 20px 0;">${companyName.toUpperCase()}</p>
+        <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: ${primaryColor}; font-weight: 800; margin: 0 0 20px 0;">${escapeHtml(companyName.toUpperCase())}</p>
         
-        <p style="color: #334155; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">Dobrý deň ${name || "zákazník"}, váš dopyt sme úspešne prijali do nášho systému.</p>
+        <p style="color: #334155; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">Dobrý deň ${safeName || "zákazník"}, váš dopyt sme úspešne prijali do nášho systému.</p>
         
         <div style="background-color: #f8fafc; border-radius: 16px; padding: 22px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
           <p style="margin: 0 0 10px 0; font-size: 14px; color: #1e293b;"><strong>Váš model:</strong> ${modelName}</p>
@@ -99,9 +118,9 @@ export const sendInquiry = createServerFn({ method: "POST" })
         <div style="border-top: 1px solid #e2e8f0; margin-bottom: 20px;"></div>
         
         <div style="font-size: 13px; color: #64748b; line-height: 1.6;">
-          <p style="margin: 0 0 4px 0; font-weight: 800; color: #0f172a;">${companyName}</p>
-          <p style="margin: 0 0 4px 0;"><a href="tel:+421900000000" style="color: #0284c7; text-decoration: none;">✆ +421 900 000 000</a></p>
-          <p style="margin: 0;"><a href="mailto:${adminEmail}" style="color: ${primaryColor}; text-decoration: none;">✉ ${adminEmail}</a></p>
+          <p style="margin: 0 0 4px 0; font-weight: 800; color: #0f172a;">${escapeHtml(companyName)}</p>
+          <p style="margin: 0 0 4px 0;"><a href="tel:${escapeHtml(companyPhone)}" style="color: #0284c7; text-decoration: none;">✆ ${escapeHtml(companyPhone)}</a></p>
+          <p style="margin: 0;"><a href="mailto:${escapeHtml(adminEmail)}" style="color: ${primaryColor}; text-decoration: none;">✉ ${escapeHtml(adminEmail)}</a></p>
         </div>
       </div>
     `;
@@ -284,3 +303,14 @@ export const sendInquiry = createServerFn({ method: "POST" })
       return { success: false, error: String(error) };
     }
   });
+
+export const verifyAdminPassword = createServerFn({ method: "POST" })
+  .inputValidator((data: { password: string }) => data)
+  .handler(async ({ data }) => {
+    const adminPassword = process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD || "admin123";
+    if (data.password && data.password === adminPassword) {
+      return { success: true };
+    }
+    return { success: false };
+  });
+

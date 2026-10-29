@@ -84,6 +84,9 @@ export function getCladdingConfig(clientName?: string | null): CladdingConfig {
     variant2: variant2Config as unknown as Partial<CladdingConfig>,
     variant3: variant3Config as unknown as Partial<CladdingConfig>,
     variant4: variant4Config as unknown as Partial<CladdingConfig>,
+    "2": variant2Config as unknown as Partial<CladdingConfig>,
+    "3": variant3Config as unknown as Partial<CladdingConfig>,
+    "4": variant4Config as unknown as Partial<CladdingConfig>,
   };
 
   const client = clientName || "default";
@@ -102,7 +105,7 @@ export function getImageCatalog(clientName?: string | null): string {
 
 export function getCatalogWithCladding(clientName?: string | null): boolean {
   const config = getCladdingConfig(clientName);
-  return config.catalogWithCladding ?? false;
+  return config.catalogWithCladding ?? true;
 }
 
 export function getPickerLayout(clientName?: string | null): "grid" | "binary" {

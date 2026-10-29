@@ -21,7 +21,7 @@ export function ProductPicker({
   return (
     <div
       id="product-picker"
-      className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-[#0a0d12]/95 backdrop-blur-md touch-pan-y"
+      className="fixed inset-0 z-50 overflow-y-auto overscroll-y-auto bg-[#0a0d12]/95 backdrop-blur-md [-webkit-overflow-scrolling:touch]"
     >
       <div className="relative mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-8 md:py-14">
         {onClose && (
@@ -56,14 +56,15 @@ export function ProductPicker({
             <button
               id="pick-vlastny"
               onClick={() => onSelect("Vlastný")}
-              className={`group cursor-pointer overflow-hidden rounded-2xl border text-left transition-all duration-300 hover:-translate-y-2 hover:border-emerald-300 hover:shadow-[0_0_45px_rgba(52,211,153,0.45)] border-emerald-400 bg-gradient-to-br from-emerald-500/20 via-[#0e141c] to-[#080b10] ring-2 ring-emerald-400/50 shadow-[0_0_30px_rgba(52,211,153,0.25)]`}
+              className={`group cursor-pointer overflow-hidden rounded-2xl border text-left transition-colors md:transition-all duration-300 md:hover:-translate-y-2 hover:border-emerald-300 hover:shadow-[0_0_45px_rgba(52,211,153,0.45)] border-emerald-400 bg-gradient-to-br from-emerald-500/20 via-[#0e141c] to-[#080b10] ring-2 ring-emerald-400/50 shadow-[0_0_30px_rgba(52,211,153,0.25)] touch-manipulation`}
             >
-              <div className="h-48 sm:h-64 md:h-80 overflow-hidden bg-[#ececec] flex items-center justify-center relative border-b border-white/10 shadow-[inset_0_2px_10px_rgba(0,0,0,0.08)]">
+              <div className="h-44 sm:h-64 md:h-80 overflow-hidden bg-[#ececec] flex items-center justify-center relative border-b border-white/10 shadow-[inset_0_2px_10px_rgba(0,0,0,0.08)]">
                 <img
                   src={`${imageCatalog}/vlastna_garaz.png?v=3`}
                   alt="Vlastná garáž"
                   loading="lazy"
-                  className="h-full w-full object-cover sm:object-contain transition duration-500 group-hover:scale-105"
+                  draggable={false}
+                  className="h-full w-full object-cover sm:object-contain transition duration-500 md:group-hover:scale-105 pointer-events-none select-none"
                 />
                 <span className="absolute top-4 right-4 z-20 rounded-full bg-emerald-400 text-slate-950 font-mono text-xs font-bold px-3.5 py-1.5 shadow-lg shadow-emerald-500/30">
                   Na mieru
@@ -104,14 +105,15 @@ export function ProductPicker({
             <button
               id="pick-hala"
               onClick={() => onSelect(names.find((n) => n.includes("10")) || names[0] || "Hala S-10")}
-              className={`group cursor-pointer overflow-hidden rounded-2xl border text-left transition-all duration-300 hover:-translate-y-2 hover:border-cyan-300 hover:shadow-[0_0_45px_rgba(34,211,238,0.45)] border-cyan-400 bg-gradient-to-br from-cyan-500/20 via-[#0e141c] to-[#080b10] ring-2 ring-cyan-400/50 shadow-[0_0_30px_rgba(34,211,238,0.25)]`}
+              className={`group cursor-pointer overflow-hidden rounded-2xl border text-left transition-colors md:transition-all duration-300 md:hover:-translate-y-2 hover:border-cyan-300 hover:shadow-[0_0_45px_rgba(34,211,238,0.45)] border-cyan-400 bg-gradient-to-br from-cyan-500/20 via-[#0e141c] to-[#080b10] ring-2 ring-cyan-400/50 shadow-[0_0_30px_rgba(34,211,238,0.25)] touch-manipulation`}
             >
-              <div className="h-48 sm:h-64 md:h-80 overflow-hidden bg-[#ececec] flex items-center justify-center relative border-b border-white/10 shadow-[inset_0_2px_10px_rgba(0,0,0,0.08)]">
+              <div className="h-44 sm:h-64 md:h-80 overflow-hidden bg-[#ececec] flex items-center justify-center relative border-b border-white/10 shadow-[inset_0_2px_10px_rgba(0,0,0,0.08)]">
                 <img
                   src={`${imageCatalog}/${halls[names.find((n) => n.includes("10")) || names[0]]?.imageKey || names.find((n) => n.includes("10")) || names[0] || "Hala S-10"}_render.png?v=3`}
                   alt="Oceľová hala"
                   loading="lazy"
-                  className="h-full w-full object-cover sm:object-contain transition duration-500 group-hover:scale-105"
+                  draggable={false}
+                  className="h-full w-full object-cover sm:object-contain transition duration-500 md:group-hover:scale-105 pointer-events-none select-none"
                 />
                 <span className="absolute top-4 right-4 z-20 rounded-full bg-cyan-400 text-slate-950 font-mono text-xs font-bold px-3.5 py-1.5 shadow-lg shadow-cyan-500/30">
                   Typová hala
@@ -155,7 +157,7 @@ export function ProductPicker({
               <button
                 id="pick-vlastny"
                 onClick={() => onSelect("Vlastný")}
-                className={`group cursor-pointer overflow-hidden rounded-xl border text-left transition hover:-translate-y-1 hover:border-emerald-400 hover:shadow-[0_0_30px_rgba(52,211,153,0.25)] ${
+                className={`group cursor-pointer overflow-hidden rounded-xl border text-left transition-colors md:transition-all md:hover:-translate-y-1 hover:border-emerald-400 hover:shadow-[0_0_30px_rgba(52,211,153,0.25)] touch-manipulation ${
                   selectedHall === "Vlastný"
                     ? "border-emerald-400 bg-gradient-to-br from-emerald-500/25 to-[#0e1116] ring-2 ring-emerald-400/50"
                     : "border-emerald-500/30 bg-gradient-to-br from-emerald-500/15 to-[#0e1116]"
@@ -166,7 +168,8 @@ export function ProductPicker({
                     src={`${imageCatalog}/vlastna_garaz.png?v=3`}
                     alt="Vlastná garáž"
                     loading="lazy"
-                    className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
+                    draggable={false}
+                    className="h-full w-full object-contain transition duration-500 md:group-hover:scale-105 pointer-events-none select-none"
                   />
                 </div>
                 <div className="border-t border-white/10 p-4">
@@ -211,7 +214,7 @@ export function ProductPicker({
                   key={name}
                   id={`pick-${name}`}
                   onClick={() => onSelect(name)}
-                  className={`group cursor-pointer overflow-hidden rounded-xl border text-left transition hover:-translate-y-1 hover:border-emerald-400 hover:shadow-[0_0_30px_rgba(52,211,153,0.25)] ${
+                  className={`group cursor-pointer overflow-hidden rounded-xl border text-left transition-colors md:transition-all md:hover:-translate-y-1 hover:border-emerald-400 hover:shadow-[0_0_30px_rgba(52,211,153,0.25)] touch-manipulation ${
                     isSelected
                       ? "border-emerald-400 bg-[#0e1116] ring-2 ring-emerald-400/50 shadow-[0_0_20px_rgba(52,211,153,0.2)]"
                       : "border-white/10 bg-[#0e1116]"
@@ -222,7 +225,8 @@ export function ProductPicker({
                       src={`${imageCatalog}/${h.imageKey || name}_render.png?v=3`}
                       alt={h.name || name}
                       loading="lazy"
-                      className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
+                      draggable={false}
+                      className="h-full w-full object-contain transition duration-500 md:group-hover:scale-105 pointer-events-none select-none"
                     />
                   </div>
                   <div className="border-t border-white/10 p-4">

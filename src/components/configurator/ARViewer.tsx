@@ -18,13 +18,6 @@ interface ARViewerProps {
   description?: string;
 }
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'model-viewer': any;
-    }
-  }
-}
 
 export const ARViewer: React.FC<ARViewerProps> = ({
   open,
