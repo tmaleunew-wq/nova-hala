@@ -14,6 +14,9 @@ import {
   makeStuccoTexture,
   makeStuccoNormalTexture,
   makeStuccoRoughnessTexture,
+  makeSandwichTexture,
+  makeSandwichNormalTexture,
+  makeSandwichRoughnessTexture,
 } from "./textures";
 
 /**
@@ -79,6 +82,35 @@ export function createPBRSmoothMaterial(
     roughnessMap,
     roughness: 0.90, // Matte architectural plaster / stierka
     metalness: 0.02, // Non-metallic facade render
+    side: THREE.DoubleSide,
+  });
+}
+
+export function createPBRSandwichMaterial(
+  color: string,
+  orientation: "horizontal" | "vertical" = "horizontal",
+  repeats = 1,
+): THREE.MeshStandardMaterial {
+  const map = makeSandwichTexture(color, repeats, orientation);
+  const normalMap = makeSandwichNormalTexture(repeats, orientation);
+  const roughnessMap = makeSandwichRoughnessTexture(repeats, orientation, 0.40);
+
+  const textures = [map, normalMap, roughnessMap];
+  for (const tex of textures) {
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+  }
+
+  return new THREE.MeshStandardMaterial({
+    map,
+    normalMap,
+    normalScale: new THREE.Vector2(1.5, 1.5),
+    roughnessMap,
+    roughness: 0.45,
+    metalness: 0.18,
     side: THREE.DoubleSide,
   });
 }

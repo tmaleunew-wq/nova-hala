@@ -455,6 +455,7 @@ export function FlashingsAndGutters({ p, explodeY }: { p: GarageParams; explodeY
   return (
     <>
       <CornerFlashings p={p} explodeY={explodeY} />
+      <JointFlashings p={p} explodeY={explodeY} />
       <Bargeboards p={p} explodeY={explodeY} />
       <EaveFlashings p={p} explodeY={explodeY} />
       <Gutters p={p} explodeY={explodeY} />

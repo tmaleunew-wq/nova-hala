@@ -4,7 +4,7 @@ import * as THREE from "three";
 import type { GarageParams } from "@/lib/garage/types";
 import { ridgeHeight, highEave, getFrameZ, getPersonalDoorZ, getWindowZs, getWindowCoords, getDoubleGateLayout } from "./Structure";
 import { makeTrapezoidTexture } from "@/lib/garage/textures";
-import { createPBRCladdingMaterial, createPBRSmoothMaterial, createPBRTileMaterial, createPBRWoodMaterial } from "@/lib/garage/pbrMaterialHelper";
+import { createPBRCladdingMaterial, createPBRSmoothMaterial, createPBRSandwichMaterial, createPBRTileMaterial, createPBRWoodMaterial } from "@/lib/garage/pbrMaterialHelper";
 import { getCladdingConfig } from "@/lib/garage/configHelper";
 
 import { PurPanel, type Rect } from './PurPanel';
@@ -57,8 +57,13 @@ function PurGableTriangle({
 
   const pbrMaterial = useMemo(() => {
     if (wireframe) return null;
-    if (panelType === "smooth" || panelType === "sandwich") {
+    if (panelType === "smooth") {
       return createPBRSmoothMaterial(activeColorStr, 3.2, 3.2);
+    }
+    if (panelType === "sandwich") {
+      const isHorizontal = claddingOrientation === "horizontal";
+      const orient = isHorizontal ? "horizontal" : "vertical";
+      return createPBRSandwichMaterial(activeColorStr, orient, 1);
     }
     if (panelType === "wood_oak") {
       return createPBRWoodMaterial("golden_oak", claddingOrientation);
@@ -217,8 +222,13 @@ function PurShedTriangle({
 
   const pbrMaterial = useMemo(() => {
     if (wireframe) return null;
-    if (panelType === "smooth" || panelType === "sandwich") {
+    if (panelType === "smooth") {
       return createPBRSmoothMaterial(activeColorStr, 3.2, 3.2);
+    }
+    if (panelType === "sandwich") {
+      const isHorizontal = claddingOrientation === "horizontal";
+      const orient = isHorizontal ? "horizontal" : "vertical";
+      return createPBRSandwichMaterial(activeColorStr, orient, 1);
     }
     if (panelType === "wood_oak") {
       return createPBRWoodMaterial("golden_oak", claddingOrientation);

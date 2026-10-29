@@ -821,3 +821,187 @@ export function makeStuccoRoughnessTexture(repeatsX = 3.2, repeatsY = 3.2): THRE
   return tex;
 }
 
+const sandwichTexCache = new Map<string, THREE.CanvasTexture>();
+const sandwichNormalCache = new Map<string, THREE.CanvasTexture>();
+const sandwichRoughnessCache = new Map<string, THREE.CanvasTexture>();
+
+export function makeSandwichTexture(
+  color: string,
+  repeats = 1,
+  orientation: "horizontal" | "vertical" = "horizontal",
+): THREE.CanvasTexture {
+  const key = `${color}_${repeats}_${orientation}`;
+  if (sandwichTexCache.has(key)) return sandwichTexCache.get(key)!;
+
+  const size = 1024;
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, size, size);
+
+  // Micro-grain architectural satin coil-coating texture (fine steel sheet texture)
+  const imgData = ctx.getImageData(0, 0, size, size);
+  const d = imgData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const grain = (Math.random() - 0.5) * 5;
+    d[i] = Math.max(0, Math.min(255, d[i] + grain));
+    d[i + 1] = Math.max(0, Math.min(255, d[i + 1] + grain));
+    d[i + 2] = Math.max(0, Math.min(255, d[i + 2] + grain));
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  const step = size / repeats;
+  const isHoriz = orientation === "horizontal";
+
+  for (let i = 0; i < repeats; i++) {
+    const start = i * step;
+
+    // Realistic sandwich panel shadow joint (jemná pero-drážka / priznaná škára):
+    // 1. Subtle upper shadow line (3px)
+    ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+    if (isHoriz) {
+      ctx.fillRect(0, start, size, 3);
+    } else {
+      ctx.fillRect(start, 0, 3, size);
+    }
+
+    // 2. Crisp dark joint recess (4px)
+    ctx.fillStyle = "rgba(0, 0, 0, 0.70)";
+    if (isHoriz) {
+      ctx.fillRect(0, start + 3, size, 4);
+    } else {
+      ctx.fillRect(start + 3, 0, 4, size);
+    }
+
+    // 3. Delicate beveled highlight on lower joint edge (3px)
+    ctx.fillStyle = "rgba(255, 255, 255, 0.40)";
+    if (isHoriz) {
+      ctx.fillRect(0, start + 7, size, 3);
+    } else {
+      ctx.fillRect(start + 7, 0, 3, size);
+    }
+
+    // 4. Soft ambient gradient across the panel face (gives realistic panel flatness & curvature)
+    const g = isHoriz
+      ? ctx.createLinearGradient(0, start, 0, start + step)
+      : ctx.createLinearGradient(start, 0, start + step, 0);
+    g.addColorStop(0.0, "rgba(0, 0, 0, 0.05)");
+    g.addColorStop(0.05, "rgba(255, 255, 255, 0.04)");
+    g.addColorStop(0.50, "rgba(255, 255, 255, 0.01)");
+    g.addColorStop(0.95, "rgba(0, 0, 0, 0.02)");
+    g.addColorStop(1.0, "rgba(0, 0, 0, 0.06)");
+
+    ctx.fillStyle = g;
+    if (isHoriz) {
+      ctx.fillRect(0, start + 10, size, step - 10);
+    } else {
+      ctx.fillRect(start + 10, 0, step - 10, size);
+    }
+  }
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 16;
+  sandwichTexCache.set(key, tex);
+  return tex;
+}
+
+export function makeSandwichNormalTexture(
+  repeats = 1,
+  orientation: "horizontal" | "vertical" = "horizontal",
+): THREE.CanvasTexture {
+  const key = `${repeats}_${orientation}`;
+  if (sandwichNormalCache.has(key)) return sandwichNormalCache.get(key)!;
+
+  const size = 512;
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext("2d")!;
+
+  const imgData = ctx.createImageData(size, size);
+  const data = imgData.data;
+
+  // Base normal is flat facing (0, 0, 1) -> (128, 128, 255)
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = 128;
+    data[i + 1] = 128;
+    data[i + 2] = 255;
+    data[i + 3] = 255;
+  }
+
+  const step = size / repeats;
+  const isHoriz = orientation === "horizontal";
+
+  for (let i = 0; i < repeats; i++) {
+    const startY = Math.round(i * step);
+    const grooveH = 8;
+
+    for (let g = 0; g < grooveH; g++) {
+      const pos = (startY + g) % size;
+      let ny = 128;
+      if (g < 4) {
+        ny = 70 + g * 14; // downward slope
+      } else {
+        ny = 186 - (g - 4) * 14; // upward slope
+      }
+
+      for (let x = 0; x < size; x++) {
+        const idx = isHoriz ? (pos * size + x) * 4 : (x * size + pos) * 4;
+        if (isHoriz) {
+          data[idx + 1] = ny;
+        } else {
+          data[idx] = ny;
+        }
+        data[idx + 2] = 230;
+      }
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  sandwichNormalCache.set(key, tex);
+  return tex;
+}
+
+export function makeSandwichRoughnessTexture(
+  repeats = 1,
+  orientation: "horizontal" | "vertical" = "horizontal",
+  baseRoughness = 0.40,
+): THREE.CanvasTexture {
+  const key = `${repeats}_${orientation}_${baseRoughness}`;
+  if (sandwichRoughnessCache.has(key)) return sandwichRoughnessCache.get(key)!;
+
+  const size = 512;
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext("2d")!;
+
+  const baseVal = Math.round(baseRoughness * 255);
+  ctx.fillStyle = `rgb(${baseVal}, ${baseVal}, ${baseVal})`;
+  ctx.fillRect(0, 0, size, size);
+
+  const step = size / repeats;
+  const isHoriz = orientation === "horizontal";
+
+  ctx.fillStyle = "rgb(160, 160, 160)";
+  for (let i = 0; i < repeats; i++) {
+    const start = i * step;
+    if (isHoriz) {
+      ctx.fillRect(0, start, size, 8);
+    } else {
+      ctx.fillRect(start, 0, 8, size);
+    }
+  }
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  sandwichRoughnessCache.set(key, tex);
+  return tex;
+}
+
+

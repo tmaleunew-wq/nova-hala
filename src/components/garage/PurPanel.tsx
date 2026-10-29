@@ -3,6 +3,7 @@ import * as THREE from "three";
 import {
   createPBRCladdingMaterial,
   createPBRSmoothMaterial,
+  createPBRSandwichMaterial,
   createPBRTileMaterial,
   createPBRWoodMaterial,
 } from "@/lib/garage/pbrMaterialHelper";
@@ -106,8 +107,13 @@ export function PurPanel({
       const repeatsY = Math.max(2, Math.round(height / 0.2));
       return createPBRTileMaterial(activeColorStr, repeatsX, repeatsY);
     }
-    if (panelType === "smooth" || panelType === "sandwich") {
+    if (panelType === "smooth") {
       return createPBRSmoothMaterial(activeColorStr, 3.2, 3.2);
+    }
+    if (panelType === "sandwich") {
+      const isHorizontal = claddingOrientation === "horizontal";
+      const orient = isHorizontal ? "horizontal" : "vertical";
+      return createPBRSandwichMaterial(activeColorStr, orient, 1);
     }
     if (panelType === "wood_oak") {
       return createPBRWoodMaterial("golden_oak", claddingOrientation);
