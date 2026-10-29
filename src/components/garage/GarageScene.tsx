@@ -111,11 +111,13 @@ export function CameraRig({
   preset,
   params,
   focusTab,
+  variantKey,
   onUserInteract,
 }: {
   preset: ViewPreset;
   params: GarageParams;
   focusTab?: string;
+  variantKey?: string | number;
   onUserInteract?: () => void;
 }) {
   const { camera, controls } = useThree() as {
@@ -128,6 +130,7 @@ export function CameraRig({
   const isTransitioning = useRef<boolean>(false);
   const transitionTimer = useRef<any>(null);
   const isInitialMount = useRef<boolean>(true);
+  const prevHallKey = useRef<string | number | undefined>(variantKey ?? params.hallType);
 
   useEffect(() => {
     if (!controls) return;
@@ -293,6 +296,33 @@ export function CameraRig({
     targetPos.current.copy(pos);
     targetLook.current.copy(target);
 
+    const currentKey = variantKey ?? params.hallType;
+    const isVariantSwitch = prevHallKey.current !== undefined && prevHallKey.current !== currentKey;
+    prevHallKey.current = currentKey;
+
+    if (preset === "iso" && (isVariantSwitch || isInitialMount.current)) {
+      // Cinematic camera reveal: start close to building and smoothly back away ("cúvať") to frame the full building
+      const closeDist = Math.max(3.2, dist * 0.25);
+      const closePos = target.clone().add(isoDir.clone().multiplyScalar(closeDist));
+      closePos.y = Math.max(1.8, target.y * 0.75);
+
+      camera.position.copy(closePos);
+      if (controls) {
+        controls.target.copy(target);
+        controls.update();
+      } else {
+        camera.lookAt(target);
+      }
+      camera.updateProjectionMatrix();
+
+      isInitialMount.current = false;
+      isTransitioning.current = true;
+      transitionTimer.current = setTimeout(() => {
+        isTransitioning.current = false;
+      }, 2500);
+      return;
+    }
+
     if (isInitialMount.current) {
       camera.position.copy(pos);
       if (controls) {
@@ -317,6 +347,7 @@ export function CameraRig({
     params.length,
     params.clearHeight,
     params.hallType,
+    variantKey,
     focusTab,
     params.doorFocus,
     params.hasPersonalDoor,
@@ -333,7 +364,7 @@ export function CameraRig({
 
   useFrame((_, delta) => {
     if (!isTransitioning.current) return;
-    const speed = Math.min(1, delta * 4.2);
+    const speed = Math.min(1, delta * 3.0);
     camera.position.lerp(targetPos.current, speed);
     if (controls) {
       controls.target.lerp(targetLook.current, speed);

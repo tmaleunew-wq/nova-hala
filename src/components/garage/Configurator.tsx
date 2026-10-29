@@ -152,6 +152,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   const configWithCladding = getCatalogWithCladding(activeVariant);
   const [catalogWithCladding, setCatalogWithCladding] = useState(() => initialUrlParams.showCladding ?? configWithCladding);
   const catalogWithCladdingRef = useRef(initialUrlParams.showCladding ?? configWithCladding);
+  const [variantAnimKey, setVariantAnimKey] = useState(0);
   const isApplyingRef = useRef(false);
   const applyHallTypeRef = useRef<(v: string, withCladding?: boolean) => void>(() => {});
   useEffect(() => {
@@ -514,6 +515,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
     catalogWithCladdingRef.current = useCladding;
     setCatalogWithCladding(useCladding);
     setSelectedHall(isCustomHall ? CUSTOM_HALL : v);
+    setVariantAnimKey((k) => k + 1);
     setShowPicker(false);
     try {
       if (!isCustomHall && hallsConfig[v]) {
@@ -866,6 +868,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           preset={preset}
           params={typedParams}
           focusTab={customActiveTab}
+          variantKey={variantAnimKey}
           onUserInteract={() => setPreset("iso")}
         />
         {!isMobile && (
