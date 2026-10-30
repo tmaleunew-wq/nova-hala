@@ -19,6 +19,8 @@ import {
   makeSandwichRoughnessTexture,
 } from "./textures";
 
+const pbrMaterialCache = new Map<string, THREE.MeshStandardMaterial>();
+
 /**
  * Creates a high-fidelity PBR (Physically Based Rendering) material for cladding panels.
  * Generates procedural Albedo, Normal, Roughness, and Metalness maps to represent
@@ -29,6 +31,10 @@ export function createPBRCladdingMaterial(
   orientation: "vertical" | "horizontal" = "vertical",
   repeats = 40,
 ): THREE.MeshStandardMaterial {
+  const cacheKey = `cladding_${color}_${orientation}_${repeats}`;
+  const existing = pbrMaterialCache.get(cacheKey);
+  if (existing) return existing;
+
   // 1. Generate Albedo (Diffuse) texture for base color
   const map = makeTrapezoidTexture(color, repeats, orientation);
 
@@ -63,6 +69,7 @@ export function createPBRCladdingMaterial(
     side: THREE.DoubleSide,
   });
 
+  pbrMaterialCache.set(cacheKey, material);
   return material;
 }
 
@@ -71,11 +78,15 @@ export function createPBRSmoothMaterial(
   repeatsX = 3.2,
   repeatsY = 3.2,
 ): THREE.MeshStandardMaterial {
+  const cacheKey = `smooth_${color}_${repeatsX}_${repeatsY}`;
+  const existing = pbrMaterialCache.get(cacheKey);
+  if (existing) return existing;
+
   const map = makeStuccoTexture(color, repeatsX, repeatsY);
   const normalMap = makeStuccoNormalTexture(repeatsX, repeatsY);
   const roughnessMap = makeStuccoRoughnessTexture(repeatsX, repeatsY);
 
-  return new THREE.MeshStandardMaterial({
+  const mat = new THREE.MeshStandardMaterial({
     map,
     normalMap,
     normalScale: new THREE.Vector2(2.0, 2.0), // Crisp tactile plaster grain micro-shadows
@@ -84,6 +95,9 @@ export function createPBRSmoothMaterial(
     metalness: 0.02, // Non-metallic facade render
     side: THREE.DoubleSide,
   });
+
+  pbrMaterialCache.set(cacheKey, mat);
+  return mat;
 }
 
 export function createPBRSandwichMaterial(
@@ -91,6 +105,10 @@ export function createPBRSandwichMaterial(
   orientation: "horizontal" | "vertical" = "horizontal",
   repeats = 1,
 ): THREE.MeshStandardMaterial {
+  const cacheKey = `sandwich_${color}_${orientation}_${repeats}`;
+  const existing = pbrMaterialCache.get(cacheKey);
+  if (existing) return existing;
+
   const map = makeSandwichTexture(color, repeats, orientation);
   const normalMap = makeSandwichNormalTexture(repeats, orientation);
   const roughnessMap = makeSandwichRoughnessTexture(repeats, orientation, 0.38);
@@ -105,7 +123,7 @@ export function createPBRSandwichMaterial(
     tex.magFilter = THREE.LinearFilter;
   }
 
-  return new THREE.MeshStandardMaterial({
+  const mat = new THREE.MeshStandardMaterial({
     map,
     normalMap,
     normalScale: new THREE.Vector2(2.0, 2.0),
@@ -114,6 +132,9 @@ export function createPBRSandwichMaterial(
     metalness: 0.16,
     side: THREE.DoubleSide,
   });
+
+  pbrMaterialCache.set(cacheKey, mat);
+  return mat;
 }
 
 export function createPBRTileMaterial(
@@ -121,6 +142,10 @@ export function createPBRTileMaterial(
   repeatsX = 12,
   repeatsY = 14,
 ): THREE.MeshStandardMaterial {
+  const cacheKey = `tile_${color}_${repeatsX}_${repeatsY}`;
+  const existing = pbrMaterialCache.get(cacheKey);
+  if (existing) return existing;
+
   const map = makeTileTexture(color, repeatsX, repeatsY);
   const normalMap = makeTileNormalTexture(repeatsX, repeatsY);
   const roughnessMap = makeTileRoughnessTexture(repeatsX, repeatsY, 0.48);
@@ -135,7 +160,7 @@ export function createPBRTileMaterial(
     tex.magFilter = THREE.LinearFilter;
   }
 
-  return new THREE.MeshStandardMaterial({
+  const mat = new THREE.MeshStandardMaterial({
     map,
     normalMap,
     normalScale: new THREE.Vector2(1.8, 1.8),
@@ -145,6 +170,9 @@ export function createPBRTileMaterial(
     metalness: 1.0,
     side: THREE.DoubleSide,
   });
+
+  pbrMaterialCache.set(cacheKey, mat);
+  return mat;
 }
 
 export function createPBRWoodMaterial(
@@ -152,6 +180,10 @@ export function createPBRWoodMaterial(
   orientation: "vertical" | "horizontal" = "horizontal",
   grainRepeat = 8,
 ): THREE.MeshStandardMaterial {
+  const cacheKey = `wood_${type}_${orientation}_${grainRepeat}`;
+  const existing = pbrMaterialCache.get(cacheKey);
+  if (existing) return existing;
+
   const map = makeWoodTexture(type, grainRepeat);
   const normalMap = makeWoodNormalTexture(grainRepeat);
   const roughnessMap = makeWoodRoughnessTexture();
@@ -169,7 +201,7 @@ export function createPBRWoodMaterial(
     }
   }
 
-  return new THREE.MeshStandardMaterial({
+  const mat = new THREE.MeshStandardMaterial({
     map,
     normalMap,
     normalScale: new THREE.Vector2(0.85, 0.85),
@@ -178,6 +210,9 @@ export function createPBRWoodMaterial(
     metalness: 0.05,
     side: THREE.DoubleSide,
   });
+
+  pbrMaterialCache.set(cacheKey, mat);
+  return mat;
 }
 
 /**

@@ -19,8 +19,6 @@ import {
   ArrowRightLeft,
   X,
 } from "lucide-react";
-import { downloadGarageDxf } from "@/lib/garage/dxfGenerator";
-import { downloadGarageFloorPlanPdf } from "@/lib/garage/floorPlanPdfGenerator";
 import { GarageBomTable } from "./GarageBomTable";
 
 export interface StandardHallMenuProps {
@@ -139,6 +137,16 @@ export function StandardHallMenu({
     typeof window !== "undefined" &&
     (new URLSearchParams(window.location.search).get("cad") === "1" ||
       new URLSearchParams(window.location.search).get("admin") === "1");
+
+  const handleDownloadFloorPlanPdf = async () => {
+    const { downloadGarageFloorPlanPdf } = await import("@/lib/garage/floorPlanPdfGenerator");
+    downloadGarageFloorPlanPdf(typedParams, `${selectedHall || "hala"}_vykres`);
+  };
+
+  const handleDownloadDxf = async () => {
+    const { downloadGarageDxf } = await import("@/lib/garage/dxfGenerator");
+    downloadGarageDxf(typedParams, `${selectedHall || "hala"}_podorys.dxf`);
+  };
 
   const allHalls = passedHallsConfig || getHallsConfig();
   const hallKeys = Object.keys(allHalls).filter(
@@ -985,7 +993,7 @@ export function StandardHallMenu({
                       <div className="grid grid-cols-2 gap-2 pt-0.5">
                         <button
                           type="button"
-                          onClick={() => downloadGarageFloorPlanPdf(typedParams, `${selectedHall || "hala"}_vykres`)}
+                          onClick={handleDownloadFloorPlanPdf}
                           className="py-2 px-2.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 active:scale-[0.99] text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md shadow-cyan-500/20"
                           title="Stiahnuť a otvoriť výkres priamo v PDF"
                         >
@@ -994,7 +1002,7 @@ export function StandardHallMenu({
                         </button>
                         <button
                           type="button"
-                          onClick={() => downloadGarageDxf(typedParams, `${selectedHall || "hala"}_podorys.dxf`)}
+                          onClick={handleDownloadDxf}
                           className="py-2 px-2.5 rounded-lg bg-white/10 hover:bg-white/15 active:scale-[0.99] text-white font-semibold text-xs flex items-center justify-center gap-1.5 border border-white/15 transition cursor-pointer"
                           title="Stiahnuť pre AutoCAD / Revit"
                         >
@@ -1095,7 +1103,7 @@ export function StandardHallMenu({
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
-                          onClick={() => downloadGarageFloorPlanPdf(typedParams, `${selectedHall || "hala"}_vykres`)}
+                          onClick={handleDownloadFloorPlanPdf}
                           className="py-2 px-2 rounded-lg bg-cyan-400/15 hover:bg-cyan-400/25 text-cyan-300 hover:text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 border border-cyan-400/30 transition cursor-pointer"
                         >
                           <FileText className="w-3.5 h-3.5 text-cyan-400" />
@@ -1104,7 +1112,7 @@ export function StandardHallMenu({
 
                         <button
                           type="button"
-                          onClick={() => downloadGarageDxf(typedParams, `${selectedHall || "hala"}_podorys.dxf`)}
+                          onClick={handleDownloadDxf}
                           className="py-2 px-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-[11px] font-medium flex items-center justify-center gap-1.5 border border-white/10 transition cursor-pointer"
                         >
                           <Download className="w-3.5 h-3.5 text-cyan-400" />

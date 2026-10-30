@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Lock, KeyRound, ShieldAlert, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { verifyAdminPassword } from "@/lib/garage/inquiryActions";
+import { verifyAdminPassword, verifyAdminSession } from "@/lib/garage/inquiryActions";
 
 interface AdminAuthGateProps {
   children: React.ReactNode;
@@ -15,13 +15,35 @@ export function AdminAuthGate({ children }: AdminAuthGateProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     if (typeof window !== "undefined") {
-      const stored = sessionStorage.getItem("ssf_admin_authed");
-      if (stored === "true") {
-        setIsAuthenticated(true);
+      const storedToken = sessionStorage.getItem("ssf_admin_token");
+      if (storedToken) {
+        verifyAdminSession({ data: { token: storedToken } })
+          .then((res) => {
+            if (!isMounted) return;
+            if (res?.valid) {
+              setIsAuthenticated(true);
+            } else {
+              sessionStorage.removeItem("ssf_admin_token");
+              setIsAuthenticated(false);
+            }
+          })
+          .catch(() => {
+            if (isMounted) setIsAuthenticated(false);
+          })
+          .finally(() => {
+            if (isMounted) setIsChecking(false);
+          });
+        return () => {
+          isMounted = false;
+        };
       }
     }
     setIsChecking(false);
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -29,8 +51,8 @@ export function AdminAuthGate({ children }: AdminAuthGateProps) {
     setIsSubmitting(true);
     try {
       const res = await verifyAdminPassword({ data: { password: passwordInput } });
-      if (res?.success) {
-        sessionStorage.setItem("ssf_admin_authed", "true");
+      if (res?.success && res?.token) {
+        sessionStorage.setItem("ssf_admin_token", res.token);
         setIsAuthenticated(true);
         setError(false);
         toast.success("Prihlásenie úspešné! Vitajte v Admin paneli.");
@@ -47,7 +69,7 @@ export function AdminAuthGate({ children }: AdminAuthGateProps) {
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem("ssf_admin_authed");
+    sessionStorage.removeItem("ssf_admin_token");
     setIsAuthenticated(false);
     setPasswordInput("");
     toast.info("Boli ste odhlásený.");

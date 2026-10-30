@@ -126,8 +126,8 @@ export const sendInquiry = createServerFn({ method: "POST" })
     `;
 
     let gmailSent = false;
-    const gmailUser = process.env.GMAIL_SMTP_USER || "pergolaconfigurator@gmail.com";
-    const gmailPass = (process.env.GMAIL_APP_PASSWORD || "mwjp iniv piep tcdf").replace(/\s+/g, "");
+    const gmailUser = process.env.GMAIL_SMTP_USER || "";
+    const gmailPass = (process.env.GMAIL_APP_PASSWORD || "").replace(/\s+/g, "");
 
     if (gmailUser && gmailPass) {
       try {
@@ -247,10 +247,7 @@ export const sendInquiry = createServerFn({ method: "POST" })
     }
 
     if (!resendApiKey) {
-      console.warn("Chýba RESEND_API_KEY. E-maily neboli odoslané reálne, iba vypísané do konzoly.");
-      console.log("=== ADMIN EMAIL ===");
-      console.log(`To: ${adminEmail}\nSubject: Nový dopyt od ${name}\nBody:\n`, adminHtml);
-      console.log(`To: ${email}\nSubject: Potvrdenie dopytu - Steel Shed Forge\nBody:\n`, clientHtml);
+      console.warn("Chýba RESEND_API_KEY aj GMAIL_SMTP_USER/PASS. Dopyt bol uložený v simulovanom režime.");
       return { success: true, simulated: true };
     }
 
@@ -307,10 +304,22 @@ export const sendInquiry = createServerFn({ method: "POST" })
 export const verifyAdminPassword = createServerFn({ method: "POST" })
   .inputValidator((data: { password: string }) => data)
   .handler(async ({ data }) => {
-    const adminPassword = process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD || "admin123";
-    if (data.password && data.password === adminPassword) {
-      return { success: true };
+    const adminPassword = process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD;
+    if (adminPassword && data.password && data.password === adminPassword) {
+      const crypto = await import("node:crypto");
+      const token = crypto.createHmac("sha256", adminPassword).update("ssf_admin_session").digest("hex");
+      return { success: true, token };
     }
     return { success: false };
+  });
+
+export const verifyAdminSession = createServerFn({ method: "POST" })
+  .inputValidator((data: { token?: string }) => data)
+  .handler(async ({ data }) => {
+    const adminPassword = process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD;
+    if (!adminPassword || !data?.token) return { valid: false };
+    const crypto = await import("node:crypto");
+    const expected = crypto.createHmac("sha256", adminPassword).update("ssf_admin_session").digest("hex");
+    return { valid: data.token === expected };
   });
 
