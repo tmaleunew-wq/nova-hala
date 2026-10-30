@@ -858,48 +858,74 @@ export function makeSandwichTexture(
   for (let i = 0; i < repeats; i++) {
     const start = i * step;
 
-    // Realistic sandwich panel shadow joint (jemná pero-drážka / priznaná škára):
-    if (i > 0) {
-      // 1. Subtle upper shadow line (4px)
-      ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+    // 1. Architectural micro-ribbing (jemné lineárne mikrolamelovanie fasádneho panelu)
+    const microCount = Math.max(12, Math.round(step / 28));
+    const microStep = step / microCount;
+    for (let m = 0; m < microCount; m++) {
+      const mPos = start + m * microStep;
+      // Fine micro-groove shadow
+      ctx.fillStyle = "rgba(0, 0, 0, 0.065)";
       if (isHoriz) {
-        ctx.fillRect(0, start, size, 4);
+        ctx.fillRect(0, mPos, size, 1.5);
       } else {
-        ctx.fillRect(start, 0, 4, size);
+        ctx.fillRect(mPos, 0, 1.5, size);
       }
-
-      // 2. Crisp dark joint recess (8px)
-      ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+      // Fine micro-bevel reflection
+      ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
       if (isHoriz) {
-        ctx.fillRect(0, start + 4, size, 8);
+        ctx.fillRect(0, mPos + 1.5, size, 1.5);
       } else {
-        ctx.fillRect(start + 4, 0, 8, size);
-      }
-
-      // 3. Delicate beveled highlight on lower joint edge (6px)
-      ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
-      if (isHoriz) {
-        ctx.fillRect(0, start + 12, size, 6);
-      } else {
-        ctx.fillRect(start + 12, 0, 6, size);
+        ctx.fillRect(mPos + 1.5, 0, 1.5, size);
       }
     }
 
-    // 4. Soft ambient gradient across the panel face (gives realistic panel flatness & curvature)
+    // 2. Realistic sandwich panel main shadow joint (priznaná škára pero-drážka):
+    if (i > 0) {
+      // Upper shadow transition
+      const topGrad = isHoriz
+        ? ctx.createLinearGradient(0, start - 8, 0, start)
+        : ctx.createLinearGradient(start - 8, 0, start, 0);
+      topGrad.addColorStop(0, "rgba(0, 0, 0, 0)");
+      topGrad.addColorStop(1, "rgba(0, 0, 0, 0.50)");
+      ctx.fillStyle = topGrad;
+      if (isHoriz) {
+        ctx.fillRect(0, start - 8, size, 8);
+      } else {
+        ctx.fillRect(start - 8, 0, 8, size);
+      }
+
+      // Crisp dark joint recess (10px deep shadow)
+      ctx.fillStyle = "rgba(0, 0, 0, 0.90)";
+      if (isHoriz) {
+        ctx.fillRect(0, start, size, 10);
+      } else {
+        ctx.fillRect(start, 0, 10, size);
+      }
+
+      // Delicate beveled highlight on lower joint edge
+      ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+      if (isHoriz) {
+        ctx.fillRect(0, start + 10, size, 5);
+      } else {
+        ctx.fillRect(start + 10, 0, 5, size);
+      }
+    }
+
+    // 3. Soft ambient panel crown gradient across the panel face
     const g = isHoriz
       ? ctx.createLinearGradient(0, start, 0, start + step)
       : ctx.createLinearGradient(start, 0, start + step, 0);
-    g.addColorStop(0.0, "rgba(0, 0, 0, 0.05)");
-    g.addColorStop(0.05, "rgba(255, 255, 255, 0.04)");
-    g.addColorStop(0.50, "rgba(255, 255, 255, 0.01)");
-    g.addColorStop(0.95, "rgba(0, 0, 0, 0.02)");
-    g.addColorStop(1.0, "rgba(0, 0, 0, 0.06)");
+    g.addColorStop(0.0, "rgba(0, 0, 0, 0.04)");
+    g.addColorStop(0.08, "rgba(255, 255, 255, 0.05)");
+    g.addColorStop(0.50, "rgba(255, 255, 255, 0.015)");
+    g.addColorStop(0.92, "rgba(0, 0, 0, 0.02)");
+    g.addColorStop(1.0, "rgba(0, 0, 0, 0.05)");
 
     ctx.fillStyle = g;
     if (isHoriz) {
-      ctx.fillRect(0, start + 18, size, step - 18);
+      ctx.fillRect(0, start + 15, size, step - 15);
     } else {
-      ctx.fillRect(start + 18, 0, step - 18, size);
+      ctx.fillRect(start + 15, 0, step - 15, size);
     }
   }
 
@@ -926,17 +952,32 @@ export function makeSandwichNormalTexture(
   const imgData = ctx.createImageData(size, size);
   const data = imgData.data;
 
-  // Base normal is flat facing (0, 0, 1) -> (128, 128, 255)
-  for (let i = 0; i < data.length; i += 4) {
-    data[i] = 128;
-    data[i + 1] = 128;
-    data[i + 2] = 255;
-    data[i + 3] = 255;
-  }
-
   const step = size / repeats;
   const isHoriz = orientation === "horizontal";
+  const microCount = Math.max(12, Math.round(step / 28));
+  const microStep = step / microCount;
 
+  // Base normal with micro-ribbing relief across panel body
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const coord = isHoriz ? y : x;
+      const mCoord = coord % microStep;
+      const mProg = mCoord / microStep;
+      const microSlope = Math.round(128 + Math.sin(mProg * Math.PI * 2) * 16);
+      const idx = (y * size + x) * 4;
+      if (isHoriz) {
+        data[idx] = 128;
+        data[idx + 1] = microSlope;
+      } else {
+        data[idx] = microSlope;
+        data[idx + 1] = 128;
+      }
+      data[idx + 2] = 240;
+      data[idx + 3] = 255;
+    }
+  }
+
+  // Deep shadow-joint recess normal indentations
   for (let i = 1; i < repeats; i++) {
     const startY = Math.round(i * step);
     const grooveH = 16;
@@ -945,9 +986,9 @@ export function makeSandwichNormalTexture(
       const pos = (startY + g) % size;
       let ny = 128;
       if (g < 8) {
-        ny = 40 + g * 11; // steep downward slope
+        ny = 32 + g * 12; // deep downward slope
       } else {
-        ny = 216 - (g - 8) * 11; // steep upward slope
+        ny = 224 - (g - 8) * 12; // sharp upward bevel
       }
 
       for (let x = 0; x < size; x++) {
@@ -957,7 +998,7 @@ export function makeSandwichNormalTexture(
         } else {
           data[idx] = ny;
         }
-        data[idx + 2] = 215;
+        data[idx + 2] = 185;
       }
     }
   }
@@ -972,7 +1013,7 @@ export function makeSandwichNormalTexture(
 export function makeSandwichRoughnessTexture(
   repeats = 1,
   orientation: "horizontal" | "vertical" = "horizontal",
-  baseRoughness = 0.40,
+  baseRoughness = 0.38,
 ): THREE.CanvasTexture {
   const key = `${repeats}_${orientation}_${baseRoughness}`;
   if (sandwichRoughnessCache.has(key)) return sandwichRoughnessCache.get(key)!;
@@ -989,8 +1030,25 @@ export function makeSandwichRoughnessTexture(
 
   const step = size / repeats;
   const isHoriz = orientation === "horizontal";
+  const microCount = Math.max(12, Math.round(step / 28));
+  const microStep = step / microCount;
 
-  ctx.fillStyle = "rgb(180, 180, 180)";
+  // Satin sheen on micro-rib crowns
+  for (let i = 0; i < repeats; i++) {
+    const start = i * step;
+    for (let m = 0; m < microCount; m++) {
+      const mPos = start + m * microStep;
+      ctx.fillStyle = `rgb(${Math.max(0, baseVal - 22)}, ${Math.max(0, baseVal - 22)}, ${Math.max(0, baseVal - 22)})`;
+      if (isHoriz) {
+        ctx.fillRect(0, mPos, size, microStep * 0.45);
+      } else {
+        ctx.fillRect(mPos, 0, microStep * 0.45, size);
+      }
+    }
+  }
+
+  // Matte absorption in joint grooves
+  ctx.fillStyle = "rgb(190, 190, 190)";
   for (let i = 1; i < repeats; i++) {
     const start = i * step;
     if (isHoriz) {

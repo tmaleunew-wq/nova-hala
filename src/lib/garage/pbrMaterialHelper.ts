@@ -93,7 +93,7 @@ export function createPBRSandwichMaterial(
 ): THREE.MeshStandardMaterial {
   const map = makeSandwichTexture(color, repeats, orientation);
   const normalMap = makeSandwichNormalTexture(repeats, orientation);
-  const roughnessMap = makeSandwichRoughnessTexture(repeats, orientation, 0.40);
+  const roughnessMap = makeSandwichRoughnessTexture(repeats, orientation, 0.38);
 
   const textures = [map, normalMap, roughnessMap];
   for (const tex of textures) {
@@ -108,10 +108,10 @@ export function createPBRSandwichMaterial(
   return new THREE.MeshStandardMaterial({
     map,
     normalMap,
-    normalScale: new THREE.Vector2(2.5, 2.5),
+    normalScale: new THREE.Vector2(2.0, 2.0),
     roughnessMap,
-    roughness: 0.45,
-    metalness: 0.18,
+    roughness: 0.38,
+    metalness: 0.16,
     side: THREE.DoubleSide,
   });
 }
