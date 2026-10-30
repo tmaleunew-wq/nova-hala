@@ -629,6 +629,81 @@ export function CustomGarageMenu({
               </div>
             </div>
 
+            {/* Typ krytiny / plášť strechy */}
+            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-semibold text-slate-200">Krytina strechy:</label>
+                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">
+                  {typedParams.roofPanelType === "trapezoid"
+                    ? "Trapézový plech"
+                    : typedParams.roofPanelType === "tile"
+                    ? "Škridla"
+                    : "Sendvičový panel"}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setParams({ roofPanelType: "sandwich" })}
+                  className={`py-2 px-1.5 rounded-xl border text-center transition cursor-pointer ${
+                    (typedParams.roofPanelType ?? "sandwich") === "sandwich"
+                      ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-2 ring-emerald-400/30 shadow-md shadow-emerald-500/10"
+                      : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80 hover:text-white"
+                  }`}
+                >
+                  <div className="text-xs sm:text-sm font-bold">🥪 Sendvič</div>
+                  <div className="text-[10px] text-white/70 mt-0.5">Zateplená</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setParams({ roofPanelType: "trapezoid" })}
+                  className={`py-2 px-1.5 rounded-xl border text-center transition cursor-pointer ${
+                    typedParams.roofPanelType === "trapezoid"
+                      ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-2 ring-emerald-400/30 shadow-md shadow-emerald-500/10"
+                      : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80 hover:text-white"
+                  }`}
+                >
+                  <div className="text-xs sm:text-sm font-bold">🏢 Trapéz</div>
+                  <div className="text-[10px] text-white/70 mt-0.5">Nezateplená</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setParams({ roofPanelType: "tile" })}
+                  className={`py-2 px-1.5 rounded-xl border text-center transition cursor-pointer ${
+                    typedParams.roofPanelType === "tile"
+                      ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-2 ring-emerald-400/30 shadow-md shadow-emerald-500/10"
+                      : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80 hover:text-white"
+                  }`}
+                >
+                  <div className="text-xs sm:text-sm font-bold">🏠 Škridla</div>
+                  <div className="text-[10px] text-white/70 mt-0.5">Plechová</div>
+                </button>
+              </div>
+
+              {/* Hrúbka strešného sendviča ak je vybraný sandwich */}
+              {(typedParams.roofPanelType ?? "sandwich") === "sandwich" && (
+                <div className="pt-2.5 border-t border-white/10 flex items-center justify-between text-xs">
+                  <span className="text-slate-200 font-medium">Hrúbka strechy:</span>
+                  <div className="flex gap-1">
+                    {[40, 60, 80, 100, 120, 150].map((th) => (
+                      <button
+                        key={th}
+                        type="button"
+                        onClick={() => setParams({ roofPanelType: "sandwich", roofPanelThicknessMm: th })}
+                        className={`px-2 py-1 rounded-lg text-xs font-mono font-semibold transition cursor-pointer ${
+                          (typedParams.roofPanelThicknessMm ?? 120) === th
+                            ? "bg-emerald-400 text-slate-950 font-bold border border-emerald-300 shadow-sm"
+                            : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
+                        }`}
+                      >
+                        {th}mm
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Sklon strechy */}
             <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
               <div className="flex justify-between items-center">
@@ -1472,78 +1547,6 @@ export function CustomGarageMenu({
                     </button>
                   </div>
                 </div>
-              </div>
-
-              {/* Opláštenie strechy */}
-              <div className="pt-3 border-t border-white/10">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-bold text-slate-100">Strecha:</label>
-                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">
-                    {typedParams.roofPanelType === "trapezoid"
-                      ? "Trapézový plech"
-                      : typedParams.roofPanelType === "tile"
-                      ? "Škridla"
-                      : "Sendvičový panel"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setParams({ roofPanelType: "sandwich" })}
-                    className={`py-1.5 px-1 rounded-lg border text-center transition cursor-pointer text-xs ${
-                      (typedParams.roofPanelType ?? "sandwich") === "sandwich"
-                        ? "border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
-                        : "border-white/15 bg-slate-800/80 text-slate-300 hover:bg-slate-700/80"
-                    }`}
-                  >
-                    <div>🥪 Sendvič</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setParams({ roofPanelType: "trapezoid" })}
-                    className={`py-1.5 px-1 rounded-lg border text-center transition cursor-pointer text-xs ${
-                      typedParams.roofPanelType === "trapezoid"
-                        ? "border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
-                        : "border-white/15 bg-slate-800/80 text-slate-300 hover:bg-slate-700/80"
-                    }`}
-                  >
-                    <div>🏢 Trapéz</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setParams({ roofPanelType: "tile" })}
-                    className={`py-1.5 px-1 rounded-lg border text-center transition cursor-pointer text-xs ${
-                      typedParams.roofPanelType === "tile"
-                        ? "border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
-                        : "border-white/15 bg-slate-800/80 text-slate-300 hover:bg-slate-700/80"
-                    }`}
-                  >
-                    <div>🏠 Škridla</div>
-                  </button>
-                </div>
-
-                {/* Hrúbka strešného sendviča ak je vybraný sandwich */}
-                {(typedParams.roofPanelType ?? "sandwich") === "sandwich" && (
-                  <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-xs">
-                    <span className="text-slate-200 font-medium">Hrúbka strechy:</span>
-                    <div className="flex gap-1">
-                      {[40, 60, 80, 100, 120, 150].map((th) => (
-                        <button
-                          key={th}
-                          type="button"
-                          onClick={() => setParams({ roofPanelType: "sandwich", roofPanelThicknessMm: th })}
-                          className={`px-1.5 py-0.5 rounded text-xs font-mono transition cursor-pointer ${
-                            (typedParams.roofPanelThicknessMm ?? 120) === th
-                              ? "bg-emerald-400 text-slate-950 font-bold border border-emerald-300 shadow-sm"
-                              : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
-                          }`}
-                        >
-                          {th}mm
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
