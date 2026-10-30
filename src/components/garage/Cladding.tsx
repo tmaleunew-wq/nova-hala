@@ -65,7 +65,7 @@ function PurGableTriangle({
       const orient = isHorizontal ? "horizontal" : "vertical";
       const spacing = 1.0;
       const repeats = isHorizontal
-        ? Math.max(1, Math.round(ridge / spacing))
+        ? Math.max(1, Math.round((ridge - eave) / spacing))
         : Math.max(1, Math.round(width / spacing));
       return createPBRSandwichMaterial(activeColorStr, orient, repeats);
     }
@@ -79,7 +79,7 @@ function PurGableTriangle({
     const orient = isHorizontal ? "horizontal" : "vertical";
     const spacing = panelType === "sandwich" ? 1.0 : 0.25;
     const repeats = isHorizontal
-      ? Math.max(1, Math.round(ridge / spacing))
+      ? Math.max(1, Math.round((ridge - eave) / spacing))
       : Math.max(1, Math.round(width / spacing));
 
     const mat = createPBRCladdingMaterial(activeColorStr, orient, repeats);
@@ -97,14 +97,30 @@ function PurGableTriangle({
       t.needsUpdate = true;
     }
     return mat;
-  }, [activeColorStr, width, ridge, claddingOrientation, wireframe, panelType]);
+  }, [activeColorStr, width, ridge, eave, claddingOrientation, wireframe, panelType]);
 
   const outerGeom = useMemo(() => {
     const depth = isSandwich ? 0.002 : thickness;
     const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 1 });
     g.translate(0, 0, thickness / 2 - depth);
+
+    const pos = g.attributes.position?.array;
+    const uvs = g.attributes.uv?.array;
+    const triH = Math.max(0.1, ridge - eave);
+    if (pos && uvs && triH > 0.01 && width > 0.01) {
+      const w2 = width / 2;
+      for (let i = 0; i < uvs.length; i += 2) {
+        const vIdx = (i / 2) * 3;
+        const x = pos[vIdx];
+        const y = pos[vIdx + 1];
+        uvs[i] = (x + w2) / width;
+        uvs[i + 1] = Math.max(0, Math.min(1, (y - eave) / triH));
+      }
+      g.attributes.uv.needsUpdate = true;
+    }
+
     return g;
-  }, [shape, thickness, isSandwich]);
+  }, [shape, thickness, isSandwich, width, eave, ridge]);
 
   const coreGeom = useMemo(() => {
     if (!isSandwich) return null;
@@ -119,8 +135,24 @@ function PurGableTriangle({
     const depth = 0.002;
     const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 1 });
     g.translate(0, 0, -thickness / 2);
+
+    const pos = g.attributes.position?.array;
+    const uvs = g.attributes.uv?.array;
+    const triH = Math.max(0.1, ridge - eave);
+    if (pos && uvs && triH > 0.01 && width > 0.01) {
+      const w2 = width / 2;
+      for (let i = 0; i < uvs.length; i += 2) {
+        const vIdx = (i / 2) * 3;
+        const x = pos[vIdx];
+        const y = pos[vIdx + 1];
+        uvs[i] = (x + w2) / width;
+        uvs[i + 1] = Math.max(0, Math.min(1, (y - eave) / triH));
+      }
+      g.attributes.uv.needsUpdate = true;
+    }
+
     return g;
-  }, [shape, thickness, isSandwich]);
+  }, [shape, thickness, isSandwich, width, eave, ridge]);
 
   const handlePointerOver = (e: any) => {
     e.stopPropagation();
@@ -234,7 +266,7 @@ function PurShedTriangle({
       const orient = isHorizontal ? "horizontal" : "vertical";
       const spacing = 1.0;
       const repeats = isHorizontal
-        ? Math.max(1, Math.round(highEave / spacing))
+        ? Math.max(1, Math.round((highEave - eave) / spacing))
         : Math.max(1, Math.round(width / spacing));
       return createPBRSandwichMaterial(activeColorStr, orient, repeats);
     }
@@ -248,7 +280,7 @@ function PurShedTriangle({
     const orient = isHorizontal ? "horizontal" : "vertical";
     const spacing = panelType === "sandwich" ? 1.0 : 0.25;
     const repeats = isHorizontal
-      ? Math.max(1, Math.round(highEave / spacing))
+      ? Math.max(1, Math.round((highEave - eave) / spacing))
       : Math.max(1, Math.round(width / spacing));
 
     const mat = createPBRCladdingMaterial(activeColorStr, orient, repeats);
@@ -266,14 +298,30 @@ function PurShedTriangle({
       t.needsUpdate = true;
     }
     return mat;
-  }, [activeColorStr, width, highEave, claddingOrientation, wireframe, panelType]);
+  }, [activeColorStr, width, highEave, eave, claddingOrientation, wireframe, panelType]);
 
   const outerGeom = useMemo(() => {
     const depth = isSandwich ? 0.002 : thickness;
     const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 1 });
     g.translate(0, 0, thickness / 2 - depth);
+
+    const pos = g.attributes.position?.array;
+    const uvs = g.attributes.uv?.array;
+    const triH = Math.max(0.1, highEave - eave);
+    if (pos && uvs && triH > 0.01 && width > 0.01) {
+      const w2 = width / 2;
+      for (let i = 0; i < uvs.length; i += 2) {
+        const vIdx = (i / 2) * 3;
+        const x = pos[vIdx];
+        const y = pos[vIdx + 1];
+        uvs[i] = (x + w2) / width;
+        uvs[i + 1] = Math.max(0, Math.min(1, (y - eave) / triH));
+      }
+      g.attributes.uv.needsUpdate = true;
+    }
+
     return g;
-  }, [shape, thickness, isSandwich]);
+  }, [shape, thickness, isSandwich, width, eave, highEave]);
 
   const coreGeom = useMemo(() => {
     if (!isSandwich) return null;
@@ -288,8 +336,24 @@ function PurShedTriangle({
     const depth = 0.002;
     const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 1 });
     g.translate(0, 0, -thickness / 2);
+
+    const pos = g.attributes.position?.array;
+    const uvs = g.attributes.uv?.array;
+    const triH = Math.max(0.1, highEave - eave);
+    if (pos && uvs && triH > 0.01 && width > 0.01) {
+      const w2 = width / 2;
+      for (let i = 0; i < uvs.length; i += 2) {
+        const vIdx = (i / 2) * 3;
+        const x = pos[vIdx];
+        const y = pos[vIdx + 1];
+        uvs[i] = (x + w2) / width;
+        uvs[i + 1] = Math.max(0, Math.min(1, (y - eave) / triH));
+      }
+      g.attributes.uv.needsUpdate = true;
+    }
+
     return g;
-  }, [shape, thickness, isSandwich]);
+  }, [shape, thickness, isSandwich, width, eave, highEave]);
 
   const handlePointerOver = (e: any) => {
     e.stopPropagation();

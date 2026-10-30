@@ -165,8 +165,23 @@ export function PurPanel({
     });
     const zTrans = thickness / 2 - depth;
     g.translate(0, 0, zTrans);
+
+    const pos = g.attributes.position?.array;
+    const uvs = g.attributes.uv?.array;
+    if (pos && uvs && height > 0.01 && width > 0.01) {
+      const w2 = width / 2;
+      for (let i = 0; i < uvs.length; i += 2) {
+        const vIdx = (i / 2) * 3;
+        const x = pos[vIdx];
+        const y = pos[vIdx + 1];
+        uvs[i] = (x + w2) / width;
+        uvs[i + 1] = Math.max(0, Math.min(1, y / height));
+      }
+      g.attributes.uv.needsUpdate = true;
+    }
+
     return g;
-  }, [shape, thickness, isSandwichActual]);
+  }, [shape, thickness, isSandwichActual, width, height]);
 
   const coreGeom = useMemo(() => {
     if (!isSandwichActual) return null;
@@ -190,8 +205,23 @@ export function PurPanel({
     });
     const zTrans = -thickness / 2;
     g.translate(0, 0, zTrans);
+
+    const pos = g.attributes.position?.array;
+    const uvs = g.attributes.uv?.array;
+    if (pos && uvs && height > 0.01 && width > 0.01) {
+      const w2 = width / 2;
+      for (let i = 0; i < uvs.length; i += 2) {
+        const vIdx = (i / 2) * 3;
+        const x = pos[vIdx];
+        const y = pos[vIdx + 1];
+        uvs[i] = (x + w2) / width;
+        uvs[i + 1] = Math.max(0, Math.min(1, y / height));
+      }
+      g.attributes.uv.needsUpdate = true;
+    }
+
     return g;
-  }, [shape, thickness, isSandwichActual]);
+  }, [shape, thickness, isSandwichActual, width, height]);
 
   const handlePointerOver = (e: any) => {
     e.stopPropagation();
