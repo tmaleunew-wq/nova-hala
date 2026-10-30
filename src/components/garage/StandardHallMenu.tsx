@@ -800,66 +800,471 @@ export function StandardHallMenu({
                   />
 
                   {/* Vstupné personálne dvere a okná */}
-                  <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
-                    {/* Personálne dvere */}
+                  <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3.5 shadow-md">
+                    {/* Personálne dvere toggle */}
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-xs font-semibold text-slate-200">Vstupné personálne dvere</div>
-                        <div className="text-[10px] text-white/50">Dvere pre personál</div>
+                        <div className="text-xs font-bold text-slate-100">Vchodové dvere</div>
+                        <div className="text-[11px] text-white/60">Samostatný bočný / zadný vstup</div>
                       </div>
                       <button
                         type="button"
-                        onClick={() => setParams({ hasPersonalDoor: !typedParams.hasPersonalDoor })}
-                        className={`w-11 h-6 flex items-center rounded-full p-1 transition cursor-pointer border border-white/20 ${
+                        onClick={() => {
+                          const nextVal = !typedParams.hasPersonalDoor;
+                          setParams({
+                            hasPersonalDoor: nextVal,
+                            doorFocus: nextVal ? "personalDoor" : "gate",
+                          });
+                        }}
+                        className={`w-12 h-6 flex items-center rounded-full p-1 transition cursor-pointer border border-white/20 ${
                           typedParams.hasPersonalDoor ? "bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)]" : "bg-slate-700"
                         }`}
                       >
                         <div
                           className={`bg-slate-950 w-4 h-4 rounded-full shadow-md transform transition ${
-                            typedParams.hasPersonalDoor ? "translate-x-5" : "translate-x-0"
+                            typedParams.hasPersonalDoor ? "translate-x-6" : "translate-x-0"
                           }`}
                         />
                       </button>
                     </div>
+
+                    {/* Nastavenie strany, rozmerov a farby dverí ak sú aktívne */}
+                    {typedParams.hasPersonalDoor && (
+                      <div className="pt-2 border-t border-white/10 space-y-3 bg-white/[0.02] -mx-1 p-2 rounded-lg">
+                        {/* Umiestnenie dverí */}
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-slate-300 font-medium">Umiestnenie dverí:</span>
+                            <span className="text-cyan-400 font-bold text-xs">
+                              {typedParams.personalDoorSide === "front_left"
+                                ? "Vpredu vľavo"
+                                : typedParams.personalDoorSide === "front_right"
+                                ? "Vpredu vpravo"
+                                : typedParams.personalDoorSide === "back"
+                                ? "Vzadu"
+                                : typedParams.personalDoorSide === "left"
+                                ? typedParams.personalDoorPosition === "back"
+                                  ? "Vľavo vzadu"
+                                  : "Vľavo vpredu"
+                                : typedParams.personalDoorPosition === "back"
+                                ? "Vpravo vzadu"
+                                : "Vpravo vpredu"}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {[
+                              { side: "left", pos: "front", label: "Vľavo vpredu" },
+                              { side: "left", pos: "back", label: "Vľavo vzadu" },
+                              { side: "right", pos: "front", label: "Vpravo vpredu" },
+                              { side: "right", pos: "back", label: "Vpravo vzadu" },
+                              { side: "front_left", pos: "front", label: "Vpredu vľavo" },
+                              { side: "front_right", pos: "front", label: "Vpredu vpravo" },
+                              { side: "back", pos: "back", label: "Vzadu" },
+                            ].map((loc) => {
+                              const isMatch =
+                                loc.side === "front_left"
+                                  ? typedParams.personalDoorSide === "front_left"
+                                  : loc.side === "front_right"
+                                  ? typedParams.personalDoorSide === "front_right"
+                                  : loc.side === "back"
+                                  ? typedParams.personalDoorSide === "back"
+                                  : typedParams.personalDoorSide === loc.side &&
+                                    (typedParams.personalDoorPosition ?? "front") === loc.pos;
+
+                              return (
+                                <button
+                                  key={`${loc.side}-${loc.pos}`}
+                                  type="button"
+                                  onClick={() =>
+                                    setParams({
+                                      personalDoorSide: loc.side as any,
+                                      personalDoorPosition: loc.pos as any,
+                                      doorFocus: "personalDoor",
+                                    })
+                                  }
+                                  className={`py-1.5 px-2 rounded-lg border text-center transition cursor-pointer text-xs ${
+                                    isMatch
+                                      ? "border-cyan-400 bg-cyan-500/25 text-white font-bold ring-1 ring-cyan-400/40"
+                                      : "border-white/15 bg-slate-800/80 text-slate-300 hover:bg-slate-700/80"
+                                  } ${loc.side === "back" ? "col-span-2" : ""}`}
+                                >
+                                  {loc.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Rozmery a posúvanie vchodových dverí */}
+                        <div className="space-y-2 pt-1 border-t border-white/10">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <div className="flex justify-between text-[11px] text-slate-300 mb-1">
+                                <span>Šírka dverí:</span>
+                                <span className="text-cyan-400 font-bold font-mono">
+                                  {typedParams.personalDoorWidth ?? 0.9} m
+                                </span>
+                              </div>
+                              <input
+                                type="range"
+                                min="0.8"
+                                max="1.3"
+                                step="0.05"
+                                value={typedParams.personalDoorWidth ?? 0.9}
+                                onChange={(e) => setParams({ personalDoorWidth: parseFloat(e.target.value), doorFocus: "personalDoor" })}
+                                className="w-full accent-cyan-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <div className="flex justify-between text-[11px] text-slate-300 mb-1">
+                                <span>Výška dverí:</span>
+                                <span className="text-cyan-400 font-bold font-mono">
+                                  {typedParams.personalDoorHeight ?? 2.0} m
+                                </span>
+                              </div>
+                              <input
+                                type="range"
+                                min="1.9"
+                                max="2.4"
+                                step="0.05"
+                                value={typedParams.personalDoorHeight ?? 2.0}
+                                onChange={(e) => setParams({ personalDoorHeight: parseFloat(e.target.value), doorFocus: "personalDoor" })}
+                                className="w-full accent-cyan-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="flex justify-between items-center text-[11px] text-slate-300 mb-1">
+                              <span>Posúvanie dverí na stene:</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-cyan-400 font-bold font-mono">
+                                  {(typedParams.personalDoorOffset ?? 0) > 0 ? `+${(typedParams.personalDoorOffset ?? 0).toFixed(2)}` : (typedParams.personalDoorOffset ?? 0).toFixed(2)} m
+                                </span>
+                                {(typedParams.personalDoorOffset ?? 0) !== 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setParams({ personalDoorOffset: 0, doorFocus: "personalDoor" })}
+                                    className="text-[9px] px-1.5 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-white/70 cursor-pointer"
+                                  >
+                                    Stred
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            {(() => {
+                              const isSideWall = typedParams.personalDoorSide === "left" || typedParams.personalDoorSide === "right";
+                              const wallDim = isSideWall ? currentLength : typedParams.width;
+                              const maxSlide = Math.max(2.5, Math.round((wallDim / 2 - 0.8) * 10) / 10);
+                              return (
+                                <input
+                                  type="range"
+                                  min={-maxSlide}
+                                  max={maxSlide}
+                                  step="0.05"
+                                  value={typedParams.personalDoorOffset ?? 0}
+                                  onChange={(e) => setParams({ personalDoorOffset: parseFloat(e.target.value), doorFocus: "personalDoor" })}
+                                  className="w-full accent-cyan-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+                                />
+                              );
+                            })()}
+                          </div>
+                        </div>
+
+                        {/* Farba a povrch vchodových dverí */}
+                        <div className="space-y-1.5 pt-1 border-t border-white/10">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-slate-300 font-medium">Farba / dekor dverí:</span>
+                            <span className="text-cyan-400 text-xs font-bold">
+                              {typedParams.doorDecor === "wood_oak"
+                                ? "Zlatý dub"
+                                : typedParams.doorDecor === "wood_walnut"
+                                ? "Tmavý orech"
+                                : (RAL_PALETTE.find(
+                                    (c) =>
+                                      c.hex.toLowerCase() ===
+                                      (typedParams.doorColor ?? "#3a3f47").toLowerCase()
+                                  )?.name ?? typedParams.doorColor ?? "RAL 7016")}
+                            </span>
+                          </div>
+
+                          {/* Drevodekor voľba */}
+                          <div className="flex gap-1.5 pb-1">
+                            <button
+                              type="button"
+                              onClick={() => setParams({ doorDecor: "none", doorFocus: "personalDoor" })}
+                              className={`flex-1 py-1 rounded text-[11px] font-bold border transition cursor-pointer ${
+                                (typedParams.doorDecor ?? "none") === "none"
+                                  ? "border-cyan-400 bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-400/30"
+                                  : "border-white/15 bg-slate-800/60 text-slate-300 hover:bg-slate-700/60"
+                              }`}
+                            >
+                              RAL farba
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setParams({ doorDecor: "wood_oak", doorFocus: "personalDoor" })}
+                              className={`flex-1 py-1 rounded text-[11px] font-bold border transition cursor-pointer ${
+                                typedParams.doorDecor === "wood_oak"
+                                  ? "border-amber-400 bg-amber-500/25 text-amber-200 ring-1 ring-amber-400/40"
+                                  : "border-white/15 bg-slate-800/60 text-slate-300 hover:bg-slate-700/60"
+                              }`}
+                            >
+                              Zlatý dub
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setParams({ doorDecor: "wood_walnut", doorFocus: "personalDoor" })}
+                              className={`flex-1 py-1 rounded text-[11px] font-bold border transition cursor-pointer ${
+                                typedParams.doorDecor === "wood_walnut"
+                                  ? "border-amber-700 bg-amber-900/40 text-amber-200 ring-1 ring-amber-600/40"
+                                  : "border-white/15 bg-slate-800/60 text-slate-300 hover:bg-slate-700/60"
+                              }`}
+                            >
+                              Tmavý orech
+                            </button>
+                          </div>
+
+                          {/* RAL paleta ak nie je vybraný drevodekor */}
+                          {(typedParams.doorDecor ?? "none") === "none" && (
+                            <div className="grid grid-cols-7 gap-1.5 pt-0.5">
+                              {RAL_PALETTE.map((c) => (
+                                <button
+                                  key={c.hex}
+                                  type="button"
+                                  onClick={() => setParams({ doorColor: c.hex, doorDecor: "none", doorFocus: "personalDoor" })}
+                                  title={c.name}
+                                  className={`h-7 rounded-lg border-2 transition cursor-pointer relative flex items-center justify-center ${
+                                    (typedParams.doorColor ?? "#3a3f47").toLowerCase() === c.hex.toLowerCase()
+                                      ? "border-cyan-300 scale-105 ring-2 ring-cyan-400/50 shadow-md"
+                                      : "border-white/20 hover:scale-105 hover:border-white/40"
+                                  }`}
+                                  style={{ backgroundColor: c.hex }}
+                                >
+                                  {(typedParams.doorColor ?? "#3a3f47").toLowerCase() === c.hex.toLowerCase() && (
+                                    <Check className="h-3.5 w-3.5 text-cyan-400 bg-black/70 rounded-full p-0.5" />
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Priemyselné okná */}
-                    <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                    <div className="flex items-center justify-between pt-2.5 border-t border-white/10">
                       <div>
-                        <div className="text-xs font-semibold text-slate-200">Priemyselné okná / pásy</div>
-                        <div className="text-[10px] text-white/50">Bočné presklenie haly</div>
+                        <div className="text-xs font-bold text-slate-100">Počet okien</div>
+                        <div className="text-[11px] text-white/60">Presvetlenie interiéru haly</div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setParams({ hasWindows: !typedParams.hasWindows })}
-                        className={`w-11 h-6 flex items-center rounded-full p-1 transition cursor-pointer border border-white/20 ${
-                          typedParams.hasWindows ? "bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)]" : "bg-slate-700"
-                        }`}
-                      >
-                        <div
-                          className={`bg-slate-950 w-4 h-4 rounded-full shadow-md transform transition ${
-                            typedParams.hasWindows ? "translate-x-5" : "translate-x-0"
-                          }`}
-                        />
-                      </button>
+                      <div className="flex gap-1.5">
+                        {[0, 1, 2, 3, 4, 5, 6].map((cnt) => (
+                          <button
+                            key={cnt}
+                            type="button"
+                            onClick={() => setParams({ hasWindows: cnt > 0, windowCount: cnt })}
+                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs font-mono font-bold transition cursor-pointer ${
+                              (typedParams.windowCount ?? (typedParams.hasWindows ? 1 : 0)) === cnt && (cnt === 0 ? !typedParams.hasWindows : typedParams.hasWindows)
+                                ? "bg-cyan-400 text-slate-950 border border-cyan-300 shadow-[0_0_8px_rgba(34,211,238,0.4)]"
+                                : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
+                            }`}
+                          >
+                            {cnt}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
-                    {typedParams.hasWindows && (
-                      <div className="pt-2 border-t border-white/10 space-y-2">
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="text-slate-300">Počet okien:</span>
-                          <span className="text-cyan-400 font-bold font-mono">
-                            {typedParams.windowCount || 1}x
-                          </span>
+                    {/* Nastavenie strany a rozmerov okien ak je počet > 0 */}
+                    {typedParams.hasWindows && (typedParams.windowCount ?? 1) > 0 && (
+                      <div className="pt-2 border-t border-white/10 space-y-3 bg-white/[0.02] -mx-1 p-2 rounded-lg">
+                        {/* Strana okien */}
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-slate-300 font-medium">Umiestnenie okien:</span>
+                            <span className="text-cyan-400 font-bold text-xs">
+                              {typedParams.windowSide === "left"
+                                ? "Ľavá stena"
+                                : typedParams.windowSide === "back"
+                                ? "Zadná stena"
+                                : "Pravá stena"}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1.5">
+                            {[
+                              { id: "left", label: "Vľavo" },
+                              { id: "right", label: "Vpravo" },
+                              { id: "back", label: "Vzadu" },
+                            ].map((s) => (
+                              <button
+                                key={s.id}
+                                type="button"
+                                onClick={() => setParams({ windowSide: s.id as any })}
+                                className={`py-1.5 rounded-lg border text-center transition cursor-pointer text-xs ${
+                                  (typedParams.windowSide ?? "left") === s.id
+                                    ? "border-cyan-400 bg-cyan-500/25 text-white font-bold ring-1 ring-cyan-400/40"
+                                    : "border-white/15 bg-slate-800/80 text-slate-300 hover:bg-slate-700/80"
+                                }`}
+                              >
+                                {s.label}
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                        <input
-                          type="range"
-                          min="1"
-                          max="6"
-                          step="1"
-                          value={typedParams.windowCount || 1}
-                          onChange={(e) => setParams({ windowCount: parseInt(e.target.value, 10) })}
-                          className="w-full accent-cyan-400 cursor-pointer h-2 bg-slate-700 rounded-lg"
-                        />
+
+                        {/* Rozmery okna a posúvanie */}
+                        <div className="space-y-2 pt-1 border-t border-white/10">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <div className="flex justify-between text-[11px] text-slate-300 mb-1">
+                                <span>Šírka okna:</span>
+                                <span className="text-cyan-400 font-bold font-mono">
+                                  {typedParams.windowWidth ?? 1.2} m
+                                </span>
+                              </div>
+                              <input
+                                type="range"
+                                min="0.6"
+                                max="2.5"
+                                step="0.05"
+                                value={typedParams.windowWidth ?? 1.2}
+                                onChange={(e) => setParams({ windowWidth: parseFloat(e.target.value) })}
+                                className="w-full accent-cyan-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <div className="flex justify-between text-[11px] text-slate-300 mb-1">
+                                <span>Výška okna:</span>
+                                <span className="text-cyan-400 font-bold font-mono">
+                                  {typedParams.windowHeight ?? 0.8} m
+                                </span>
+                              </div>
+                              <input
+                                type="range"
+                                min="0.4"
+                                max="1.6"
+                                step="0.05"
+                                value={typedParams.windowHeight ?? 0.8}
+                                onChange={(e) => setParams({ windowHeight: parseFloat(e.target.value) })}
+                                className="w-full accent-cyan-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <div className="flex justify-between items-center text-[11px] text-slate-300 mb-1">
+                                <div className="flex items-center gap-1">
+                                  <span>Výška osadenia:</span>
+                                  {typedParams.hasPersonalDoor && (
+                                    <button
+                                      type="button"
+                                      title="Lícovať hornú hranu okna s dverami"
+                                      onClick={() => {
+                                        const doorH = typedParams.personalDoorHeight ?? 2.0;
+                                        const winH = typedParams.windowHeight ?? 0.8;
+                                        const aligned = Math.round((doorH - winH / 2) * 100) / 100;
+                                        setParams({ windowElevation: aligned });
+                                      }}
+                                      className="text-[9px] px-1 py-0.5 rounded bg-cyan-800/80 hover:bg-cyan-700 text-cyan-200 transition cursor-pointer"
+                                    >
+                                      S dverami
+                                    </button>
+                                  )}
+                                </div>
+                                <span className="text-cyan-400 font-bold font-mono">
+                                  {(typedParams.windowElevation ?? 2.0).toFixed(2)} m
+                                </span>
+                              </div>
+                              {(() => {
+                                const winH = typedParams.windowHeight ?? 0.8;
+                                const maxElev = Math.max(2.0, Math.round(((typedParams.clearHeight ?? 4.0) - winH / 2 - 0.2) * 100) / 100);
+                                const minElev = Math.round((winH / 2 + 0.35) * 100) / 100;
+                                return (
+                                  <input
+                                    type="range"
+                                    min={minElev}
+                                    max={maxElev}
+                                    step="0.05"
+                                    value={typedParams.windowElevation ?? 2.0}
+                                    onChange={(e) => setParams({ windowElevation: parseFloat(e.target.value) })}
+                                    className="w-full accent-cyan-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+                                  />
+                                );
+                              })()}
+                            </div>
+                            <div>
+                              <div className="flex justify-between items-center text-[11px] text-slate-300 mb-1">
+                                <span>Posúvanie:</span>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-cyan-400 font-bold font-mono text-[10px]">
+                                    {(typedParams.windowOffset ?? 0) > 0 ? `+${(typedParams.windowOffset ?? 0).toFixed(2)}` : (typedParams.windowOffset ?? 0).toFixed(2)}m
+                                  </span>
+                                  {(typedParams.windowOffset ?? 0) !== 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setParams({ windowOffset: 0 })}
+                                      className="text-[9px] px-1 py-0.2 rounded bg-slate-700 hover:bg-slate-600 text-white/70 cursor-pointer"
+                                    >
+                                      0
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              {(() => {
+                                const isSideWin = (typedParams.windowSide ?? "left") === "left" || typedParams.windowSide === "right";
+                                const wallDim = isSideWin ? currentLength : typedParams.width;
+                                const maxSlideWin = Math.max(2.0, Math.round((wallDim / 2 - 0.8) * 10) / 10);
+                                return (
+                                  <input
+                                    type="range"
+                                    min={-maxSlideWin}
+                                    max={maxSlideWin}
+                                    step="0.05"
+                                    value={typedParams.windowOffset ?? 0}
+                                    onChange={(e) => setParams({ windowOffset: parseFloat(e.target.value) })}
+                                    className="w-full accent-cyan-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+                                  />
+                                );
+                              })()}
+                            </div>
+                          </div>
+
+                          {/* Farba rámu okna */}
+                          <div className="space-y-1.5 pt-1 border-t border-white/10">
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="text-slate-300 font-medium">Farba rámu okna:</span>
+                              <span className="text-cyan-400 text-xs font-bold">
+                                {RAL_PALETTE.find(
+                                  (c) =>
+                                    c.hex.toLowerCase() ===
+                                    (typedParams.windowColor ?? "#2b2f36").toLowerCase()
+                                )?.name ?? typedParams.windowColor ?? "RAL 7016"}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-7 gap-1.5 pt-0.5">
+                              {RAL_PALETTE.map((c) => (
+                                <button
+                                  key={c.hex}
+                                  type="button"
+                                  onClick={() => setParams({ windowColor: c.hex })}
+                                  title={c.name}
+                                  className={`h-7 rounded-lg border-2 transition cursor-pointer relative flex items-center justify-center ${
+                                    (typedParams.windowColor ?? "#2b2f36").toLowerCase() === c.hex.toLowerCase()
+                                      ? "border-cyan-300 scale-105 ring-2 ring-cyan-400/50 shadow-md"
+                                      : "border-white/20 hover:scale-105 hover:border-white/40"
+                                  }`}
+                                  style={{ backgroundColor: c.hex }}
+                                >
+                                  {(typedParams.windowColor ?? "#2b2f36").toLowerCase() === c.hex.toLowerCase() && (
+                                    <Check className="h-3.5 w-3.5 text-cyan-400 bg-black/70 rounded-full p-0.5" />
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     )}
 

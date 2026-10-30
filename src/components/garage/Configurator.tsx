@@ -700,6 +700,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
   let typedParams: GarageParams = {
     ...DEFAULT_PARAMS,
     ...cleanParams,
+    ...customParams,
     notes,
     gateCount: (isCurrentCatalog ? 1 : gateCountState) as 1 | 2,
     gateType: (isCurrentCatalog ? "sectional" : gateTypeState) as any,
