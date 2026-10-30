@@ -82,21 +82,7 @@ function PurGableTriangle({
       ? Math.max(1, Math.round((ridge - eave) / spacing))
       : Math.max(1, Math.round(width / spacing));
 
-    const mat = createPBRCladdingMaterial(activeColorStr, orient, repeats);
-
-    const textures = [mat.map, mat.normalMap, mat.roughnessMap, mat.metalnessMap].filter(
-      Boolean,
-    ) as THREE.Texture[];
-    for (const t of textures) {
-      if (isHorizontal) {
-        t.rotation = Math.PI / 2;
-        t.center.set(0.5, 0.5);
-      } else {
-        t.rotation = 0;
-      }
-      t.needsUpdate = true;
-    }
-    return mat;
+    return createPBRCladdingMaterial(activeColorStr, orient, repeats);
   }, [activeColorStr, width, ridge, eave, claddingOrientation, wireframe, panelType]);
 
   const outerGeom = useMemo(() => {
@@ -283,21 +269,7 @@ function PurShedTriangle({
       ? Math.max(1, Math.round((highEave - eave) / spacing))
       : Math.max(1, Math.round(width / spacing));
 
-    const mat = createPBRCladdingMaterial(activeColorStr, orient, repeats);
-
-    const textures = [mat.map, mat.normalMap, mat.roughnessMap, mat.metalnessMap].filter(
-      Boolean,
-    ) as THREE.Texture[];
-    for (const t of textures) {
-      if (isHorizontal) {
-        t.rotation = Math.PI / 2;
-        t.center.set(0.5, 0.5);
-      } else {
-        t.rotation = 0;
-      }
-      t.needsUpdate = true;
-    }
-    return mat;
+    return createPBRCladdingMaterial(activeColorStr, orient, repeats);
   }, [activeColorStr, width, highEave, eave, claddingOrientation, wireframe, panelType]);
 
   const outerGeom = useMemo(() => {
