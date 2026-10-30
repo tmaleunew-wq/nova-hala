@@ -186,63 +186,63 @@ export function CustomGarageMenu({
       <div className="shrink-0 px-3.5 md:px-4 py-2 md:py-3 border-b border-white/10 bg-[#111723] flex flex-col">
         {/* Mobile drag pill indicator */}
         <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-1.5 md:hidden" />
-        <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-          </span>
-          <div>
-            <div className="text-sm md:text-base font-mono font-bold text-white tracking-wider uppercase flex items-center gap-2">
-              <span>Vlastná garáž</span>
-              <span className="text-[10px] md:text-xs text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.5 rounded-md border border-emerald-400/40">
-                NA MIERU
-              </span>
-            </div>
-            <div className="text-xs md:text-sm font-mono text-emerald-400/80 font-medium mt-0.5">
-              {typedParams.width} × {typedParams.length} m · <span className="text-white/60">{area} m²</span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="relative flex h-2.5 w-2.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <div className="min-w-0">
+              <div className="text-xs sm:text-sm font-mono font-bold text-white tracking-wide uppercase flex items-center gap-1.5 flex-nowrap">
+                <span className="whitespace-nowrap">Vlastná garáž</span>
+                <span className="text-[9px] sm:text-[10px] text-emerald-300 font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded border border-emerald-400/40 whitespace-nowrap shrink-0">
+                  NA MIERU
+                </span>
+              </div>
+              <div className="text-[11px] sm:text-xs font-mono text-emerald-400/80 font-medium whitespace-nowrap">
+                {typedParams.width} × {typedParams.length} m · <span className="text-white/60">{area} m²</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {onOpenComparison && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onOpenComparison && (
+              <button
+                type="button"
+                onClick={onOpenComparison}
+                className="hidden lg:flex items-center gap-1 rounded-lg bg-white/10 hover:bg-white/15 text-white font-mono text-xs px-2 py-1 transition cursor-pointer border border-white/10 active:scale-95 whitespace-nowrap"
+                title="Porovnať varianty konfigurácie"
+              >
+                <ArrowRightLeft className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Porovnať</span>
+              </button>
+            )}
             <button
               type="button"
-              onClick={onOpenComparison}
-              className="hidden sm:flex items-center gap-1 rounded-lg bg-white/10 hover:bg-white/15 text-white font-mono text-xs px-2.5 py-1.5 transition cursor-pointer border border-white/10 active:scale-95"
-              title="Porovnať varianty konfigurácie"
+              onClick={() => setQuoteRequestSignal((v) => v + 1)}
+              className="rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-mono text-xs font-bold px-2.5 sm:px-3 py-1 transition cursor-pointer active:scale-95 shadow-md shadow-emerald-500/20 whitespace-nowrap"
             >
-              <ArrowRightLeft className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Porovnať</span>
+              Dopyt
             </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setQuoteRequestSignal((v) => v + 1)}
-            className="rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-mono text-xs md:text-sm font-bold px-3.5 py-1.5 transition cursor-pointer active:scale-95 shadow-md shadow-emerald-500/20"
-          >
-            Dopyt
-          </button>
-          {onClose && (
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                title="Zavrieť menu (zobraziť celú 3D garáž)"
+                className="p-1 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer border border-white/10"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
             <button
               type="button"
-              onClick={onClose}
-              title="Zavrieť menu (zobraziť celú 3D garáž)"
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer border border-white/10"
+              onClick={() => setIsMobileMinimized((v) => !v)}
+              title={isMobileMinimized ? "Rozbaliť menu" : "Zbaliť menu"}
+              className="md:hidden p-1 rounded-lg bg-white/10 text-white hover:bg-white/20 transition cursor-pointer"
             >
-              <X className="h-4 w-4" />
+              {isMobileMinimized ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
             </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setIsMobileMinimized((v) => !v)}
-            title={isMobileMinimized ? "Rozbaliť menu" : "Zbaliť menu"}
-            className="md:hidden p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition cursor-pointer"
-          >
-            {isMobileMinimized ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-          </button>
+          </div>
         </div>
-      </div>
       </div>
 
       {!isMobileMinimized && (
