@@ -859,28 +859,30 @@ export function makeSandwichTexture(
     const start = i * step;
 
     // Realistic sandwich panel shadow joint (jemná pero-drážka / priznaná škára):
-    // 1. Subtle upper shadow line (4px)
-    ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-    if (isHoriz) {
-      ctx.fillRect(0, start, size, 4);
-    } else {
-      ctx.fillRect(start, 0, 4, size);
-    }
+    if (i > 0) {
+      // 1. Subtle upper shadow line (4px)
+      ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+      if (isHoriz) {
+        ctx.fillRect(0, start, size, 4);
+      } else {
+        ctx.fillRect(start, 0, 4, size);
+      }
 
-    // 2. Crisp dark joint recess (8px)
-    ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
-    if (isHoriz) {
-      ctx.fillRect(0, start + 4, size, 8);
-    } else {
-      ctx.fillRect(start + 4, 0, 8, size);
-    }
+      // 2. Crisp dark joint recess (8px)
+      ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+      if (isHoriz) {
+        ctx.fillRect(0, start + 4, size, 8);
+      } else {
+        ctx.fillRect(start + 4, 0, 8, size);
+      }
 
-    // 3. Delicate beveled highlight on lower joint edge (6px)
-    ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
-    if (isHoriz) {
-      ctx.fillRect(0, start + 12, size, 6);
-    } else {
-      ctx.fillRect(start + 12, 0, 6, size);
+      // 3. Delicate beveled highlight on lower joint edge (6px)
+      ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
+      if (isHoriz) {
+        ctx.fillRect(0, start + 12, size, 6);
+      } else {
+        ctx.fillRect(start + 12, 0, 6, size);
+      }
     }
 
     // 4. Soft ambient gradient across the panel face (gives realistic panel flatness & curvature)
@@ -935,7 +937,7 @@ export function makeSandwichNormalTexture(
   const step = size / repeats;
   const isHoriz = orientation === "horizontal";
 
-  for (let i = 0; i < repeats; i++) {
+  for (let i = 1; i < repeats; i++) {
     const startY = Math.round(i * step);
     const grooveH = 16;
 
@@ -989,7 +991,7 @@ export function makeSandwichRoughnessTexture(
   const isHoriz = orientation === "horizontal";
 
   ctx.fillStyle = "rgb(180, 180, 180)";
-  for (let i = 0; i < repeats; i++) {
+  for (let i = 1; i < repeats; i++) {
     const start = i * step;
     if (isHoriz) {
       ctx.fillRect(0, start, size, 14);

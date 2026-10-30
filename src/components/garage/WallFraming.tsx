@@ -2,7 +2,7 @@ import React from "react";
 import type { GarageParams } from "@/lib/garage/types";
 import { getHallsConfig } from "@/lib/garage/configHelper";
 import { SteelTube, SteelPlate } from "./SteelTube";
-import { getPersonalDoorZ, getWindowCoords, getDoubleGateLayout } from "./Structure";
+import { getPersonalDoorZ, getFrontPersonalDoorX, getBackPersonalDoorX, getWindowCoords, getDoubleGateLayout } from "./Structure";
 
 interface WallFramingProps {
   p: GarageParams;
@@ -96,6 +96,20 @@ export function WallFraming({
   const frontCuts: Interval[] = [];
   const backCuts: Interval[] = [];
 
+  const defaultElevation = Math.min(
+    Heave - (p.windowHeight ?? 0.6) / 2 - 0.15,
+    (p.personalDoorHeight ?? 2.0) - (p.windowHeight ?? 0.6) / 2,
+  );
+  const winElevation = p.windowElevation !== undefined
+    ? Math.max((p.windowHeight ?? 0.6) / 2 + 0.35, Math.min(Heave - (p.windowHeight ?? 0.6) / 2 - 0.15, p.windowElevation))
+    : defaultElevation;
+  const pDoorH = p.personalDoorHeight ?? 2.0;
+  const pDoorW = p.personalDoorWidth ?? 0.9;
+  const halfDoorW = pDoorW / 2;
+  const winHalfH = (p.windowHeight ?? 0.6) / 2;
+  const winBottom = winElevation - winHalfH;
+  const winTop = winElevation + winHalfH;
+
   for (const h of heights) {
     if (h >= Heave) continue;
 
@@ -111,6 +125,10 @@ export function WallFraming({
         } else {
           frontCuts.push({ start: x_L_post, end: x_R_post });
         }
+      }
+      if (h < pDoorH && p.hasPersonalDoor && (p.personalDoorSide === "front_left" || p.personalDoorSide === "front_right")) {
+        const doorX = getFrontPersonalDoorX(p);
+        frontCuts.push({ start: doorX - halfDoorW, end: doorX + halfDoorW });
       }
       const frontGirts = subtractIntervals(hxL, hxR, frontCuts);
       for (const seg of frontGirts) {
@@ -133,15 +151,14 @@ export function WallFraming({
     if (p.hasBackDoor && h < p.doorHeight) {
       backCuts.push({ start: -p.doorWidth / 2, end: p.doorWidth / 2 });
     }
-    if (p.personalDoorSide === "back" && p.hasPersonalDoor && h < 2.0) {
-      backCuts.push({ start: p.hasBackDoor ? p.width / 4 - 0.45 : -0.45, end: p.hasBackDoor ? p.width / 4 + 0.45 : 0.45 });
+    if (p.personalDoorSide === "back" && p.hasPersonalDoor && h < pDoorH) {
+      const doorX = getBackPersonalDoorX(p);
+      backCuts.push({ start: doorX - halfDoorW, end: doorX + halfDoorW });
     }
     if (p.hasWindows && p.windowSide === "back" && p.windowCount > 0) {
       const winXs = getWindowCoords(p);
       for (const winX of winXs) {
-        const wHalf = p.windowWidth / 2;
-        const winBottom = 1.6 - p.windowHeight / 2;
-        const winTop = 1.6 + p.windowHeight / 2;
+        const wHalf = (p.windowWidth ?? 0.95) / 2;
         if (h > winBottom && h < winTop) {
           backCuts.push({ start: winX - wHalf, end: winX + wHalf });
         }
@@ -164,16 +181,14 @@ export function WallFraming({
 
     // 3. LEFT WALL (x = -W/2) - Cut by personal door or windows
     leftCuts.length = 0;
-    if (p.personalDoorSide === "left" && p.hasPersonalDoor && h < 2.0) {
+    if (p.personalDoorSide === "left" && p.hasPersonalDoor && h < pDoorH) {
       const doorZ = getPersonalDoorZ(p);
-      leftCuts.push({ start: doorZ - 0.45, end: doorZ + 0.45 });
+      leftCuts.push({ start: doorZ - halfDoorW, end: doorZ + halfDoorW });
     }
     if (p.hasWindows && p.windowSide === "left" && p.windowCount > 0) {
       const winZs = getWindowCoords(p);
       for (const winZ of winZs) {
-        const wHalf = p.windowWidth / 2;
-        const winBottom = 1.6 - p.windowHeight / 2;
-        const winTop = 1.6 + p.windowHeight / 2;
+        const wHalf = (p.windowWidth ?? 0.95) / 2;
         if (h > winBottom && h < winTop) {
           leftCuts.push({ start: winZ - wHalf, end: winZ + wHalf });
         }
@@ -196,16 +211,14 @@ export function WallFraming({
 
     // 4. RIGHT WALL (x = W/2) - Cut by personal door or windows
     rightCuts.length = 0;
-    if (p.personalDoorSide === "right" && p.hasPersonalDoor && h < 2.0) {
+    if (p.personalDoorSide === "right" && p.hasPersonalDoor && h < pDoorH) {
       const doorZ = getPersonalDoorZ(p);
-      rightCuts.push({ start: doorZ - 0.45, end: doorZ + 0.45 });
+      rightCuts.push({ start: doorZ - halfDoorW, end: doorZ + halfDoorW });
     }
     if (p.hasWindows && p.windowSide === "right" && p.windowCount > 0) {
       const winZs = getWindowCoords(p);
       for (const winZ of winZs) {
-        const wHalf = p.windowWidth / 2;
-        const winBottom = 1.6 - p.windowHeight / 2;
-        const winTop = 1.6 + p.windowHeight / 2;
+        const wHalf = (p.windowWidth ?? 0.95) / 2;
         if (h > winBottom && h < winTop) {
           rightCuts.push({ start: winZ - wHalf, end: winZ + wHalf });
         }
@@ -449,23 +462,24 @@ export function WallFraming({
 
   // Back Personal Door frame
   if (p.personalDoorSide === "back" && p.hasPersonalDoor) {
-    const xDoorBack = 0.45;
+    const doorX = getBackPersonalDoorX(p);
     let y_back_L = Heave;
     let y_back_R = Heave;
     if (p.roofType === "gable") {
-      const hSlope = Heave + (halfW - xDoorBack) * Math.tan(slopeAngle);
-      y_back_L = hSlope;
-      y_back_R = hSlope;
+      const hSlopeL = Heave + (halfW - Math.abs(doorX - halfDoorW)) * Math.tan(slopeAngle);
+      const hSlopeR = Heave + (halfW - Math.abs(doorX + halfDoorW)) * Math.tan(slopeAngle);
+      y_back_L = hSlopeL;
+      y_back_R = hSlopeR;
     } else {
       const angleShed = Math.atan2(Hhi - Heave, p.width);
-      y_back_L = Heave + (-xDoorBack - hxL) * Math.tan(angleShed);
-      y_back_R = Heave + (xDoorBack - hxL) * Math.tan(angleShed);
+      y_back_L = Heave + (doorX - halfDoorW - hxL) * Math.tan(angleShed);
+      y_back_R = Heave + (doorX + halfDoorW - hxL) * Math.tan(angleShed);
     }
     out.push(
       <SteelTube
         key="back-door-frame-L"
-        from={[-xDoorBack, 0, L / 2]}
-        to={[-xDoorBack, Math.min(2.0, y_back_L), L / 2]}
+        from={[doorX - halfDoorW, 0, L / 2]}
+        to={[doorX - halfDoorW, Math.min(pDoorH, y_back_L), L / 2]}
         size={sz}
         thickness={th}
         color={col}
@@ -473,8 +487,8 @@ export function WallFraming({
       />,
       <SteelTube
         key="back-door-frame-R"
-        from={[xDoorBack, 0, L / 2]}
-        to={[xDoorBack, Math.min(2.0, y_back_R), L / 2]}
+        from={[doorX + halfDoorW, 0, L / 2]}
+        to={[doorX + halfDoorW, Math.min(pDoorH, y_back_R), L / 2]}
         size={sz}
         thickness={th}
         color={col}
@@ -482,8 +496,47 @@ export function WallFraming({
       />,
       <SteelTube
         key="back-door-frame-top"
-        from={[-xDoorBack, 2.0, L / 2]}
-        to={[xDoorBack, 2.0, L / 2]}
+        from={[doorX - halfDoorW, pDoorH, L / 2]}
+        to={[doorX + halfDoorW, pDoorH, L / 2]}
+        size={sz}
+        thickness={th}
+        color={col}
+        wireframe={wf}
+      />,
+    );
+  }
+
+  // Front Personal Door frame
+  if (p.hasPersonalDoor && (p.personalDoorSide === "front_left" || p.personalDoorSide === "front_right")) {
+    const doorX = getFrontPersonalDoorX(p);
+    const pDoorW = p.personalDoorWidth ?? 0.9;
+    const pDoorH = p.personalDoorHeight ?? 2.0;
+    const halfW = pDoorW / 2;
+    const y_L = getPostY(doorX - halfW);
+    const y_R = getPostY(doorX + halfW);
+    out.push(
+      <SteelTube
+        key="front-door-frame-L"
+        from={[doorX - halfW, 0, -L / 2]}
+        to={[doorX - halfW, Math.min(pDoorH, y_L), -L / 2]}
+        size={sz}
+        thickness={th}
+        color={col}
+        wireframe={wf}
+      />,
+      <SteelTube
+        key="front-door-frame-R"
+        from={[doorX + halfW, 0, -L / 2]}
+        to={[doorX + halfW, Math.min(pDoorH, y_R), -L / 2]}
+        size={sz}
+        thickness={th}
+        color={col}
+        wireframe={wf}
+      />,
+      <SteelTube
+        key="front-door-frame-top"
+        from={[doorX - halfW, pDoorH, -L / 2]}
+        to={[doorX + halfW, pDoorH, -L / 2]}
         size={sz}
         thickness={th}
         color={col}
@@ -495,11 +548,14 @@ export function WallFraming({
   // Left Wall Personal Door frame
   if (p.personalDoorSide === "left" && p.hasPersonalDoor) {
     const doorZ = getPersonalDoorZ(p);
+    const pDoorW = p.personalDoorWidth ?? 0.9;
+    const pDoorH = p.personalDoorHeight ?? 2.0;
+    const halfW = pDoorW / 2;
     out.push(
       <SteelTube
         key="left-door-frame-L"
-        from={[hxL, 0, doorZ - 0.45]}
-        to={[hxL, 2.0, doorZ - 0.45]}
+        from={[hxL, 0, doorZ - halfW]}
+        to={[hxL, pDoorH, doorZ - halfW]}
         size={sz}
         thickness={th}
         color={col}
@@ -509,8 +565,8 @@ export function WallFraming({
     out.push(
       <SteelTube
         key="left-door-frame-R"
-        from={[hxL, 0, doorZ + 0.45]}
-        to={[hxL, 2.0, doorZ + 0.45]}
+        from={[hxL, 0, doorZ + halfW]}
+        to={[hxL, pDoorH, doorZ + halfW]}
         size={sz}
         thickness={th}
         color={col}
@@ -520,8 +576,8 @@ export function WallFraming({
     out.push(
       <SteelTube
         key="left-door-frame-top"
-        from={[hxL, 2.0, doorZ - 0.45]}
-        to={[hxL, 2.0, doorZ + 0.45]}
+        from={[hxL, pDoorH, doorZ - halfW]}
+        to={[hxL, pDoorH, doorZ + halfW]}
         size={sz}
         thickness={th}
         color={col}
@@ -533,11 +589,14 @@ export function WallFraming({
   // Right Wall Personal Door frame
   if (p.personalDoorSide === "right" && p.hasPersonalDoor) {
     const doorZ = getPersonalDoorZ(p);
+    const pDoorW = p.personalDoorWidth ?? 0.9;
+    const pDoorH = p.personalDoorHeight ?? 2.0;
+    const halfW = pDoorW / 2;
     out.push(
       <SteelTube
         key="right-door-frame-L"
-        from={[hxR, 0, doorZ - 0.45]}
-        to={[hxR, 2.0, doorZ - 0.45]}
+        from={[hxR, 0, doorZ - halfW]}
+        to={[hxR, pDoorH, doorZ - halfW]}
         size={sz}
         thickness={th}
         color={col}
@@ -547,8 +606,8 @@ export function WallFraming({
     out.push(
       <SteelTube
         key="right-door-frame-R"
-        from={[hxR, 0, doorZ + 0.45]}
-        to={[hxR, 2.0, doorZ + 0.45]}
+        from={[hxR, 0, doorZ + halfW]}
+        to={[hxR, pDoorH, doorZ + halfW]}
         size={sz}
         thickness={th}
         color={col}
@@ -558,8 +617,8 @@ export function WallFraming({
     out.push(
       <SteelTube
         key="right-door-frame-top"
-        from={[hxR, 2.0, doorZ - 0.45]}
-        to={[hxR, 2.0, doorZ + 0.45]}
+        from={[hxR, pDoorH, doorZ - halfW]}
+        to={[hxR, pDoorH, doorZ + halfW]}
         size={sz}
         thickness={th}
         color={col}

@@ -2,7 +2,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useMemo, useRef, useState } from "react";
 import type { GarageParams } from "@/lib/garage/types";
-import { ridgeHeight, highEave, getFrameZ, getPersonalDoorZ, getWindowZs, getWindowCoords, getDoubleGateLayout } from "./Structure";
+import { ridgeHeight, highEave, getFrameZ, getPersonalDoorZ, getFrontPersonalDoorX, getBackPersonalDoorX, getWindowZs, getWindowCoords, getDoubleGateLayout } from "./Structure";
 import { createPBRCladdingMaterial, createPBRSmoothMaterial, createPBRWoodMaterial } from "@/lib/garage/pbrMaterialHelper";
 import { FlashingsAndGutters } from "./FlashingsAndGutters";
 
@@ -315,8 +315,9 @@ function PersonalDoor({ p, explodeY }: { p: GarageParams; explodeY: number }) {
     ? Math.max(0.04, p.wallPanelThicknessMm / 1000)
     : 0.01;
   const sz = p.profileSize;
-  const doorWidth = 0.88;
-  const doorHeight = 1.98;
+  const doorWidth = (p.personalDoorWidth ?? 0.9) - 0.02;
+  const doorHeight = (p.personalDoorHeight ?? 2.0) - 0.02;
+  const pDoorOff = p.personalDoorOffset ?? 0;
   const frameThickness = wallThickness + 0.015; // frame should be slightly thicker than cladding
 
   // Position and rotation based on side
@@ -335,15 +336,14 @@ function PersonalDoor({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   } else if (p.personalDoorSide === "right") {
     position = [W / 2 + offset + ex * 2.2, 0, doorZ];
     rotation = [0, Math.PI / 2, 0];
-  } else if (p.personalDoorSide === "front_left") {
-    position = [-W / 2 + 0.65, 0, -L / 2 - offset + ex * -2.2];
-    rotation = [0, 0, 0];
-  } else if (p.personalDoorSide === "front_right") {
-    position = [W / 2 - 0.65, 0, -L / 2 - offset + ex * -2.2];
+  } else if (p.personalDoorSide === "front_left" || p.personalDoorSide === "front_right") {
+    const doorX = getFrontPersonalDoorX(p);
+    position = [doorX, 0, -L / 2 - offset + ex * -2.2];
     rotation = [0, 0, 0];
   } else {
     // Back wall
-    position = [0, 0, L / 2 + offset + ex * 2.2];
+    const doorX = getBackPersonalDoorX(p);
+    position = [doorX, 0, L / 2 + offset + ex * 2.2];
     rotation = [0, 0, 0];
   }
 
@@ -475,14 +475,21 @@ function Windows({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   let basePosition: [number, number, number] = [0, 0, 0];
   let rotY = 0;
 
+  const defaultElevation = Math.min(
+    p.clearHeight - (p.windowHeight ?? 0.6) / 2 - 0.15,
+    (p.personalDoorHeight ?? 2.0) - (p.windowHeight ?? 0.6) / 2,
+  );
+  const winElevation = p.windowElevation !== undefined
+    ? Math.max((p.windowHeight ?? 0.6) / 2 + 0.35, Math.min(p.clearHeight - (p.windowHeight ?? 0.6) / 2 - 0.15, p.windowElevation))
+    : defaultElevation;
   if (side === "left") {
-    basePosition = [-W / 2 - offset + ex * -2.2, 1.6, 0];
+    basePosition = [-W / 2 - offset + ex * -2.2, winElevation, 0];
     rotY = -Math.PI / 2;
   } else if (side === "right") {
-    basePosition = [W / 2 + offset + ex * 2.2, 1.6, 0];
+    basePosition = [W / 2 + offset + ex * 2.2, winElevation, 0];
     rotY = Math.PI / 2;
   } else if (side === "back") {
-    basePosition = [0, 1.6, L / 2 + offset + ex * 2.2];
+    basePosition = [0, winElevation, L / 2 + offset + ex * 2.2];
     rotY = 0;
   }
 

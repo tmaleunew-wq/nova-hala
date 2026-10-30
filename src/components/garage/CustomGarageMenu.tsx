@@ -1001,6 +1001,83 @@ export function CustomGarageMenu({
                     </div>
                   </div>
 
+                  {/* Rozmery a posúvanie vchodových dverí */}
+                  <div className="space-y-2 pt-1 border-t border-white/10">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="flex justify-between text-[11px] text-slate-300 mb-1">
+                          <span>Šírka dverí:</span>
+                          <span className="text-emerald-400 font-bold font-mono">
+                            {typedParams.personalDoorWidth ?? 0.9} m
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.8"
+                          max="1.1"
+                          step="0.05"
+                          value={typedParams.personalDoorWidth ?? 0.9}
+                          onChange={(e) => setParams({ personalDoorWidth: parseFloat(e.target.value), doorFocus: "personalDoor" })}
+                          className="w-full accent-emerald-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-[11px] text-slate-300 mb-1">
+                          <span>Výška dverí:</span>
+                          <span className="text-emerald-400 font-bold font-mono">
+                            {typedParams.personalDoorHeight ?? 2.0} m
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="1.9"
+                          max="2.2"
+                          step="0.05"
+                          value={typedParams.personalDoorHeight ?? 2.0}
+                          onChange={(e) => setParams({ personalDoorHeight: parseFloat(e.target.value), doorFocus: "personalDoor" })}
+                          className="w-full accent-emerald-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between items-center text-[11px] text-slate-300 mb-1">
+                        <span>Posúvanie dverí na stene:</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-emerald-400 font-bold font-mono">
+                            {(typedParams.personalDoorOffset ?? 0) > 0 ? `+${(typedParams.personalDoorOffset ?? 0).toFixed(2)}` : (typedParams.personalDoorOffset ?? 0).toFixed(2)} m
+                          </span>
+                          {(typedParams.personalDoorOffset ?? 0) !== 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setParams({ personalDoorOffset: 0, doorFocus: "personalDoor" })}
+                              className="text-[9px] px-1.5 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-white/70"
+                            >
+                              Stred
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {(() => {
+                        const isSideWall = typedParams.personalDoorSide === "left" || typedParams.personalDoorSide === "right";
+                        const maxSlide = isSideWall
+                          ? Math.max(2.5, Math.round(((typedParams.length ?? 6) - 1.2) * 10) / 10)
+                          : 1.5;
+                        return (
+                          <input
+                            type="range"
+                            min={-maxSlide}
+                            max={maxSlide}
+                            step="0.05"
+                            value={typedParams.personalDoorOffset ?? 0}
+                            onChange={(e) => setParams({ personalDoorOffset: parseFloat(e.target.value), doorFocus: "personalDoor" })}
+                            className="w-full accent-emerald-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+                          />
+                        );
+                      })()}
+                    </div>
+                  </div>
+
                   {/* Farba a povrch vchodových dverí */}
                   <div className="space-y-1.5 pt-1">
                     <div className="flex justify-between items-center text-xs">
@@ -1143,6 +1220,132 @@ export function CustomGarageMenu({
                     </div>
                   </div>
 
+                  {/* Rozmery okna a posúvanie */}
+                  <div className="space-y-2 pt-1 border-t border-white/10">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="flex justify-between text-[11px] text-slate-300 mb-1">
+                          <span>Šírka okna:</span>
+                          <span className="text-emerald-400 font-bold font-mono">
+                            {typedParams.windowWidth ?? 0.8} m
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.5"
+                          max="1.8"
+                          step="0.05"
+                          value={typedParams.windowWidth ?? 0.8}
+                          onChange={(e) => setParams({ windowWidth: parseFloat(e.target.value) })}
+                          className="w-full accent-emerald-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-[11px] text-slate-300 mb-1">
+                          <span>Výška okna:</span>
+                          <span className="text-emerald-400 font-bold font-mono">
+                            {typedParams.windowHeight ?? 0.6} m
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.35"
+                          max="1.2"
+                          step="0.05"
+                          value={typedParams.windowHeight ?? 0.6}
+                          onChange={(e) => setParams({ windowHeight: parseFloat(e.target.value) })}
+                          className="w-full accent-emerald-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="flex justify-between items-center text-[11px] text-slate-300 mb-1">
+                          <div className="flex items-center gap-1">
+                            <span>Výška osadenia:</span>
+                            {typedParams.hasPersonalDoor && (
+                              <button
+                                type="button"
+                                title="Lícovať hornú hranu okna s dverami (nadpražie 2,0 m)"
+                                onClick={() => {
+                                  const doorH = typedParams.personalDoorHeight ?? 2.0;
+                                  const winH = typedParams.windowHeight ?? 0.6;
+                                  const aligned = Math.round((doorH - winH / 2) * 100) / 100;
+                                  setParams({ windowElevation: aligned });
+                                }}
+                                className="text-[9px] px-1 py-0.5 rounded bg-emerald-800/80 hover:bg-emerald-700 text-emerald-200 transition"
+                              >
+                                S dverami
+                              </button>
+                            )}
+                          </div>
+                          <span className="text-emerald-400 font-bold font-mono">
+                            {(typedParams.windowElevation ?? 1.7).toFixed(2)} m
+                          </span>
+                        </div>
+                        {(() => {
+                          const winH = typedParams.windowHeight ?? 0.6;
+                          const maxElev = Math.max(1.8, Math.round(((typedParams.clearHeight ?? 2.13) - winH / 2 - 0.15) * 100) / 100);
+                          const minElev = Math.round((winH / 2 + 0.35) * 100) / 100;
+                          return (
+                            <input
+                              type="range"
+                              min={minElev}
+                              max={maxElev}
+                              step="0.05"
+                              value={typedParams.windowElevation ?? 1.7}
+                              onChange={(e) => setParams({ windowElevation: parseFloat(e.target.value) })}
+                              className="w-full accent-emerald-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+                            />
+                          );
+                        })()}
+                      </div>
+                      <div>
+                        <div className="flex justify-between items-center text-[11px] text-slate-300 mb-1">
+                          <div className="flex items-center gap-1">
+                            <span>Posúvanie:</span>
+                            {typedParams.hasPersonalDoor && typedParams.personalDoorSide === typedParams.windowSide && (
+                              <span className="text-[9px] text-amber-300/90 font-medium" title="Okno automaticky rešpektuje dvere na rovnakej stene">
+                                (s dverami)
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-emerald-400 font-bold font-mono text-[10px]">
+                              {(typedParams.windowOffset ?? 0) > 0 ? `+${(typedParams.windowOffset ?? 0).toFixed(2)}` : (typedParams.windowOffset ?? 0).toFixed(2)}m
+                            </span>
+                            {(typedParams.windowOffset ?? 0) !== 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setParams({ windowOffset: 0 })}
+                                className="text-[9px] px-1 py-0.2 rounded bg-slate-700 hover:bg-slate-600 text-white/70"
+                              >
+                                0
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {(() => {
+                          const isSideWin = (typedParams.windowSide ?? "left") === "left" || typedParams.windowSide === "right";
+                          const wallDim = isSideWin ? (typedParams.length ?? 6) : (typedParams.width ?? 4);
+                          const maxSlideWin = Math.max(1.5, Math.round((wallDim / 2 - 0.6) * 10) / 10);
+                          return (
+                            <input
+                              type="range"
+                              min={-maxSlideWin}
+                              max={maxSlideWin}
+                              step="0.05"
+                              value={typedParams.windowOffset ?? 0}
+                              onChange={(e) => setParams({ windowOffset: parseFloat(e.target.value) })}
+                              className="w-full accent-emerald-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+                            />
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Farba rámu okien */}
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-center text-xs">
@@ -1181,41 +1384,166 @@ export function CustomGarageMenu({
         {/* --- TAB 4: FARBY & OPLÁŠTENIE --- */}
         {activeTab === "colors" && (
           <div className="space-y-4">
-            {/* Typ opláštenia */}
-            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
-              <div className="flex justify-between items-center">
-                <label className="text-xs font-semibold text-slate-200">Typ opláštenia:</label>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">
-                  Sendvičový panel
-                </span>
-              </div>
-              <div className="p-2.5 rounded-xl border border-emerald-400/40 bg-emerald-500/15 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-white">Sendvičový panel</div>
-                  <div className="text-[10px] text-emerald-300/80 mt-0.5">Tepelnoizolačné PUR / PIR jadro</div>
+            {/* Typ opláštenia fasády a strechy */}
+            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3.5 shadow-md">
+              {/* Opláštenie stien */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-xs font-bold text-slate-100">Fasáda (steny):</label>
+                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">
+                    {typedParams.panelType === "trapezoid" ? "Trapézový plech" : "Sendvičový panel"}
+                  </span>
                 </div>
-                <span className="text-[11px] font-mono font-bold text-emerald-300">
-                  {typedParams.wallPanelThicknessMm ?? 100} mm
-                </span>
-              </div>
-              <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
-                <span className="text-slate-200 font-medium">Hrúbka jadra:</span>
-                <div className="flex gap-1.5">
-                  {[40, 60, 80, 100].map((th) => (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setParams({ panelType: "sandwich" })}
+                    className={`py-2 px-2 rounded-lg border text-center transition cursor-pointer text-xs ${
+                      (typedParams.panelType ?? "sandwich") !== "trapezoid"
+                        ? "border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
+                        : "border-white/15 bg-slate-800/80 text-slate-300 hover:bg-slate-700/80"
+                    }`}
+                  >
+                    <div>🥪 Sendvič (PUR/PIR)</div>
+                    <div className="text-[10px] text-white/60">Zateplená hala</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setParams({ panelType: "trapezoid" })}
+                    className={`py-2 px-2 rounded-lg border text-center transition cursor-pointer text-xs ${
+                      typedParams.panelType === "trapezoid"
+                        ? "border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
+                        : "border-white/15 bg-slate-800/80 text-slate-300 hover:bg-slate-700/80"
+                    }`}
+                  >
+                    <div>🏢 Trapézový plech</div>
+                    <div className="text-[10px] text-white/60">Nezateplená fasáda</div>
+                  </button>
+                </div>
+
+                {/* Hrúbka fasádneho sendviča ak je vybraný sandwich */}
+                {(typedParams.panelType ?? "sandwich") !== "trapezoid" && (
+                  <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+                    <span className="text-slate-200 font-medium">Hrúbka fasády:</span>
+                    <div className="flex gap-1">
+                      {[40, 60, 80, 100, 120].map((th) => (
+                        <button
+                          key={th}
+                          type="button"
+                          onClick={() => setParams({ panelType: "sandwich", wallPanelThicknessMm: th })}
+                          className={`px-2 py-0.5 rounded text-xs font-mono transition cursor-pointer ${
+                            (typedParams.wallPanelThicknessMm ?? 100) === th
+                              ? "bg-emerald-400 text-slate-950 font-bold border border-emerald-300 shadow-sm"
+                              : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
+                          }`}
+                        >
+                          {th}mm
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Ukladanie panelov: Horizontálne vs Vertikálne */}
+                <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+                  <span className="text-slate-200 font-medium">Ukladanie fasády:</span>
+                  <div className="flex gap-1.5">
                     <button
-                      key={th}
                       type="button"
-                      onClick={() => setParams({ panelType: "sandwich", wallPanelThicknessMm: th })}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-mono transition cursor-pointer ${
-                        (typedParams.wallPanelThicknessMm ?? 100) === th
+                      onClick={() => setParams({ claddingOrientation: "horizontal" })}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                        (typedParams.claddingOrientation ?? "horizontal") === "horizontal"
                           ? "bg-emerald-400 text-slate-950 font-bold border border-emerald-300 shadow-sm"
                           : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
                       }`}
                     >
-                      {th}mm
+                      Horizontálne
                     </button>
-                  ))}
+                    <button
+                      type="button"
+                      onClick={() => setParams({ claddingOrientation: "vertical" })}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                        typedParams.claddingOrientation === "vertical"
+                          ? "bg-emerald-400 text-slate-950 font-bold border border-emerald-300 shadow-sm"
+                          : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
+                      }`}
+                    >
+                      Vertikálne
+                    </button>
+                  </div>
                 </div>
+              </div>
+
+              {/* Opláštenie strechy */}
+              <div className="pt-3 border-t border-white/10">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-xs font-bold text-slate-100">Strecha:</label>
+                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">
+                    {typedParams.roofPanelType === "trapezoid"
+                      ? "Trapézový plech"
+                      : typedParams.roofPanelType === "tile"
+                      ? "Škridla"
+                      : "Sendvičový panel"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setParams({ roofPanelType: "sandwich" })}
+                    className={`py-1.5 px-1 rounded-lg border text-center transition cursor-pointer text-xs ${
+                      (typedParams.roofPanelType ?? "sandwich") === "sandwich"
+                        ? "border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
+                        : "border-white/15 bg-slate-800/80 text-slate-300 hover:bg-slate-700/80"
+                    }`}
+                  >
+                    <div>🥪 Sendvič</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setParams({ roofPanelType: "trapezoid" })}
+                    className={`py-1.5 px-1 rounded-lg border text-center transition cursor-pointer text-xs ${
+                      typedParams.roofPanelType === "trapezoid"
+                        ? "border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
+                        : "border-white/15 bg-slate-800/80 text-slate-300 hover:bg-slate-700/80"
+                    }`}
+                  >
+                    <div>🏢 Trapéz</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setParams({ roofPanelType: "tile" })}
+                    className={`py-1.5 px-1 rounded-lg border text-center transition cursor-pointer text-xs ${
+                      typedParams.roofPanelType === "tile"
+                        ? "border-emerald-400 bg-emerald-500/25 text-white font-bold ring-1 ring-emerald-400/40"
+                        : "border-white/15 bg-slate-800/80 text-slate-300 hover:bg-slate-700/80"
+                    }`}
+                  >
+                    <div>🏠 Škridla</div>
+                  </button>
+                </div>
+
+                {/* Hrúbka strešného sendviča ak je vybraný sandwich */}
+                {(typedParams.roofPanelType ?? "sandwich") === "sandwich" && (
+                  <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+                    <span className="text-slate-200 font-medium">Hrúbka strechy:</span>
+                    <div className="flex gap-1">
+                      {[40, 60, 80, 100, 120, 150].map((th) => (
+                        <button
+                          key={th}
+                          type="button"
+                          onClick={() => setParams({ roofPanelType: "sandwich", roofPanelThicknessMm: th })}
+                          className={`px-1.5 py-0.5 rounded text-xs font-mono transition cursor-pointer ${
+                            (typedParams.roofPanelThicknessMm ?? 120) === th
+                              ? "bg-emerald-400 text-slate-950 font-bold border border-emerald-300 shadow-sm"
+                              : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
+                          }`}
+                        >
+                          {th}mm
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

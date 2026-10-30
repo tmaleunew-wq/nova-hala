@@ -53,6 +53,9 @@ export interface GarageParams {
   hasPersonalDoor: boolean;
   personalDoorSide: "left" | "right" | "back" | "front_left" | "front_right";
   personalDoorPosition?: "front" | "back";
+  personalDoorWidth?: number;
+  personalDoorHeight?: number;
+  personalDoorOffset?: number;
   doorFocus?: "gate" | "personalDoor";
   hasWindows: boolean;
   hasSkylights: boolean;
@@ -60,6 +63,8 @@ export interface GarageParams {
   windowCount: number;
   windowWidth: number;
   windowHeight: number;
+  windowOffset?: number;
+  windowElevation?: number;
   // view
   showCladding: boolean;
   showStructure: boolean;
@@ -129,12 +134,17 @@ export const DEFAULT_PARAMS: GarageParams = {
   hasPersonalDoor: true,
   personalDoorSide: "right",
   personalDoorPosition: "front",
+  personalDoorWidth: 0.9,
+  personalDoorHeight: 2.0,
+  personalDoorOffset: 0,
   hasWindows: true,
   hasSkylights: false,
   windowSide: "left",
   windowCount: 1,
-  windowWidth: 0.6,
-  windowHeight: 0.4,
+  windowWidth: 0.8,
+  windowHeight: 0.6,
+  windowOffset: 0,
+  windowElevation: 1.7,
   showCladding: true,
   showStructure: true,
   wireframe: false,

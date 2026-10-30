@@ -451,10 +451,61 @@ export function EaveFlashings({ p, explodeY }: { p: GarageParams; explodeY: numb
   );
 }
 
+export function BaseFlashings({ p, explodeY }: { p: GarageParams; explodeY: number }) {
+  const W = p.width;
+  const L = p.length;
+  const ex = explodeY * 1.5;
+  const wallThickness = isThickWall(p.panelType) ? Math.max(0.04, p.wallPanelThicknessMm / 1000) : 0.01;
+  const sz = p.profileSize;
+  const offset = sz / 2 + wallThickness;
+  const color = p.trimmingColor || "#030303";
+  const h = 0.06; // 60mm soklový profil
+  const t = 0.004;
+
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: color,
+    metalness: 0.5,
+    roughness: 0.4,
+  }), [color]);
+
+  const isDouble = (Number(p.gateCount) || 1) === 2;
+  const maxSafeDoorW = isDouble
+    ? Math.max(1.2, (W - 0.85) / 2)
+    : Math.max(1.5, W - 0.5);
+  const actualDW = Math.min(p.doorWidth, maxSafeDoorW);
+  const frontOpeningW = isDouble ? W - 0.4 : actualDW;
+  const frontSideW = Math.max(0.1, (W + offset * 2 - frontOpeningW) / 2);
+
+  return (
+    <group position={[0, h / 2, 0]}>
+      {/* Left wall base flashing */}
+      <mesh position={[-W / 2 - offset - ex, 0, 0]} rotation={[0, -Math.PI / 2, 0]} castShadow material={mat}>
+        <boxGeometry args={[L + offset * 2, h, t]} />
+      </mesh>
+      {/* Right wall base flashing */}
+      <mesh position={[W / 2 + offset + ex, 0, 0]} rotation={[0, Math.PI / 2, 0]} castShadow material={mat}>
+        <boxGeometry args={[L + offset * 2, h, t]} />
+      </mesh>
+      {/* Back wall base flashing */}
+      <mesh position={[0, 0, L / 2 + offset + ex]} castShadow material={mat}>
+        <boxGeometry args={[W + offset * 2, h, t]} />
+      </mesh>
+      {/* Front wall base flashing (left & right of gate) */}
+      <mesh position={[-W / 2 - offset / 2 + frontSideW / 2, 0, -L / 2 - offset - ex]} castShadow material={mat}>
+        <boxGeometry args={[frontSideW, h, t]} />
+      </mesh>
+      <mesh position={[W / 2 + offset / 2 - frontSideW / 2, 0, -L / 2 - offset - ex]} castShadow material={mat}>
+        <boxGeometry args={[frontSideW, h, t]} />
+      </mesh>
+    </group>
+  );
+}
+
 export function FlashingsAndGutters({ p, explodeY }: { p: GarageParams; explodeY: number }) {
   return (
     <>
       <CornerFlashings p={p} explodeY={explodeY} />
+      <BaseFlashings p={p} explodeY={explodeY} />
       <JointFlashings p={p} explodeY={explodeY} />
       <Bargeboards p={p} explodeY={explodeY} />
       <EaveFlashings p={p} explodeY={explodeY} />

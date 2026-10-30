@@ -2,7 +2,7 @@ import "@react-three/fiber";
 import { useMemo, useState } from "react";
 import * as THREE from "three";
 import type { GarageParams } from "@/lib/garage/types";
-import { ridgeHeight, highEave, getFrameZ, getPersonalDoorZ, getWindowZs, getWindowCoords, getDoubleGateLayout } from "./Structure";
+import { ridgeHeight, highEave, getFrameZ, getPersonalDoorZ, getFrontPersonalDoorX, getBackPersonalDoorX, getWindowZs, getWindowCoords, getDoubleGateLayout } from "./Structure";
 import { makeTrapezoidTexture } from "@/lib/garage/textures";
 import { createPBRCladdingMaterial, createPBRSmoothMaterial, createPBRSandwichMaterial, createPBRTileMaterial, createPBRWoodMaterial } from "@/lib/garage/pbrMaterialHelper";
 import { getCladdingConfig } from "@/lib/garage/configHelper";
@@ -63,7 +63,11 @@ function PurGableTriangle({
     if (panelType === "sandwich") {
       const isHorizontal = claddingOrientation === "horizontal";
       const orient = isHorizontal ? "horizontal" : "vertical";
-      return createPBRSandwichMaterial(activeColorStr, orient, 1);
+      const spacing = 1.0;
+      const repeats = isHorizontal
+        ? Math.max(1, Math.round(ridge / spacing))
+        : Math.max(1, Math.round(width / spacing));
+      return createPBRSandwichMaterial(activeColorStr, orient, repeats);
     }
     if (panelType === "wood_oak") {
       return createPBRWoodMaterial("golden_oak", claddingOrientation);
@@ -228,7 +232,11 @@ function PurShedTriangle({
     if (panelType === "sandwich") {
       const isHorizontal = claddingOrientation === "horizontal";
       const orient = isHorizontal ? "horizontal" : "vertical";
-      return createPBRSandwichMaterial(activeColorStr, orient, 1);
+      const spacing = 1.0;
+      const repeats = isHorizontal
+        ? Math.max(1, Math.round(highEave / spacing))
+        : Math.max(1, Math.round(width / spacing));
+      return createPBRSandwichMaterial(activeColorStr, orient, repeats);
     }
     if (panelType === "wood_oak") {
       return createPBRWoodMaterial("golden_oak", claddingOrientation);
@@ -381,18 +389,26 @@ export function Cladding({
         { cx: dLayout.rightCx, cy: actualDH / 2 + 0.02, w: dLayout.actualDoorW, h: actualDH },
       ]
     : [{ cx: 0, cy: actualDH / 2 + 0.02, w: actualDW, h: actualDH }];
-  if (p.hasPersonalDoor && p.personalDoorSide === "front_left") {
-    // Keďže front panel má rotáciu Math.PI, invertujeme znamienko
-    frontDoorHoles.push({ cx: W / 2 - 0.65, cy: 1.0, w: 0.9, h: 2.0 });
-  } else if (p.hasPersonalDoor && p.personalDoorSide === "front_right") {
-    frontDoorHoles.push({ cx: -W / 2 + 0.65, cy: 1.0, w: 0.9, h: 2.0 });
+  const pDoorW = p.personalDoorWidth ?? 0.9;
+  const pDoorH = p.personalDoorHeight ?? 2.0;
+  const pDoorOff = p.personalDoorOffset ?? 0;
+  if (p.hasPersonalDoor && (p.personalDoorSide === "front_left" || p.personalDoorSide === "front_right")) {
+    const doorX = getFrontPersonalDoorX(p);
+    frontDoorHoles.push({ cx: -doorX, cy: pDoorH / 2, w: pDoorW, h: pDoorH });
   }
-  const personalHole: Rect = { cx: getPersonalDoorZ(p), cy: 1.0, w: 0.9, h: 2.0 };
+  const personalHole: Rect = { cx: getPersonalDoorZ(p), cy: pDoorH / 2, w: pDoorW, h: pDoorH };
+  const defaultElevation = Math.min(
+    Heave - (p.windowHeight ?? 0.6) / 2 - 0.15,
+    (p.personalDoorHeight ?? 2.0) - (p.windowHeight ?? 0.6) / 2,
+  );
+  const winElevation = p.windowElevation !== undefined
+    ? Math.max((p.windowHeight ?? 0.6) / 2 + 0.35, Math.min(Heave - (p.windowHeight ?? 0.6) / 2 - 0.15, p.windowElevation))
+    : defaultElevation;
   const winSpread: Rect[] = [];
   if (p.hasWindows && p.windowCount > 0) {
     const winCoords = getWindowCoords(p);
     for (const coord of winCoords) {
-      winSpread.push({ cx: coord, cy: 1.6, w: p.windowWidth, h: p.windowHeight });
+      winSpread.push({ cx: coord, cy: winElevation, w: p.windowWidth, h: p.windowHeight });
     }
   }
   const windowSide = p.windowSide;
@@ -434,7 +450,8 @@ export function Cladding({
           backHoles.push({ cx: 0, cy: actualDH / 2 + 0.02, w: actualDW, h: actualDH });
         }
         if (p.personalDoorSide === "back" && p.hasPersonalDoor) {
-          backHoles.push({ cx: p.hasBackDoor ? W / 4 : 0, cy: 1.0, w: 0.9, h: 2.0 });
+          const doorX = getBackPersonalDoorX(p);
+          backHoles.push({ cx: doorX, cy: pDoorH / 2, w: pDoorW, h: pDoorH });
         }
         if (p.hasWindows && p.windowSide === "back" && p.windowCount > 0) {
           for (const wRect of winSpread) {
@@ -475,14 +492,36 @@ export function Cladding({
 
           const bayHoles: Rect[] = [];
           if (p.personalDoorSide === "left" && p.hasPersonalDoor) {
-            if (personalHole.cx + personalHole.w / 2 > zStart && personalHole.cx - personalHole.w / 2 < zEnd) {
-              bayHoles.push({ cx: personalHole.cx - zCenter, cy: personalHole.cy, w: personalHole.w, h: personalHole.h });
+            const dStart = personalHole.cx - personalHole.w / 2;
+            const dEnd = personalHole.cx + personalHole.w / 2;
+            const oStart = Math.max(actualStart, dStart);
+            const oEnd = Math.min(actualEnd, dEnd);
+            if (oEnd - oStart > 0.02) {
+              const cutW = oEnd - oStart;
+              const cutCenterZ = (oStart + oEnd) / 2;
+              bayHoles.push({
+                cx: cutCenterZ - zCenter,
+                cy: personalHole.cy,
+                w: cutW,
+                h: personalHole.h,
+              });
             }
           }
           if (p.hasWindows && windowSide === "left") {
             for (const wRect of winSpread) {
-              if (wRect.cx + wRect.w / 2 > zStart && wRect.cx - wRect.w / 2 < zEnd) {
-                bayHoles.push({ cx: wRect.cx - zCenter, cy: wRect.cy, w: wRect.w, h: wRect.h });
+              const wStart = wRect.cx - wRect.w / 2;
+              const wEnd = wRect.cx + wRect.w / 2;
+              const oStart = Math.max(actualStart, wStart);
+              const oEnd = Math.min(actualEnd, wEnd);
+              if (oEnd - oStart > 0.02) {
+                const cutW = oEnd - oStart;
+                const cutCenterZ = (oStart + oEnd) / 2;
+                bayHoles.push({
+                  cx: cutCenterZ - zCenter,
+                  cy: wRect.cy,
+                  w: cutW,
+                  h: wRect.h,
+                });
               }
             }
           }
@@ -523,14 +562,36 @@ export function Cladding({
 
           const bayHoles: Rect[] = [];
           if (p.personalDoorSide === "right" && p.hasPersonalDoor) {
-            if (personalHole.cx + personalHole.w / 2 > zStart && personalHole.cx - personalHole.w / 2 < zEnd) {
-              bayHoles.push({ cx: zCenter - personalHole.cx, cy: personalHole.cy, w: personalHole.w, h: personalHole.h });
+            const dStart = personalHole.cx - personalHole.w / 2;
+            const dEnd = personalHole.cx + personalHole.w / 2;
+            const oStart = Math.max(actualStart, dStart);
+            const oEnd = Math.min(actualEnd, dEnd);
+            if (oEnd - oStart > 0.02) {
+              const cutW = oEnd - oStart;
+              const cutCenterZ = (oStart + oEnd) / 2;
+              bayHoles.push({
+                cx: zCenter - cutCenterZ,
+                cy: personalHole.cy,
+                w: cutW,
+                h: personalHole.h,
+              });
             }
           }
           if (p.hasWindows && windowSide === "right") {
             for (const wRect of winSpread) {
-              if (wRect.cx + wRect.w / 2 > zStart && wRect.cx - wRect.w / 2 < zEnd) {
-                bayHoles.push({ cx: zCenter - wRect.cx, cy: wRect.cy, w: wRect.w, h: wRect.h });
+              const wStart = wRect.cx - wRect.w / 2;
+              const wEnd = wRect.cx + wRect.w / 2;
+              const oStart = Math.max(actualStart, wStart);
+              const oEnd = Math.min(actualEnd, wEnd);
+              if (oEnd - oStart > 0.02) {
+                const cutW = oEnd - oStart;
+                const cutCenterZ = (oStart + oEnd) / 2;
+                bayHoles.push({
+                  cx: zCenter - cutCenterZ,
+                  cy: wRect.cy,
+                  w: cutW,
+                  h: wRect.h,
+                });
               }
             }
           }
@@ -727,23 +788,33 @@ export function Cladding({
         </>
       ) : p.roofType === "cubic" ? (
         (() => {
+          // Technický spád strechy v atike dozadu k odkvapu (skryté za obvodovou atikou)
+          const pitchDeg = Math.max(2, Math.min(p.roofPitchDeg, 5));
+          const pitchRad = (pitchDeg * Math.PI) / 180;
+          const drop = Math.tan(pitchRad) * L;
+          const psz = sz * 0.7;
+          const frontPurlinTop = Heave + sz / 2 + psz;
+          const midY = frontPurlinTop - drop / 2 + offRoof;
+          const slopeLen = Math.hypot(L, drop);
+          const roofW = W + sz - 0.02;
+
+          // Rozdelenie na štandardné modulové strešné panely (šírka ~1.0 m) idúce pozdĺžne v smere spádu
+          const panelModuleW = 1.0;
+          const numRoofPanels = Math.max(2, Math.round(roofW / panelModuleW));
+          const actualPanelW = roofW / numRoofPanels;
+          const startX = -roofW / 2;
+
           return (
-            <group position={[0, Heave - 0.01 + offRoof, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-              {zs.map((z, i) => {
-                if (i === zs.length - 1) return null;
-                const zStart = zs[i];
-                const zEnd = zs[i + 1];
-                const actualStart = i === 0 ? zStart - sz / 2 : zStart;
-                const actualEnd = i === zs.length - 2 ? zEnd + sz / 2 : zEnd;
-                const w = actualEnd - actualStart;
-                const zCenter = (actualStart + actualEnd) / 2;
+            <group position={[0, midY, 0]} rotation={[-Math.PI / 2 + pitchRad, 0, 0]}>
+              {Array.from({ length: numRoofPanels }).map((_, i) => {
+                const px = startX + i * actualPanelW + actualPanelW / 2;
                 const id = `roof-cubic-${i}`;
                 return (
-                  <group key={id} position={[0, actualStart, sz / 2 + roofPanelThickness / 2]}>
+                  <group key={id} position={[px, -slopeLen / 2, roofPanelThickness / 2]}>
                     <PurPanel
                       id={id}
-                      width={W + sz}
-                      height={w}
+                      width={actualPanelW - 0.003}
+                      height={slopeLen}
                       holes={[]}
                       texture={roofTex}
                       color={p.roofColor}
@@ -752,7 +823,7 @@ export function Cladding({
                       onToggle={() => onTogglePanel?.(id)}
                       thickness={roofPanelThickness}
                       isSandwich={isRoofSand}
-                      claddingOrientation={p.roofCladdingOrientation}
+                      claddingOrientation="vertical"
                       panelType={p.roofPanelType}
                     />
                   </group>

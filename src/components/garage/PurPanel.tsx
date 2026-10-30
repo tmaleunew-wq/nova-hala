@@ -63,23 +63,20 @@ export function PurPanel({
     s.lineTo(-w2, height);
     s.lineTo(-w2, 0);
     for (const r of holes) {
-      const margin = 0.01;
-      const maxW = Math.max(0.1, width - margin * 2);
-      const holeW = Math.min(r.w, maxW);
-      const maxH = Math.max(0.1, height - margin * 2);
-      const holeH = Math.min(r.h, maxH);
-      const halfHW = holeW / 2;
-      const x0 = Math.max(-w2 + margin, Math.min(w2 - margin - holeW, r.cx - halfHW));
-      const x1 = x0 + holeW;
-      const y0 = Math.max(margin, Math.min(height - margin - holeH, r.cy - holeH / 2));
-      const y1 = y0 + holeH;
-      const path = new THREE.Path();
-      path.moveTo(x0, y0);
-      path.lineTo(x0, y1);
-      path.lineTo(x1, y1);
-      path.lineTo(x1, y0);
-      path.lineTo(x0, y0);
-      s.holes.push(path);
+      const margin = 0.005;
+      const x0 = Math.max(-w2 + margin, Math.min(w2 - margin, r.cx - r.w / 2));
+      const x1 = Math.max(-w2 + margin, Math.min(w2 - margin, r.cx + r.w / 2));
+      const y0 = Math.max(margin, Math.min(height - margin, r.cy - r.h / 2));
+      const y1 = Math.max(margin, Math.min(height - margin, r.cy + r.h / 2));
+      if (x1 - x0 > 0.02 && y1 - y0 > 0.02) {
+        const path = new THREE.Path();
+        path.moveTo(x0, y0);
+        path.lineTo(x0, y1);
+        path.lineTo(x1, y1);
+        path.lineTo(x1, y0);
+        path.lineTo(x0, y0);
+        s.holes.push(path);
+      }
     }
     return s;
   }, [width, height, holes]);
@@ -112,8 +109,12 @@ export function PurPanel({
     }
     if (panelType === "sandwich") {
       const isHorizontal = claddingOrientation === "horizontal";
-      const orient = isHorizontal ? "horizontal" : "vertical";
-      return createPBRSandwichMaterial(activeColorStr, orient, 1);
+      const orient = isRoof ? "vertical" : isHorizontal ? "horizontal" : "vertical";
+      const spacing = isRoof ? 0.25 : 1.0;
+      const repeats = isHorizontal && !isRoof
+        ? Math.max(1, Math.round(height / spacing))
+        : Math.max(2, Math.round(width / spacing));
+      return createPBRSandwichMaterial(activeColorStr, orient, repeats);
     }
     if (panelType === "wood_oak") {
       return createPBRWoodMaterial("golden_oak", claddingOrientation);
