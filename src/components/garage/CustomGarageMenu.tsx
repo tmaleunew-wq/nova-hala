@@ -16,6 +16,7 @@ import {
   Download,
   ArrowRightLeft,
   X,
+  Layers,
 } from "lucide-react";
 import { GarageBomTable } from "./GarageBomTable";
 
@@ -36,11 +37,12 @@ export interface CustomGarageMenuProps {
   onClose?: () => void;
 }
 
-type TabType = "dimensions" | "roof" | "doors" | "colors" | "view" | "summary";
+type TabType = "dimensions" | "cladding" | "roof" | "doors" | "colors" | "view" | "summary";
 
 const WIZARD_STEPS: { id: TabType; title: string }[] = [
   { id: "view", title: "CAD Zobrazenie" },
   { id: "dimensions", title: "Rozmery" },
+  { id: "cladding", title: "Opláštenie" },
   { id: "roof", title: "Strecha" },
   { id: "doors", title: "Brány & Otvory" },
   { id: "colors", title: "Farby" },
@@ -264,7 +266,7 @@ export function CustomGarageMenu({
           </div>
 
       {/* 2. SUB-NAVIGATION TABS */}
-      <div className="shrink-0 grid grid-cols-6 border-b border-white/10 bg-[#0e131d] text-[11px] md:text-xs font-mono">
+      <div className="shrink-0 grid grid-cols-7 border-b border-white/10 bg-[#0e131d] text-[10px] md:text-xs font-mono">
         <button
           type="button"
           onClick={() => setActiveTab("view")}
@@ -290,6 +292,19 @@ export function CustomGarageMenu({
         >
           <Ruler className="h-4 w-4 mb-1" />
           <span>Rozmer</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("cladding")}
+          title="Opláštenie a steny"
+          className={`flex flex-col items-center justify-center py-2.5 border-r border-white/5 transition cursor-pointer ${
+            activeTab === "cladding"
+              ? "bg-emerald-500/25 text-emerald-300 border-b-2 border-b-emerald-400 font-bold shadow-inner"
+              : "text-white/70 hover:bg-white/10 hover:text-white"
+          }`}
+        >
+          <Layers className="h-4 w-4 mb-1" />
+          <span className="truncate max-w-full px-0.5">Plášť</span>
         </button>
         <button
           type="button"
@@ -586,6 +601,143 @@ export function CustomGarageMenu({
                   >
                     {h}m
                   </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --- TAB: OPLÁŠTENIE & STENY --- */}
+        {activeTab === "cladding" && (
+          <div className="space-y-4">
+            {/* 1. Sendvičový panel (zateplenie stien: ukladanie a hrúbka) */}
+            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3.5 shadow-md">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-bold text-slate-100">Sendvičový panel (steny):</label>
+                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">
+                  {typedParams.wallPanelThicknessMm ?? 100} mm PUR/PIR
+                </span>
+              </div>
+
+              {/* Ukladanie sendviča: Horizontálne vs Vertikálne */}
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-200 font-medium">Ukladanie sendviča:</span>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setParams({ claddingOrientation: "horizontal" })}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                      (typedParams.claddingOrientation ?? "horizontal") === "horizontal"
+                        ? "bg-emerald-400 text-slate-950 font-bold border border-emerald-300 shadow-sm"
+                        : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
+                    }`}
+                  >
+                    Horizontálne
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setParams({ claddingOrientation: "vertical" })}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                      typedParams.claddingOrientation === "vertical"
+                        ? "bg-emerald-400 text-slate-950 font-bold border border-emerald-300 shadow-sm"
+                        : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
+                    }`}
+                  >
+                    Vertikálne
+                  </button>
+                </div>
+              </div>
+
+              {/* Hrúbka sendviča */}
+              <div className="pt-2.5 border-t border-white/10 flex items-center justify-between text-xs">
+                <span className="text-slate-200 font-medium">Hrúbka sendviča:</span>
+                <div className="flex gap-1">
+                  {[40, 60, 80, 100, 120, 150].map((th) => (
+                    <button
+                      key={th}
+                      type="button"
+                      onClick={() => setParams({ wallPanelThicknessMm: th })}
+                      className={`px-2 py-1 rounded text-xs font-mono font-semibold transition cursor-pointer ${
+                        (typedParams.wallPanelThicknessMm ?? 100) === th
+                          ? "bg-emerald-400 text-slate-950 font-bold border border-emerald-300 shadow-sm"
+                          : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
+                      }`}
+                    >
+                      {th}mm
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Fasáda (finálna povrchová úprava: Sendvič / Plech / Omietka) */}
+            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-bold text-slate-100">Fasáda (povrchová úprava):</label>
+                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">
+                  {typedParams.panelType === "trapezoid"
+                    ? "Trapézový plech"
+                    : typedParams.panelType === "smooth"
+                    ? "Fasádna omietka"
+                    : "Priznaný sendvič"}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setParams({ panelType: "sandwich" })}
+                  className={`py-2 px-1.5 rounded-xl border text-center transition cursor-pointer ${
+                    typedParams.panelType === "sandwich" || (!typedParams.panelType && typedParams.panelType !== "trapezoid" && typedParams.panelType !== "smooth")
+                      ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-2 ring-emerald-400/30 shadow-md shadow-emerald-500/10"
+                      : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80 hover:text-white"
+                  }`}
+                >
+                  <div className="text-xs sm:text-sm font-bold">🥪 Sendvič</div>
+                  <div className="text-[10px] text-white/70 mt-0.5">Priznaný panel</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setParams({ panelType: "trapezoid" })}
+                  className={`py-2 px-1.5 rounded-xl border text-center transition cursor-pointer ${
+                    typedParams.panelType === "trapezoid"
+                      ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-2 ring-emerald-400/30 shadow-md shadow-emerald-500/10"
+                      : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80 hover:text-white"
+                  }`}
+                >
+                  <div className="text-xs sm:text-sm font-bold">🏢 Plech</div>
+                  <div className="text-[10px] text-white/70 mt-0.5">Trapézový profil</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setParams({ panelType: "smooth" })}
+                  className={`py-2 px-1.5 rounded-xl border text-center transition cursor-pointer ${
+                    typedParams.panelType === "smooth"
+                      ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-2 ring-emerald-400/30 shadow-md shadow-emerald-500/10"
+                      : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80 hover:text-white"
+                  }`}
+                >
+                  <div className="text-xs sm:text-sm font-bold">🏛️ Omietka</div>
+                  <div className="text-[10px] text-white/70 mt-0.5">Fasádna stierka</div>
+                </button>
+              </div>
+            </div>
+
+            {/* Farba stien */}
+            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-semibold text-slate-200">Farba stien:</label>
+                <span className="text-emerald-400 text-xs font-bold">
+                  {RAL_PALETTE.find((c) => c.hex.toLowerCase() === typedParams.claddingColor?.toLowerCase())?.name ?? typedParams.claddingColor}
+                </span>
+              </div>
+              <div className="grid grid-cols-7 gap-2 pt-1">
+                {RAL_PALETTE.map((c) => (
+                  <RalSwatchButton
+                    key={c.hex}
+                    color={c}
+                    isSelected={typedParams.claddingColor?.toLowerCase() === c.hex.toLowerCase()}
+                    onClick={() => setParams({ claddingColor: c.hex })}
+                  />
                 ))}
               </div>
             </div>
@@ -1464,141 +1616,9 @@ export function CustomGarageMenu({
           </div>
         )}
 
-        {/* --- TAB 4: FARBY & OPLÁŠTENIE --- */}
+        {/* --- TAB 5: FARBY --- */}
         {activeTab === "colors" && (
           <div className="space-y-4">
-            {/* 1. Sendvičový panel (zateplenie stien: ukladanie a hrúbka) */}
-            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3.5 shadow-md">
-              <div className="flex justify-between items-center">
-                <label className="text-xs font-bold text-slate-100">Sendvičový panel (steny):</label>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">
-                  {typedParams.wallPanelThicknessMm ?? 100} mm PUR/PIR
-                </span>
-              </div>
-
-              {/* Ukladanie sendviča: Horizontálne vs Vertikálne */}
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-200 font-medium">Ukladanie sendviča:</span>
-                <div className="flex gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setParams({ claddingOrientation: "horizontal" })}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                      (typedParams.claddingOrientation ?? "horizontal") === "horizontal"
-                        ? "bg-emerald-400 text-slate-950 font-bold border border-emerald-300 shadow-sm"
-                        : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
-                    }`}
-                  >
-                    Horizontálne
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setParams({ claddingOrientation: "vertical" })}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                      typedParams.claddingOrientation === "vertical"
-                        ? "bg-emerald-400 text-slate-950 font-bold border border-emerald-300 shadow-sm"
-                        : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
-                    }`}
-                  >
-                    Vertikálne
-                  </button>
-                </div>
-              </div>
-
-              {/* Hrúbka sendviča */}
-              <div className="pt-2.5 border-t border-white/10 flex items-center justify-between text-xs">
-                <span className="text-slate-200 font-medium">Hrúbka sendviča:</span>
-                <div className="flex gap-1">
-                  {[40, 60, 80, 100, 120, 150].map((th) => (
-                    <button
-                      key={th}
-                      type="button"
-                      onClick={() => setParams({ wallPanelThicknessMm: th })}
-                      className={`px-2 py-1 rounded text-xs font-mono font-semibold transition cursor-pointer ${
-                        (typedParams.wallPanelThicknessMm ?? 100) === th
-                          ? "bg-emerald-400 text-slate-950 font-bold border border-emerald-300 shadow-sm"
-                          : "bg-slate-800/80 text-slate-200 border border-white/15 hover:bg-slate-700/80"
-                      }`}
-                    >
-                      {th}mm
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Fasáda (finálna povrchová úprava: Sendvič / Plech / Omietka) */}
-            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-xs font-bold text-slate-100">Fasáda (povrchová úprava):</label>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">
-                  {typedParams.panelType === "trapezoid"
-                    ? "Trapézový plech"
-                    : typedParams.panelType === "smooth"
-                    ? "Fasádna omietka"
-                    : "Priznaný sendvič"}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setParams({ panelType: "sandwich" })}
-                  className={`py-2 px-1.5 rounded-xl border text-center transition cursor-pointer ${
-                    typedParams.panelType === "sandwich" || (!typedParams.panelType && typedParams.panelType !== "trapezoid" && typedParams.panelType !== "smooth")
-                      ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-2 ring-emerald-400/30 shadow-md shadow-emerald-500/10"
-                      : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80 hover:text-white"
-                  }`}
-                >
-                  <div className="text-xs sm:text-sm font-bold">🥪 Sendvič</div>
-                  <div className="text-[10px] text-white/70 mt-0.5">Priznaný panel</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setParams({ panelType: "trapezoid" })}
-                  className={`py-2 px-1.5 rounded-xl border text-center transition cursor-pointer ${
-                    typedParams.panelType === "trapezoid"
-                      ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-2 ring-emerald-400/30 shadow-md shadow-emerald-500/10"
-                      : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80 hover:text-white"
-                  }`}
-                >
-                  <div className="text-xs sm:text-sm font-bold">🏢 Plech</div>
-                  <div className="text-[10px] text-white/70 mt-0.5">Trapézový profil</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setParams({ panelType: "smooth" })}
-                  className={`py-2 px-1.5 rounded-xl border text-center transition cursor-pointer ${
-                    typedParams.panelType === "smooth"
-                      ? "border-2 border-emerald-400 bg-emerald-500/25 text-white font-bold ring-2 ring-emerald-400/30 shadow-md shadow-emerald-500/10"
-                      : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80 hover:text-white"
-                  }`}
-                >
-                  <div className="text-xs sm:text-sm font-bold">🏛️ Omietka</div>
-                  <div className="text-[10px] text-white/70 mt-0.5">Fasádna stierka</div>
-                </button>
-              </div>
-            </div>
-
-            {/* Farba stien */}
-            <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
-              <div className="flex justify-between items-center">
-                <label className="text-xs font-semibold text-slate-200">Farba stien:</label>
-                <span className="text-emerald-400 text-xs font-bold">
-                  {RAL_PALETTE.find((c) => c.hex.toLowerCase() === typedParams.claddingColor?.toLowerCase())?.name ?? typedParams.claddingColor}
-                </span>
-              </div>
-              <div className="grid grid-cols-7 gap-2 pt-1">
-                {RAL_PALETTE.map((c) => (
-                  <RalSwatchButton
-                    key={c.hex}
-                    color={c}
-                    isSelected={typedParams.claddingColor?.toLowerCase() === c.hex.toLowerCase()}
-                    onClick={() => setParams({ claddingColor: c.hex })}
-                  />
-                ))}
-              </div>
-            </div>
-
             {/* Farba strechy */}
             <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
               <div className="flex justify-between items-center">

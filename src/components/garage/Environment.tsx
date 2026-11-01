@@ -1,6 +1,7 @@
 import "@react-three/fiber";
 import { useMemo } from "react";
 import type { GarageParams } from "@/lib/garage/types";
+import { HallGroundDetails } from "./HallGroundDetails";
 
 /**
  * Okolie haly (trávnik, príjazd, plot, stromy).
@@ -20,7 +21,7 @@ function rng(seed: number) {
   };
 }
 
-export function Environment({ p }: { p: Pick<GarageParams, "width" | "length" | "doorWidth"> }) {
+export function Environment({ p, clientName }: { p: Pick<GarageParams, "width" | "length" | "doorWidth">; clientName?: string }) {
   const W = p.width;
   const L = p.length;
   const halfW = W / 2;
@@ -76,6 +77,8 @@ export function Environment({ p }: { p: Pick<GarageParams, "width" | "length" | 
 
   return (
     <group name="environment">
+      <HallGroundDetails width={W} length={L} plotWidth={plotW} plotLength={plotL}
+        driveWidth={driveW} driveLength={driveLen} clientName={clientName} />
       {/* Trávnik */}
       <mesh position={[0, -0.185, 0]} raycast={noRaycast} receiveShadow>
         <boxGeometry args={[plotW + 40, 0.02, plotL + 40]} />

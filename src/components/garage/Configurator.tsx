@@ -467,6 +467,10 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
       personalDoorSide: { value: initialUrlParams.personalDoorSide ?? DEFAULT_PARAMS.personalDoorSide, options: { "Vľavo": "left", "Vpravo": "right", "Vzadu": "back" }, label: "Strana dverí" },
       hasWindows: { value: isCatalog ? false : (initialUrlParams.hasWindows ?? DEFAULT_PARAMS.hasWindows), label: "Okná" },
       hasSkylights: { value: isCatalog ? false : (initialUrlParams.hasSkylights ?? DEFAULT_PARAMS.hasSkylights), label: "Strešné svetlíky ☀️" },
+      skylightWidth: { value: initialUrlParams.skylightWidth ?? DEFAULT_PARAMS.skylightWidth!, min: 0.3, max: 50, step: 0.1, label: "Svetlík šírka [m]" },
+      skylightLength: { value: initialUrlParams.skylightLength ?? DEFAULT_PARAMS.skylightLength!, min: 0.3, max: 200, step: 0.1, label: "Svetlík dĺžka [m]" },
+      skylightPositionX: { value: initialUrlParams.skylightPositionX ?? DEFAULT_PARAMS.skylightPositionX!, min: 0, max: 100, step: 1, label: "Svetlík priečne [%]" },
+      skylightPositionY: { value: initialUrlParams.skylightPositionY ?? DEFAULT_PARAMS.skylightPositionY!, min: 0, max: 100, step: 1, label: "Svetlík pozdĺžne [%]" },
       windowSide: { value: initialUrlParams.windowSide ?? DEFAULT_PARAMS.windowSide, options: { "Vľavo": "left", "Vpravo": "right", "Vzadu": "back" }, label: "Strana okien" },
       windowCount: { value: initialUrlParams.windowCount ?? DEFAULT_PARAMS.windowCount, min: 0, max: 4, step: 1, label: "Počet okien" },
       windowWidth: { value: initialUrlParams.windowWidth ?? DEFAULT_PARAMS.windowWidth, min: 0.3, max: 1.5, step: 0.1, label: "Okno Š [m]" },
@@ -856,6 +860,7 @@ export default function Configurator({ variant }: { variant?: string } = {}) {
           onTogglePanel={togglePanel}
           hideDimensions={showCatalogModal || showPicker}
           showEnvironment={showEnvironment}
+          environmentClient={activeVariant}
           isCustom={isCustom}
         />
         <OrbitControls

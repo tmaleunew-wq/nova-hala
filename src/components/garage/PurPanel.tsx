@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import * as THREE from "three";
 import { RoofCoverDetails } from "./RoofCoverDetails";
 import { FacadePanelDetails } from "./FacadePanelDetails";
+import { getSkylightPanelSection } from "@/lib/garage/skylights";
 import {
   createPBRCladdingMaterial,
   createPBRSmoothMaterial,
@@ -32,6 +33,7 @@ export interface PurPanelProps {
   claddingOrientation?: "vertical" | "horizontal";
   panelType?: string;
   isSkylight?: boolean;
+  roofOpening?: Rect;
 }
 
 export function PurPanel({
@@ -48,6 +50,7 @@ export function PurPanel({
   claddingOrientation = "horizontal",
   panelType,
   isSkylight = false,
+  roofOpening,
 }: PurPanelProps) {
   const [hovered, setHovered] = useState(false);
 
@@ -82,6 +85,22 @@ export function PurPanel({
     }
     return s;
   }, [width, height, holes]);
+
+  // A skylight crossing a panel edge needs an open cut, not a closed hole with a metal strip.
+  const extrusionShape = useMemo(() => {
+    if (!roofOpening) return shape;
+    const section = getSkylightPanelSection(roofOpening, width, height);
+    if (!section) return shape;
+    return section.remainder.map(({ cx, cy, w, h }) => {
+      const part = new THREE.Shape();
+      part.moveTo(cx - w / 2, cy - h / 2);
+      part.lineTo(cx + w / 2, cy - h / 2);
+      part.lineTo(cx + w / 2, cy + h / 2);
+      part.lineTo(cx - w / 2, cy + h / 2);
+      part.closePath();
+      return part;
+    });
+  }, [shape, roofOpening, width, height]);
 
   const isRoof = id.startsWith("roof");
   const isSandwichActual = isSandwich && !isSkylight;
@@ -146,7 +165,7 @@ export function PurPanel({
 
   const outerGeom = useMemo(() => {
     const depth = isSandwichActual ? 0.002 : thickness;
-    const g = new THREE.ExtrudeGeometry(shape, {
+    const g = new THREE.ExtrudeGeometry(extrusionShape, {
       depth,
       bevelEnabled: false,
       curveSegments: 2,
@@ -169,24 +188,24 @@ export function PurPanel({
     }
 
     return g;
-  }, [shape, thickness, isSandwichActual, width, height]);
+  }, [extrusionShape, thickness, isSandwichActual, width, height]);
 
   const coreGeom = useMemo(() => {
     if (!isSandwichActual) return null;
     const depth = thickness - 0.004;
-    const g = new THREE.ExtrudeGeometry(shape, {
+    const g = new THREE.ExtrudeGeometry(extrusionShape, {
       depth,
       bevelEnabled: false,
       curveSegments: 2,
     });
     g.translate(0, 0, -depth / 2);
     return g;
-  }, [shape, thickness, isSandwichActual]);
+  }, [extrusionShape, thickness, isSandwichActual]);
 
   const innerGeom = useMemo(() => {
     if (!isSandwichActual) return null;
     const depth = 0.002;
-    const g = new THREE.ExtrudeGeometry(shape, {
+    const g = new THREE.ExtrudeGeometry(extrusionShape, {
       depth,
       bevelEnabled: false,
       curveSegments: 2,
@@ -209,7 +228,7 @@ export function PurPanel({
     }
 
     return g;
-  }, [shape, thickness, isSandwichActual, width, height]);
+  }, [extrusionShape, thickness, isSandwichActual, width, height]);
 
   const handlePointerOver = (e: any) => {
     e.stopPropagation();

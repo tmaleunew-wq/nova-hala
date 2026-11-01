@@ -18,8 +18,10 @@ import {
   Download,
   ArrowRightLeft,
   X,
+  Layers,
 } from "lucide-react";
 import { GarageBomTable } from "./GarageBomTable";
+import { HallSkylightControls } from "./HallSkylightControls";
 
 export interface StandardHallMenuProps {
   showControls: boolean;
@@ -45,11 +47,12 @@ export interface StandardHallMenuProps {
   onClose?: () => void;
 }
 
-type TabType = "dimensions" | "roof" | "doors" | "colors" | "view" | "summary";
+type TabType = "dimensions" | "cladding" | "roof" | "doors" | "colors" | "view" | "summary";
 
 const WIZARD_STEPS: { id: TabType; title: string }[] = [
   { id: "view", title: "CAD Zobrazenie" },
   { id: "dimensions", title: "Rozmery" },
+  { id: "cladding", title: "Opláštenie" },
   { id: "roof", title: "Strecha" },
   { id: "doors", title: "Brány & Otvory" },
   { id: "colors", title: "Farby" },
@@ -262,7 +265,7 @@ export function StandardHallMenu({
             </div>
 
             {/* 2. SUB-NAVIGATION TABS */}
-            <div className="shrink-0 grid grid-cols-6 border-b border-white/10 bg-[#0e131d] text-[11px] md:text-xs font-mono">
+            <div className="shrink-0 grid grid-cols-7 border-b border-white/10 bg-[#0e131d] text-[10px] md:text-xs font-mono">
               <button
                 type="button"
                 onClick={() => setActiveTab("view")}
@@ -291,8 +294,21 @@ export function StandardHallMenu({
               </button>
               <button
                 type="button"
+                onClick={() => setActiveTab("cladding")}
+                title="Opláštenie stien haly"
+                className={`flex flex-col items-center justify-center py-2.5 border-r border-white/5 transition cursor-pointer ${
+                  activeTab === "cladding"
+                    ? "bg-cyan-500/25 text-cyan-300 border-b-2 border-b-cyan-400 font-bold shadow-inner"
+                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                <Layers className="h-4 w-4 mb-1" />
+                <span className="truncate max-w-full px-0.5">Plášť</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setActiveTab("roof")}
-                title="Strecha a opláštenie"
+                title="Strecha a strešná krytina"
                 className={`flex flex-col items-center justify-center py-2.5 border-r border-white/5 transition cursor-pointer ${
                   activeTab === "roof"
                     ? "bg-cyan-500/25 text-cyan-300 border-b-2 border-b-cyan-400 font-bold shadow-inner"
@@ -554,7 +570,111 @@ export function StandardHallMenu({
                 </div>
               )}
 
-              {/* --- TAB 2: STRECHA & OPLÁŠTENIE --- */}
+              {/* --- TAB: OPLÁŠTENIE --- */}
+              {activeTab === "cladding" && (
+                <div className="space-y-4">
+                  {/* Opláštenie stien */}
+                  <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-semibold text-slate-200">Opláštenie stien haly:</label>
+                      <span className="text-[11px] font-semibold text-cyan-400">
+                        {typedParams.panelType === "sandwich" ? "Sendvičový panel PIR" : "Trapézový plech"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setParams({ panelType: "sandwich" })}
+                        className={`py-2 rounded-xl border text-center transition cursor-pointer text-xs ${
+                          typedParams.panelType === "sandwich"
+                            ? "border-2 border-cyan-400 bg-cyan-500/25 text-white font-bold ring-1 ring-cyan-400/40"
+                            : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80"
+                        }`}
+                      >
+                        <div className="font-bold">Sendvičový panel PIR</div>
+                        <div className="text-[10px] text-white/60">Izolované steny</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setParams({ panelType: "trapezoid" })}
+                        className={`py-2 rounded-xl border text-center transition cursor-pointer text-xs ${
+                          typedParams.panelType === "trapezoid"
+                            ? "border-2 border-cyan-400 bg-cyan-500/25 text-white font-bold ring-1 ring-cyan-400/40"
+                            : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80"
+                        }`}
+                      >
+                        <div className="font-bold">Trapézový plech</div>
+                        <div className="text-[10px] text-white/60">Neizolovaný sklad</div>
+                      </button>
+                    </div>
+
+                    {/* Ukladanie panelov stien: Pozdĺžne vs Priečne */}
+                    <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+                      <span className="text-slate-300 font-medium">Ukladanie panelov stien:</span>
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setParams({ claddingOrientation: "horizontal" })}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                            (typedParams.claddingOrientation ?? "horizontal") === "horizontal"
+                              ? "bg-cyan-400 text-slate-950 font-bold shadow-sm"
+                              : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                          }`}
+                        >
+                          Pozdĺžne
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setParams({ claddingOrientation: "vertical" })}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                            typedParams.claddingOrientation === "vertical"
+                              ? "bg-cyan-400 text-slate-950 font-bold shadow-sm"
+                              : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                          }`}
+                        >
+                          Priečne
+                        </button>
+                      </div>
+                    </div>
+
+                    {typedParams.panelType === "sandwich" && (
+                      <div className="pt-2 border-t border-white/10 space-y-2">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-300">Hrúbka PIR stien:</span>
+                          <span className="text-cyan-400 font-bold font-mono">
+                            {typedParams.wallPanelThicknessMm ?? 100} mm
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {[60, 80, 100, 120].map((th) => (
+                            <button
+                              key={th}
+                              type="button"
+                              onClick={() => setParams({ wallPanelThicknessMm: th })}
+                              className={`py-1.5 rounded-lg text-xs font-mono transition cursor-pointer ${
+                                (typedParams.wallPanelThicknessMm ?? 100) === th
+                                  ? "bg-cyan-400 text-slate-950 font-bold"
+                                  : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                              }`}
+                            >
+                              {th}mm
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Farba opláštenia stien */}
+                  <HallRalColorPicker
+                    label="Farba opláštenia stien"
+                    value={typedParams.claddingColor}
+                    onChange={(hex) => setParams({ claddingColor: hex })}
+                  />
+                </div>
+              )}
+
+              {/* --- TAB 2: STRECHA --- */}
               {activeTab === "roof" && (
                 <div className="space-y-4">
                   {/* Typ strechy */}
@@ -612,42 +732,47 @@ export function StandardHallMenu({
                     </div>
                   </div>
 
-                  {/* Typ a hrúbka opláštenia */}
+                  {/* Strešný plášť / krytina */}
                   <div className="rounded-xl bg-[#121824]/90 border border-white/10 p-3.5 space-y-3 shadow-md">
-                    <label className="text-xs font-semibold text-slate-200 block">Typ opláštenia:</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-semibold text-slate-200">Strešný plášť / krytina:</label>
+                      <span className="text-[11px] font-semibold text-cyan-400">
+                        {typedParams.roofPanelType === "sandwich" ? "Strešný sendvič PIR" : "Trapézový plech"}
+                      </span>
+                    </div>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
-                        onClick={() => setParams({ panelType: "sandwich", roofPanelType: "sandwich" })}
+                        onClick={() => setParams({ roofPanelType: "sandwich" })}
                         className={`py-2 rounded-xl border text-center transition cursor-pointer text-xs ${
-                          typedParams.panelType === "sandwich"
+                          typedParams.roofPanelType === "sandwich"
                             ? "border-2 border-cyan-400 bg-cyan-500/25 text-white font-bold ring-1 ring-cyan-400/40"
                             : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80"
                         }`}
                       >
-                        <div className="font-bold">Sendvičový panel PIR</div>
-                        <div className="text-[10px] text-white/60">Izolované riešenie</div>
+                        <div className="font-bold">Strešný sendvič PIR</div>
+                        <div className="text-[10px] text-white/60">Izolovaná strecha</div>
                       </button>
                       <button
                         type="button"
-                        onClick={() => setParams({ panelType: "trapezoid", roofPanelType: "trapezoid" })}
+                        onClick={() => setParams({ roofPanelType: "trapezoid" })}
                         className={`py-2 rounded-xl border text-center transition cursor-pointer text-xs ${
-                          typedParams.panelType === "trapezoid"
+                          typedParams.roofPanelType === "trapezoid"
                             ? "border-2 border-cyan-400 bg-cyan-500/25 text-white font-bold ring-1 ring-cyan-400/40"
                             : "border border-white/15 bg-slate-800/80 text-slate-200 hover:bg-slate-700/80"
                         }`}
                       >
                         <div className="font-bold">Trapézový plech</div>
-                        <div className="text-[10px] text-white/60">Neizolovaný sklad</div>
+                        <div className="text-[10px] text-white/60">Neizolovaná strecha</div>
                       </button>
                     </div>
 
-                    {typedParams.panelType === "sandwich" && (
+                    {typedParams.roofPanelType === "sandwich" && (
                       <div className="pt-2 border-t border-white/10 space-y-2">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-slate-300">Hrúbka PIR panelu:</span>
+                          <span className="text-slate-300">Hrúbka PIR strechy:</span>
                           <span className="text-cyan-400 font-bold font-mono">
-                            {typedParams.wallPanelThicknessMm ?? 100} mm
+                            {typedParams.roofPanelThicknessMm ?? 120} mm
                           </span>
                         </div>
                         <div className="grid grid-cols-4 gap-1.5">
@@ -655,9 +780,9 @@ export function StandardHallMenu({
                             <button
                               key={th}
                               type="button"
-                              onClick={() => setParams({ wallPanelThicknessMm: th, roofPanelThicknessMm: th })}
+                              onClick={() => setParams({ roofPanelThicknessMm: th })}
                               className={`py-1.5 rounded-lg text-xs font-mono transition cursor-pointer ${
-                                (typedParams.wallPanelThicknessMm ?? 100) === th
+                                (typedParams.roofPanelThicknessMm ?? 120) === th
                                   ? "bg-cyan-400 text-slate-950 font-bold"
                                   : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                               }`}
@@ -692,6 +817,10 @@ export function StandardHallMenu({
                       </button>
                     </div>
                   </div>
+
+                  {typedParams.hasSkylights && (
+                    <HallSkylightControls params={typedParams} onChange={setParams} />
+                  )}
 
                   {/* Farba strechy */}
                   <HallRalColorPicker
@@ -1286,7 +1415,7 @@ export function StandardHallMenu({
                 </div>
               )}
 
-              {/* --- TAB 4: FARBY & OPLÁŠTENIE --- */}
+              {/* --- TAB 5: FARBY --- */}
               {activeTab === "colors" && (
                 <div className="space-y-4">
                   {/* Farba stien */}
@@ -1455,10 +1584,18 @@ export function StandardHallMenu({
                         </span>
                       </div>
                       <div className="flex justify-between items-center py-0.5 border-b border-white/5">
-                        <span className="text-white/60 font-medium">Opláštenie:</span>
+                        <span className="text-white/60 font-medium">Opláštenie stien:</span>
                         <span className="text-white font-semibold">
                           {typedParams.panelType === "sandwich"
-                            ? `Sendvič PIR ${typedParams.wallPanelThicknessMm ?? 100}mm`
+                            ? `Sendvič PIR ${typedParams.wallPanelThicknessMm ?? 100}mm (${(typedParams.claddingOrientation ?? "horizontal") === "horizontal" ? "pozdĺžne" : "priečne"})`
+                            : `Trapézový plech (${(typedParams.claddingOrientation ?? "horizontal") === "horizontal" ? "pozdĺžne" : "priečne"})`}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-0.5 border-b border-white/5">
+                        <span className="text-white/60 font-medium">Strešný plášť:</span>
+                        <span className="text-white font-semibold">
+                          {typedParams.roofPanelType === "sandwich"
+                            ? `Sendvič PIR ${typedParams.roofPanelThicknessMm ?? 120}mm`
                             : "Trapézový plech"}
                         </span>
                       </div>

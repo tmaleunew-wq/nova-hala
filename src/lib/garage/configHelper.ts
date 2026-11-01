@@ -50,6 +50,7 @@ export const getHallsConfig = (): Record<string, HallConfig> => {
 };
 
 export interface CladdingConfig {
+  hallEnvironment?: Partial<typeof defaultConfig.hallEnvironment>;
   panelType: string;
   insulationMaterial: string;
   wallCoreThickness: number;
@@ -101,6 +102,13 @@ export function getCladdingConfig(clientName?: string | null): CladdingConfig {
 export function getImageCatalog(clientName?: string | null): string {
   const config = getCladdingConfig(clientName);
   return config.imageCatalog || "/catalog";
+}
+
+export function getHallEnvironmentConfig(clientName?: string | null) {
+  return {
+    ...defaultConfig.hallEnvironment,
+    ...getCladdingConfig(clientName).hallEnvironment,
+  };
 }
 
 export function getCatalogWithCladding(clientName?: string | null): boolean {

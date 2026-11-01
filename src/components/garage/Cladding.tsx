@@ -8,6 +8,7 @@ import { createPBRCladdingMaterial, createPBRSmoothMaterial, createPBRSandwichMa
 import { getCladdingConfig } from "@/lib/garage/configHelper";
 
 import { PurPanel, type Rect } from './PurPanel';
+import { HallRoofPanel } from "./HallRoofPanel";
 import { FacadePanelDetails } from "./FacadePanelDetails";
 
 function PurGableTriangle({
@@ -801,7 +802,10 @@ export function Cladding({
                     const isSkylightPanel = p.hasSkylights && (p.bayCount <= 2 ? i === 0 : i % 2 === 1);
                     return (
                       <group key={id} position={[s * (slopeLen / 2 - (sz / 2 + roofPanelThickness / 2) * Math.tan(angle)), actualStart, sz / 2 + roofPanelThickness / 2]}>
-                        <PurPanel
+                        <HallRoofPanel
+                          params={p}
+                          direction={s}
+                          roof={{ width: slopeLen, length: L + 2 * (sz / 2 + panelThickness + overhang), cx: 0, cy: -actualStart }}
                           id={id}
                           width={slopeLen}
                           height={w}
@@ -850,7 +854,9 @@ export function Cladding({
                 const id = `roof-cubic-${i}`;
                 return (
                   <group key={id} position={[px, -slopeLen / 2, roofPanelThickness / 2]}>
-                    <PurPanel
+                    <HallRoofPanel
+                      params={p}
+                      roof={{ width: roofW, length: slopeLen, cx: -px, cy: slopeLen / 2 }}
                       id={id}
                       width={actualPanelW - 0.003}
                       height={slopeLen}
@@ -894,7 +900,9 @@ export function Cladding({
                 const isSkylightPanel = p.hasSkylights && (p.bayCount <= 2 ? i === 0 : i % 2 === 1);
                 return (
                   <group key={id} position={[0, actualStart, sz / 2 + roofPanelThickness / 2]}>
-                    <PurPanel
+                    <HallRoofPanel
+                      params={p}
+                      roof={{ width: slopeLen, length: L + 2 * (sz / 2 + panelThickness + overhang), cx: 0, cy: -actualStart }}
                       id={id}
                       width={slopeLen}
                       height={w}

@@ -22,6 +22,7 @@ interface SceneProps {
   onTogglePanel: (id: string) => void;
   hideDimensions?: boolean;
   showEnvironment?: boolean;
+  environmentClient?: string;
   isCustom?: boolean;
 }
 
@@ -32,6 +33,7 @@ export function Scene({
   onTogglePanel,
   hideDimensions,
   showEnvironment,
+  environmentClient,
   isCustom,
 }: SceneProps) {
   const { gl, scene } = useThree();
@@ -85,7 +87,7 @@ export function Scene({
       )}
 
       {showEnvironment && (
-        isCustom ? <CustomGarageIsland p={params} /> : <Environment p={params} />
+        isCustom ? <CustomGarageIsland p={params} /> : <Environment p={params} clientName={environmentClient} />
       )}
 
       {!showEnvironment && (

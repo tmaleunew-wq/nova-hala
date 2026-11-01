@@ -1,5 +1,20 @@
 {
   "panelType": "sandwich",
+  "skylightWidth": 1.2,
+  "skylightLength": 3,
+  "skylightPositionX": 50,
+  "skylightPositionY": 50,
+  "hallEnvironment": {
+    "grassColor": "#889b74",
+    "concreteColor": "#b5b8b9",
+    "asphaltColor": "#747b80",
+    "curbColor": "#d3d3cb",
+    "apronDepth": 3.5,
+    "transitionLength": 1.5,
+    "concreteTileSize": 4,
+    "curbWidth": 0.16,
+    "curbHeight": 0.1
+  },
   "insulationMaterial": "PUR (Polyuretán)",
   "wallCoreThickness": 80,
   "roofCoreThickness": 100,

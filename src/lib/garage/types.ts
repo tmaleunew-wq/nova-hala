@@ -59,6 +59,10 @@ export interface GarageParams {
   doorFocus?: "gate" | "personalDoor";
   hasWindows: boolean;
   hasSkylights: boolean;
+  skylightWidth?: number;
+  skylightLength?: number;
+  skylightPositionX?: number;
+  skylightPositionY?: number;
   windowSide: "left" | "right" | "back";
   windowCount: number;
   windowWidth: number;
@@ -139,6 +143,10 @@ export const DEFAULT_PARAMS: GarageParams = {
   personalDoorOffset: 0,
   hasWindows: true,
   hasSkylights: false,
+  skylightWidth: defaultConfig.skylightWidth,
+  skylightLength: defaultConfig.skylightLength,
+  skylightPositionX: defaultConfig.skylightPositionX,
+  skylightPositionY: defaultConfig.skylightPositionY,
   windowSide: "left",
   windowCount: 1,
   windowWidth: 0.8,
