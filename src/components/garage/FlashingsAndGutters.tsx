@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { useMemo } from "react";
 import type { GarageParams } from "@/lib/garage/types";
 import { ridgeHeight, highEave, getFrameZ } from "./Structure";
+import { GutterDetails } from "./AccessoryDetails";
 
 const isThickWall = (type?: string) => type === "sandwich" || type === "smooth" || type === "wood_oak" || type === "wood_walnut";
 
@@ -67,6 +68,8 @@ export function Gutters({ p, explodeY }: { p: GarageParams; explodeY: number }) 
   return (
     <group>
       {/* left eave gutter */}
+      <GutterDetails length={capLen} gutterX={leftX} gutterY={leftGutterY} pipeX={leftWallX} pipeHeight={leftDownpipeH} pipeZ={L / 2 + gapWidth} side={-1} color={color} wireframe={p.wireframe} />
+      <GutterDetails length={capLen} gutterX={rightX} gutterY={rightGutterY} pipeX={rightWallX} pipeHeight={rightDownpipeH} pipeZ={L / 2 + gapWidth} side={1} color={color} wireframe={p.wireframe} />
       <mesh position={[leftX, leftGutterY, 0]} geometry={geom} castShadow>
         <meshStandardMaterial color={color} metalness={0.6} roughness={0.4} side={THREE.DoubleSide} wireframe={p.wireframe} />
       </mesh>

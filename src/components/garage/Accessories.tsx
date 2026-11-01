@@ -5,6 +5,10 @@ import type { GarageParams } from "@/lib/garage/types";
 import { ridgeHeight, highEave, getFrameZ, getPersonalDoorZ, getFrontPersonalDoorX, getBackPersonalDoorX, getWindowZs, getWindowCoords, getDoubleGateLayout } from "./Structure";
 import { createPBRCladdingMaterial, createPBRSmoothMaterial, createPBRWoodMaterial } from "@/lib/garage/pbrMaterialHelper";
 import { FlashingsAndGutters } from "./FlashingsAndGutters";
+import { PersonalDoorDetails, WindowDetails } from "./AccessoryDetails";
+import { PersonalDoorLeafFinish, PersonalDoorFrameFinish } from "./PersonalDoorFinish.tsx";
+import { SectionalPanelDetails, SectionalGuideDetails } from "./SectionalDoorDetails";
+import { GateSurfaceDetails, GateJambDetails, LeafHingeDetails, TiltDoorArmDetails } from "./GateSurfaceDetails";
 
 /** Garage door supporting Sectional, Up & Over (Výklopná), and Double-leaf (Dvojkrídlová) types */
 function GarageDoor({
@@ -76,6 +80,7 @@ function GarageDoor({
 
   return (
     <group position={[cx, 0, cz]} rotation={[0, rotY, 0]}>
+      <GateJambDetails width={gateWidth} height={actualDoorHeight} wireframe={p.wireframe} />
       {/* 0. PORTÁLOVÝ KRYCÍ RÁM OTVORU (Jambs & Header Portal Frame) */}
       <group>
         {/* Ľavé ostenie */}
@@ -98,6 +103,7 @@ function GarageDoor({
       {/* 1. SEKČNÁ BRÁNA */}
       {gateType === "sectional" && (
         <>
+          <SectionalGuideDetails width={gateWidth} height={actualDoorHeight} radius={R} curveStart={hCurveStart} wireframe={p.wireframe} />
           {Array.from({ length: panels }).map((_, i) => {
             const baseY = 0.02 + i * panelH + panelH / 2;
             const u = baseY + travelDistance;
@@ -124,6 +130,7 @@ function GarageDoor({
 
             return (
               <group key={i} position={[0, panelY, panelZ]} rotation={[rotX, 0, 0]}>
+                <SectionalPanelDetails width={gateWidth} height={panelH} index={i} material={gateMaterial} wireframe={p.wireframe} />
                 {/* Hlavné teleso lamely */}
                 <mesh castShadow receiveShadow material={gateMaterial}>
                   <boxGeometry args={[gateWidth - 0.01, panelH - 0.006, 0.04]} />
@@ -202,7 +209,10 @@ function GarageDoor({
         const tiltY = 0.02 + actualDoorHeight / 2 + currentProgress * (actualDoorHeight / 2.2);
         const tiltZ = currentProgress * (actualDoorHeight * 0.65);
         return (
+          <>
+          <TiltDoorArmDetails width={gateWidth} height={actualDoorHeight} y={tiltY} z={tiltZ} angle={tiltAngle} wireframe={p.wireframe} />
           <group position={[0, tiltY, tiltZ]} rotation={[tiltAngle, 0, 0]}>
+            <GateSurfaceDetails width={gateWidth - 0.02} height={actualDoorHeight - 0.02} material={gateMaterial} wireframe={p.wireframe} handle="tilt" />
             <mesh castShadow receiveShadow material={gateMaterial}>
               <boxGeometry args={[gateWidth - 0.02, actualDoorHeight - 0.02, 0.04]} />
             </mesh>
@@ -235,6 +245,7 @@ function GarageDoor({
               </mesh>
             </group>
           </group>
+          </>
         );
       })()}
 
@@ -246,6 +257,10 @@ function GarageDoor({
           <group position={[0, 0.02 + actualDoorHeight / 2, 0]}>
             {/* Ľavé krídlo */}
             <group position={[-gateWidth / 2, 0, 0]} rotation={[0, swingAngle, 0]}>
+              <LeafHingeDetails height={actualDoorHeight} side={1} wireframe={p.wireframe} />
+              <group position={[leafW / 2, 0, 0]}>
+                <GateSurfaceDetails width={leafW} height={actualDoorHeight - 0.02} material={gateMaterial} wireframe={p.wireframe} handle="none" />
+              </group>
               <mesh position={[leafW / 2, 0, 0]} castShadow receiveShadow material={gateMaterial}>
                 <boxGeometry args={[leafW, actualDoorHeight - 0.02, 0.04]} />
               </mesh>
@@ -260,6 +275,10 @@ function GarageDoor({
 
             {/* Pravé krídlo s kľučkou */}
             <group position={[gateWidth / 2, 0, 0]} rotation={[0, -swingAngle, 0]}>
+              <LeafHingeDetails height={actualDoorHeight} side={-1} wireframe={p.wireframe} />
+              <group position={[-leafW / 2, 0, 0]}>
+                <GateSurfaceDetails width={leafW} height={actualDoorHeight - 0.02} material={gateMaterial} wireframe={p.wireframe} handle="leaf" />
+              </group>
               <mesh position={[-leafW / 2, 0, 0]} castShadow receiveShadow material={gateMaterial}>
                 <boxGeometry args={[leafW, actualDoorHeight - 0.02, 0.04]} />
               </mesh>
@@ -373,6 +392,8 @@ function PersonalDoor({ p, explodeY }: { p: GarageParams; explodeY: number }) {
 
   return (
     <group position={position} rotation={rotation}>
+      <PersonalDoorFrameFinish width={doorWidth} height={doorHeight} depth={frameThickness} color={p.doorColor || "#3a3f47"} wood={!!p.doorDecor?.startsWith("wood_") || (!p.doorColor && !!p.gateDecor?.startsWith("wood_"))} wireframe={p.wireframe} />
+      <PersonalDoorDetails width={doorWidth} height={doorHeight} frameDepth={frameThickness} exterior={p.personalDoorSide === "front_left" || p.personalDoorSide === "front_right" ? -1 : 1} wireframe={p.wireframe} />
       {/* Door Frame (Zárubeň) - Left, Right, Top */}
       <group>
         {/* Left frame post */}
@@ -398,6 +419,7 @@ function PersonalDoor({ p, explodeY }: { p: GarageParams; explodeY: number }) {
         {p.wireframe && (
           <meshStandardMaterial color={p.doorColor} side={THREE.DoubleSide} wireframe />
         )}
+        <PersonalDoorLeafFinish width={doorWidth} height={doorHeight} color={p.doorColor || "#3a3f47"} wood={!!p.doorDecor?.startsWith("wood_") || (!p.doorColor && !!p.gateDecor?.startsWith("wood_"))} base={pbrMaterial} wireframe={p.wireframe} />
       </mesh>
 
       {/* Realistic Door Handle (Kľučka) & Escutcheon (Štítok) */}
@@ -504,6 +526,7 @@ function Windows({ p, explodeY }: { p: GarageParams; explodeY: number }) {
 
     items.push(
       <group key={i} position={pos} rotation={[0, rotY, 0]}>
+        <WindowDetails width={p.windowWidth} height={p.windowHeight} frameDepth={frameThickness} color={frameColor} wireframe={p.wireframe} />
         {/* glass */}
         <mesh castShadow receiveShadow>
           <boxGeometry args={[p.windowWidth, p.windowHeight, 0.02]} />

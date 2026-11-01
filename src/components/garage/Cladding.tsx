@@ -8,6 +8,7 @@ import { createPBRCladdingMaterial, createPBRSmoothMaterial, createPBRSandwichMa
 import { getCladdingConfig } from "@/lib/garage/configHelper";
 
 import { PurPanel, type Rect } from './PurPanel';
+import { FacadePanelDetails } from "./FacadePanelDetails";
 
 function PurGableTriangle({
   p,
@@ -178,6 +179,7 @@ function PurGableTriangle({
       <mesh geometry={outerGeom} castShadow receiveShadow material={pbrMaterial || undefined}>
         {wireframe && <meshStandardMaterial color={activeColorStr} side={THREE.DoubleSide} wireframe />}
       </mesh>
+      <FacadePanelDetails shape={shape} thickness={thickness} panelType={panelType} orientation={claddingOrientation} color={activeColorStr} material={pbrMaterial} wireframe={wireframe} />
       {isSandwich && coreGeom && (
         <mesh geometry={coreGeom} castShadow receiveShadow>
           <meshStandardMaterial color={hovered ? "#faf3cc" : "#e6dfb3"} side={THREE.DoubleSide} metalness={0.05} roughness={0.9} wireframe={wireframe} />
@@ -366,6 +368,7 @@ function PurShedTriangle({
       <mesh geometry={outerGeom} castShadow receiveShadow material={pbrMaterial || undefined}>
         {wireframe && <meshStandardMaterial color={activeColorStr} side={THREE.DoubleSide} wireframe />}
       </mesh>
+      <FacadePanelDetails shape={shape} thickness={thickness} panelType={panelType} orientation={claddingOrientation} color={activeColorStr} material={pbrMaterial} wireframe={wireframe} />
       {isSandwich && coreGeom && (
         <mesh geometry={coreGeom} castShadow receiveShadow>
           <meshStandardMaterial color={hovered ? "#faf3cc" : "#e6dfb3"} side={THREE.DoubleSide} metalness={0.05} roughness={0.9} wireframe={wireframe} />

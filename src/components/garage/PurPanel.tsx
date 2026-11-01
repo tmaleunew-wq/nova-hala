@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import * as THREE from "three";
+import { RoofCoverDetails } from "./RoofCoverDetails";
+import { FacadePanelDetails } from "./FacadePanelDetails";
 import {
   createPBRCladdingMaterial,
   createPBRSmoothMaterial,
@@ -261,6 +263,12 @@ export function PurPanel({
           <meshStandardMaterial color={activeColorStr} side={THREE.DoubleSide} wireframe />
         )}
       </mesh>
+      {(isRoof || id.startsWith("ext-roof")) && !isSkylight && holes.length === 0 && (
+        <RoofCoverDetails id={id} width={width} height={height} thickness={thickness} panelType={panelType} color={activeColorStr} wireframe={wireframe} />
+      )}
+      {!isRoof && !id.startsWith("ext-roof") && !isSkylight && (
+        <FacadePanelDetails shape={shape} thickness={thickness} panelType={panelType} orientation={claddingOrientation} color={activeColorStr} material={pbrMaterial} wireframe={wireframe} />
+      )}
       {isSandwichActual && coreGeom && (
         <mesh geometry={coreGeom} castShadow receiveShadow>
           <meshStandardMaterial
