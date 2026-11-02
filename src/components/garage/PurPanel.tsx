@@ -285,6 +285,9 @@ export function PurPanel({
       {(isRoof || id.startsWith("ext-roof")) && !isSkylight && holes.length === 0 && (
         <RoofCoverDetails id={id} width={width} height={height} thickness={thickness} panelType={panelType} color={activeColorStr} wireframe={wireframe} />
       )}
+      {(isRoof || id.startsWith("ext-roof")) && !isSkylight && roofOpening && (
+        <RoofCoverDetails id={id} width={width} height={height} thickness={thickness} panelType={panelType} color={activeColorStr} wireframe={wireframe} roofOpening={roofOpening} />
+      )}
       {!isRoof && !id.startsWith("ext-roof") && !isSkylight && (
         <FacadePanelDetails shape={shape} thickness={thickness} panelType={panelType} orientation={claddingOrientation} color={activeColorStr} material={pbrMaterial} wireframe={wireframe} />
       )}

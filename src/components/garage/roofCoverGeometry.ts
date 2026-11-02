@@ -7,6 +7,7 @@ export type RoofCoverDimensions = {
   panelType: string;
   alongY: boolean;
   reverse: boolean;
+  roofOpening?: { cx: number; cy: number; w: number; h: number };
 };
 
 /** Panel-local coordinates: +Z is outside; v runs from uphill to downhill. */
@@ -31,6 +32,36 @@ export function createRoofCoverGeometry(d: RoofCoverDimensions): BufferGeometry 
   const base = d.thickness / 2 + 0.001;
   const positions: number[] = [];
   const quad = (a: number[], b: number[], c: number[], e: number[]) => {
+    if (d.roofOpening) {
+      const { cx, cy, w, h } = d.roofOpening;
+      let remaining = [a, b, c, e];
+      // Emit the outside of each boundary, then clip the remaining polygon.
+      for (const [axis, boundary, sign] of [
+        [0, cx - w / 2, 1], [0, cx + w / 2, -1],
+        [1, cy - h / 2, 1], [1, cy + h / 2, -1],
+      ]) {
+        const inside: number[][] = [];
+        const outside: number[][] = [];
+        for (let i = 0; i < remaining.length; i++) {
+          const from = remaining[i];
+          const to = remaining[(i + 1) % remaining.length];
+          const df = (from[axis] - boundary) * sign;
+          const dt = (to[axis] - boundary) * sign;
+          (df >= 0 ? inside : outside).push(from);
+          if ((df >= 0) !== (dt >= 0)) {
+            const t = df / (df - dt);
+            const intersection = from.map((value, j) => value + t * (to[j] - value));
+            inside.push(intersection);
+            outside.push(intersection);
+          }
+        }
+        for (let i = 1; i + 1 < outside.length; i++) {
+          positions.push(...outside[0], ...outside[i], ...outside[i + 1]);
+        }
+        remaining = inside;
+      }
+      return;
+    }
     positions.push(...a, ...b, ...c, ...a, ...c, ...e);
   };
   const profile = tile

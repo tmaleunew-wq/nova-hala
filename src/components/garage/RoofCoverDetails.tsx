@@ -11,6 +11,7 @@ export const RoofCoverDetails = memo(function RoofCoverDetails({
   panelType,
   color,
   wireframe,
+  roofOpening,
 }: {
   id: string;
   width: number;
@@ -19,6 +20,7 @@ export const RoofCoverDetails = memo(function RoofCoverDetails({
   panelType?: string;
   color: string;
   wireframe: boolean;
+  roofOpening?: { cx: number; cy: number; w: number; h: number };
 }) {
   const dimensions = useMemo(
     () => ({
@@ -28,8 +30,9 @@ export const RoofCoverDetails = memo(function RoofCoverDetails({
       panelType: panelType ?? "sandwich",
       alongY: id.startsWith("roof-cubic"),
       reverse: !id.startsWith("roof-right"),
+      roofOpening,
     }),
-    [id, width, height, thickness, panelType],
+    [id, width, height, thickness, panelType, roofOpening],
   );
   const geometry = useMemo(() => createRoofCoverGeometry(dimensions), [dimensions]);
   useEffect(() => () => geometry.dispose(), [geometry]);
@@ -56,7 +59,9 @@ export const RoofCoverDetails = memo(function RoofCoverDetails({
         );
       }
     }
-    return points;
+    return points.filter(([x, y]) => !dimensions.roofOpening
+      || Math.abs(x - dimensions.roofOpening.cx) > dimensions.roofOpening.w / 2 + 0.01
+      || Math.abs(y - dimensions.roofOpening.cy) > dimensions.roofOpening.h / 2 + 0.01);
   }, [dimensions, panelType, width, height, thickness]);
   useLayoutEffect(() => {
     if (!screws.current || !washers.current) return;

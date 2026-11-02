@@ -5,6 +5,7 @@
   "skylightPositionX": 50,
   "skylightPositionY": 50,
   "hallEnvironment": {
+    "treeSeed": 721,
     "grassColor": "#889b74",
     "concreteColor": "#b5b8b9",
     "asphaltColor": "#747b80",
