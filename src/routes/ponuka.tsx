@@ -5,6 +5,8 @@ import { ridgeHeight, highEave } from "@/components/garage/Structure";
 import { Download, ExternalLink, FileText, CheckCircle2, Mail, Phone, MapPin, Box, User, Info, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { generateGarageQuotePDF } from "@/lib/garage/pdfGenerator";
+import { fetchInquiryByIdFromSupabase } from "@/lib/supabase";
+import { getDefaultPricingRates } from "@/lib/garage/bomCalculator";
 
 export const Route = createFileRoute("/ponuka")({
   component: CustomerPriceOffer,
@@ -75,6 +77,12 @@ function CustomerPriceOffer() {
         } else {
           const latest = localStorage.getItem("ssf_latest_img");
           if (latest) setImageDataUrl(latest);
+          if (idFromUrl) {
+            fetchInquiryByIdFromSupabase(idFromUrl).then((rec) => {
+              const snap = rec?.params?._snapshot || rec?.image_data_url;
+              if (snap) setImageDataUrl(snap);
+            });
+          }
         }
       }
     } catch (e) {
@@ -135,28 +143,30 @@ function CustomerPriceOffer() {
     totalGirtsLength += frontLen + backLen + leftLen + rightLen;
   }
 
+  const defRates = getDefaultPricingRates();
   const totalSteelLength = totalColLength + totalRafterLength + totalPurlinLength + totalGirtsLength + 2 * L;
-  const steelWeight = totalSteelLength * 6.2;
-  const steelCost = steelWeight * 1.85;
+  const steelWeight = totalSteelLength * defRates.steelWeightPerMeter;
+  const steelCost = steelWeight * defRates.steelPricePerKg;
 
   const wallArea = 2 * W * Heave + 2 * L * Heave;
   const gableArea = params.roofType === "gable" ? W * (Hridge - Heave) : 0;
   const roofArea = params.roofType === "gable" ? 2 * Math.hypot(W / 2, Hridge - Heave) * L : Math.hypot(W, Hhi - Heave) * L;
   const totalCladdingArea = wallArea + gableArea + roofArea;
-  const unitCladdingPrice = params.panelType === "sandwich" ? 32.5 : 16.8;
+  const unitCladdingPrice = params.panelType === "sandwich" ? defRates.sandwichPricePerSqM : defRates.trapezoidPricePerSqM;
   const claddingCost = totalCladdingArea * unitCladdingPrice;
 
-  const basePlatesCost = frames * 2 * 12.0;
-  const garageDoorCost = 550.0;
-  const personalDoorCost = params.hasPersonalDoor ? 220.0 : 0;
-  const windowsCost = params.hasWindows ? params.windowCount * 140.0 : 0;
-  const foundationCost = params.showFoundation ? W * L * 65.0 : 0;
+  const basePlatesCost = frames * 2 * defRates.basePlateCost;
+  const totalGatesCount = (params.gateCount ?? 1) + (params.hasBackDoor ? 1 : 0);
+  const garageDoorCost = totalGatesCount * defRates.garageDoorCost;
+  const personalDoorCost = params.hasPersonalDoor ? defRates.personalDoorCost : 0;
+  const windowsCost = params.hasWindows ? params.windowCount * defRates.windowCost : 0;
+  const foundationCost = params.showFoundation ? W * L * defRates.foundationPricePerSqM : 0;
   const componentsSubtotal = basePlatesCost + garageDoorCost + personalDoorCost + windowsCost + foundationCost;
 
-  const laborCost = 850.0;
-  const transportCost = 150.0;
+  const laborCost = defRates.laborCost;
+  const transportCost = defRates.transportCost;
   const rawSubtotal = steelCost + claddingCost + componentsSubtotal + laborCost + transportCost;
-  const marginAmount = rawSubtotal * 0.15;
+  const marginAmount = rawSubtotal * (defRates.marginPercent / 100);
   const subtotalBeforeVat = rawSubtotal + marginAmount;
   const vatAmount = subtotalBeforeVat * 0.2;
   const totalWithVat = subtotalBeforeVat + vatAmount;

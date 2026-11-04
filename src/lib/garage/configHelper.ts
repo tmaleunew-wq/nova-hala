@@ -76,6 +76,19 @@ export interface CladdingConfig {
     email?: string;
     phone?: string;
   };
+  pricing?: {
+    steelPricePerKg?: number;
+    steelWeightPerMeter?: number;
+    basePlateCost?: number;
+    garageDoorCost?: number;
+    personalDoorCost?: number;
+    windowCost?: number;
+    foundationPricePerSqM?: number;
+    transportCost?: number;
+    laborCost?: number;
+    marginPercent?: number;
+  };
+  _hasPricing?: boolean;
 }
 
 export function getCladdingConfig(clientName?: string | null): CladdingConfig {

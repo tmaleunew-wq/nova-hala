@@ -40,6 +40,18 @@
     "email": "info@vbau.eu",
     "phone": "(+421) 902 565 100"
   },
+  "pricing": {
+    "steelPricePerKg": 1.85,
+    "steelWeightPerMeter": 6.2,
+    "basePlateCost": 12.0,
+    "garageDoorCost": 550.0,
+    "personalDoorCost": 220.0,
+    "windowCost": 140.0,
+    "foundationPricePerSqM": 65.0,
+    "transportCost": 150.0,
+    "laborCost": 850.0,
+    "marginPercent": 15
+  },
   "defaultGarage": {
     "width": 4.0,
     "length": 6.0,

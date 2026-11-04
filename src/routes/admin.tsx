@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateOrderExcelXml } from "@/lib/garage/excelGenerator";
-import { fetchInquiriesFromSupabase, supabase } from "@/lib/supabase";
+import { fetchInquiriesFromSupabase, updateInquiryStatusInSupabase, supabase } from "@/lib/supabase";
+import { getDefaultPricingRates } from "@/lib/garage/bomCalculator";
 
 import { AdminAuthGate } from "@/components/garage/AdminAuthGate";
 import { PriceQuoteModal } from "@/components/garage/PriceQuoteModal";
@@ -67,23 +68,80 @@ function AdminDashboard() {
   const [clientNote, setClientNote] = useState<string>("");
 
   // Editable unit pricing states
-  const [steelPricePerKg, setSteelPricePerKg] = useState<number>(1.85);
-  const [steelWeightPerMeter, setSteelWeightPerMeter] = useState<number>(6.2);
-  const [sandwichPricePerSqM, setSandwichPricePerSqM] = useState<number>(32.50);
-  const [trapezoidPricePerSqM, setTrapezoidPricePerSqM] = useState<number>(16.80);
-  const [basePlateCost, setBasePlateCost] = useState<number>(12.00);
-  const [garageDoorCost, setGarageDoorCost] = useState<number>(550.00);
-  const [personalDoorCost, setPersonalDoorCost] = useState<number>(220.00);
-  const [windowCost, setWindowCost] = useState<number>(140.00);
-  const [foundationPricePerSqM, setFoundationPricePerSqM] = useState<number>(65.00);
-  const [transportCost, setTransportCost] = useState<number>(150.00);
-  const [laborCost, setLaborCost] = useState<number>(850.00);
-  const [marginPercent, setMarginPercent] = useState<number>(15);
+  const defaultRates = getDefaultPricingRates();
+  const [steelPricePerKg, setSteelPricePerKg] = useState<number>(defaultRates.steelPricePerKg);
+  const [steelWeightPerMeter, setSteelWeightPerMeter] = useState<number>(defaultRates.steelWeightPerMeter);
+  const [sandwichPricePerSqM, setSandwichPricePerSqM] = useState<number>(defaultRates.sandwichPricePerSqM);
+  const [trapezoidPricePerSqM, setTrapezoidPricePerSqM] = useState<number>(defaultRates.trapezoidPricePerSqM);
+  const [basePlateCost, setBasePlateCost] = useState<number>(defaultRates.basePlateCost);
+  const [garageDoorCost, setGarageDoorCost] = useState<number>(defaultRates.garageDoorCost);
+  const [personalDoorCost, setPersonalDoorCost] = useState<number>(defaultRates.personalDoorCost);
+  const [windowCost, setWindowCost] = useState<number>(defaultRates.windowCost);
+  const [foundationPricePerSqM, setFoundationPricePerSqM] = useState<number>(defaultRates.foundationPricePerSqM);
+  const [transportCost, setTransportCost] = useState<number>(defaultRates.transportCost);
+  const [laborCost, setLaborCost] = useState<number>(defaultRates.laborCost);
+  const [marginPercent, setMarginPercent] = useState<number>(defaultRates.marginPercent);
+  const [pricingLoaded, setPricingLoaded] = useState<boolean>(false);
 
   const [customItem1Label, setCustomItem1Label] = useState<string>("");
   const [customItem1Cost, setCustomItem1Cost] = useState<number>(0);
   const [customItem2Label, setCustomItem2Label] = useState<string>("");
   const [customItem2Cost, setCustomItem2Cost] = useState<number>(0);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("ssf_admin_pricing") || "null");
+      if (saved) {
+        if (typeof saved.steelPricePerKg === "number") setSteelPricePerKg(saved.steelPricePerKg);
+        if (typeof saved.steelWeightPerMeter === "number") setSteelWeightPerMeter(saved.steelWeightPerMeter);
+        if (typeof saved.sandwichPricePerSqM === "number") setSandwichPricePerSqM(saved.sandwichPricePerSqM);
+        if (typeof saved.trapezoidPricePerSqM === "number") setTrapezoidPricePerSqM(saved.trapezoidPricePerSqM);
+        if (typeof saved.basePlateCost === "number") setBasePlateCost(saved.basePlateCost);
+        if (typeof saved.garageDoorCost === "number") setGarageDoorCost(saved.garageDoorCost);
+        if (typeof saved.personalDoorCost === "number") setPersonalDoorCost(saved.personalDoorCost);
+        if (typeof saved.windowCost === "number") setWindowCost(saved.windowCost);
+        if (typeof saved.foundationPricePerSqM === "number") setFoundationPricePerSqM(saved.foundationPricePerSqM);
+        if (typeof saved.transportCost === "number") setTransportCost(saved.transportCost);
+        if (typeof saved.laborCost === "number") setLaborCost(saved.laborCost);
+        if (typeof saved.marginPercent === "number") setMarginPercent(saved.marginPercent);
+      }
+    } catch {}
+    setPricingLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!pricingLoaded) return;
+    try {
+      localStorage.setItem("ssf_admin_pricing", JSON.stringify({
+        steelPricePerKg,
+        steelWeightPerMeter,
+        sandwichPricePerSqM,
+        trapezoidPricePerSqM,
+        basePlateCost,
+        garageDoorCost,
+        personalDoorCost,
+        windowCost,
+        foundationPricePerSqM,
+        transportCost,
+        laborCost,
+        marginPercent,
+      }));
+    } catch {}
+  }, [
+    pricingLoaded,
+    steelPricePerKg,
+    steelWeightPerMeter,
+    sandwichPricePerSqM,
+    trapezoidPricePerSqM,
+    basePlateCost,
+    garageDoorCost,
+    personalDoorCost,
+    windowCost,
+    foundationPricePerSqM,
+    transportCost,
+    laborCost,
+    marginPercent,
+  ]);
 
   // Fetch orders on mount
   const loadOrders = async () => {
@@ -104,6 +162,7 @@ function AdminDashboard() {
         params: o.params || DEFAULT_PARAMS,
         total_price: o.total_price || 0,
         evaluation_url: o.evaluation_url || "",
+        status: o.status || o.params?._status || "Nový",
       }));
     } else {
       // Fallback to localStorage
@@ -120,6 +179,7 @@ function AdminDashboard() {
           params: o.params || DEFAULT_PARAMS,
           total_price: o.totalWithVat || 0,
           evaluation_url: o.evaluationUrl || "",
+          status: o.status || o.params?._status || "Nový",
         }));
       } catch (e) {}
     }
@@ -146,9 +206,33 @@ function AdminDashboard() {
     setClientNote(ord.message || "");
 
     const config = getCladdingConfig(ord.name);
-    setSandwichPricePerSqM(config.sandwichPricePerSqM);
-    setTrapezoidPricePerSqM(config.trapezoidPricePerSqM);
+    if (!localStorage.getItem("ssf_admin_pricing")) {
+      setSandwichPricePerSqM(config.sandwichPricePerSqM);
+      setTrapezoidPricePerSqM(config.trapezoidPricePerSqM);
+    }
     setMobileTab("detail");
+  };
+
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    const targetOrder = orders.find((o) => o.id === orderId || o.order_id === orderId);
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId || o.order_id === orderId
+          ? { ...o, status: newStatus, params: { ...(o.params || DEFAULT_PARAMS), _status: newStatus } as any }
+          : o
+      )
+    );
+    try {
+      const local = JSON.parse(localStorage.getItem("ssf_orders") || "[]");
+      const updated = local.map((o: any) =>
+        o.id === orderId || o.order_id === orderId
+          ? { ...o, status: newStatus, params: { ...(o.params || {}), _status: newStatus } }
+          : o
+      );
+      localStorage.setItem("ssf_orders", JSON.stringify(updated));
+    } catch {}
+    await updateInquiryStatusInSupabase(targetOrder?.order_id || orderId, newStatus, targetOrder?.params);
+    toast.success(`Stav dopytu zmenený na: ${newStatus}`);
   };
 
   const handleDeleteOrder = async (id: string, e: React.MouseEvent) => {
@@ -258,7 +342,8 @@ function AdminDashboard() {
 
   const basePlatesCount = frames * 2;
   const calculatedBasePlateCost = basePlatesCount * basePlateCost;
-  const calculatedGarageDoorCost = garageDoorCost;
+  const totalGatesCount = (params.gateCount ?? 1) + (params.hasBackDoor ? 1 : 0);
+  const calculatedGarageDoorCost = totalGatesCount * garageDoorCost;
   const calculatedPersonalDoorCost = params.hasPersonalDoor ? personalDoorCost : 0;
   const calculatedWindowsCost = params.hasWindows ? params.windowCount * windowCost : 0;
   const calculatedFoundationCost = params.showFoundation ? (W * L * foundationPricePerSqM) : 0;
@@ -471,7 +556,20 @@ function AdminDashboard() {
                         <User className="h-3.5 w-3.5 text-emerald-400" />
                         {ord.name}
                       </div>
-                      <span className="text-[10px] text-white/40 font-mono">{ord.date}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                            ord.status === "Uzavretý"
+                              ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                              : ord.status === "Nacenený"
+                              ? "bg-blue-500/20 text-blue-300 border-blue-500/40"
+                              : "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                          }`}
+                        >
+                          {ord.status || "Nový"}
+                        </span>
+                        <span className="text-[10px] text-white/40 font-mono">{ord.date}</span>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-1 text-[11px] text-white/60 mb-2">
@@ -528,7 +626,20 @@ function AdminDashboard() {
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-3 mb-4 gap-3">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Detail Zákazníka</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Detail Zákazníka</span>
+                  {selectedOrderId && (
+                    <select
+                      value={orders.find((o) => o.id === selectedOrderId)?.status || "Nový"}
+                      onChange={(e) => handleStatusChange(selectedOrderId, e.target.value)}
+                      className="rounded border border-white/15 bg-black/60 px-2 py-0.5 text-[11px] font-bold text-emerald-300 focus:border-emerald-400 focus:outline-none cursor-pointer"
+                    >
+                      <option value="Nový">Stav: Nový</option>
+                      <option value="Nacenený">Stav: Nacenený</option>
+                      <option value="Uzavretý">Stav: Uzavretý</option>
+                    </select>
+                  )}
+                </div>
                 <h2 className="text-base sm:text-lg font-bold text-white">{clientName || "Vyberte dopyt zo zoznamu"}</h2>
               </div>
               <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">

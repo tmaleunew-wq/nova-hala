@@ -146,13 +146,14 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
   const claddingCost = totalCladdingArea * panelPricePerSqM;
 
   // 3. Components
+  const pr = claddingConfig.pricing || {};
   const basePlatesCount = frames * 2;
-  const basePlateCost = basePlatesCount * 12.00;
+  const basePlateCost = basePlatesCount * (pr.basePlateCost ?? 12.00);
   const totalGates = (p.gateCount ?? 1) + (p.hasBackDoor ? 1 : 0);
-  const garageDoorCost = totalGates * 550.00;
-  const personalDoorCost = p.hasPersonalDoor ? 220.00 : 0.00;
-  const windowsCost = p.windowCount * 140.00;
-  const foundationCost = p.showFoundation ? (W * L * 65.00) : 0.00;
+  const garageDoorCost = totalGates * (pr.garageDoorCost ?? 550.00);
+  const personalDoorCost = p.hasPersonalDoor ? (pr.personalDoorCost ?? 220.00) : 0.00;
+  const windowsCost = p.windowCount * (pr.windowCost ?? 140.00);
+  const foundationCost = p.showFoundation ? (W * L * (pr.foundationPricePerSqM ?? 65.00)) : 0.00;
 
   // Subtotals
   const materialSubtotal = steelCost + claddingCost + basePlateCost;
@@ -327,6 +328,7 @@ export function PriceCalculator({ p, quoteRequestSignal }: PriceCalculatorProps)
       params: p,
       total_price: totalWithVat,
       evaluation_url: evaluationUrl,
+      image_data_url: imageDataUrl,
     });
 
     try {

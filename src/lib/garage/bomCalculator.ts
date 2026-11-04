@@ -1,5 +1,6 @@
 import type { GarageParams } from "./types";
 import { ridgeHeight, highEave } from "@/components/garage/Structure";
+import { getCladdingConfig } from "./configHelper";
 
 export interface BomItem {
   id: string;
@@ -234,5 +235,161 @@ export function calculateGarageBom(p: GarageParams): BomSummary {
     totalRoofAreaM2: Math.round(roofArea * 10) / 10,
     totalFlashingBm: Math.round(totalFlashingBm * 10) / 10,
     totalFastenersCount,
+  };
+}
+
+export interface UnifiedPricingRates {
+  steelPricePerKg: number;
+  steelWeightPerMeter: number;
+  sandwichPricePerSqM: number;
+  trapezoidPricePerSqM: number;
+  basePlateCost: number;
+  garageDoorCost: number;
+  personalDoorCost: number;
+  windowCost: number;
+  foundationPricePerSqM: number;
+  transportCost: number;
+  laborCost: number;
+  marginPercent: number;
+  customItem1Cost?: number;
+  customItem2Cost?: number;
+}
+
+export function getDefaultPricingRates(clientName?: string | null): UnifiedPricingRates {
+  const cfg = getCladdingConfig(clientName);
+  const pr = cfg.pricing || {};
+  return {
+    steelPricePerKg: pr.steelPricePerKg ?? 1.85,
+    steelWeightPerMeter: pr.steelWeightPerMeter ?? 6.2,
+    sandwichPricePerSqM: cfg.sandwichPricePerSqM ?? 32.5,
+    trapezoidPricePerSqM: cfg.trapezoidPricePerSqM ?? 16.8,
+    basePlateCost: pr.basePlateCost ?? 12.0,
+    garageDoorCost: pr.garageDoorCost ?? 550.0,
+    personalDoorCost: pr.personalDoorCost ?? 220.0,
+    windowCost: pr.windowCost ?? 140.0,
+    foundationPricePerSqM: pr.foundationPricePerSqM ?? 65.0,
+    transportCost: pr.transportCost ?? 150.0,
+    laborCost: pr.laborCost ?? 850.0,
+    marginPercent: pr.marginPercent ?? 15,
+    customItem1Cost: 0,
+    customItem2Cost: 0,
+  };
+}
+
+export function calculateUnifiedGaragePricing(
+  p: GarageParams,
+  overrides?: Partial<UnifiedPricingRates>,
+  clientName?: string | null
+) {
+  const rates = { ...getDefaultPricingRates(clientName), ...overrides };
+  const W = p.width;
+  const L = p.length;
+  const Heave = p.clearHeight;
+  const Hridge = ridgeHeight(p);
+  const Hhi = highEave(p);
+  const frames = (p.bayCount ?? 2) + 1;
+
+  const leftColH = Heave;
+  const rightColH = p.roofType === "shed" ? Hhi : Heave;
+  const totalColLength = frames * leftColH + frames * rightColH;
+
+  let totalRafterLength = 0;
+  if (p.roofType === "gable") {
+    const slopeLen = Math.hypot(W / 2, Hridge - Heave);
+    totalRafterLength = frames * 2 * slopeLen;
+  } else {
+    const slopeLen = Math.hypot(W, Hhi - Heave);
+    totalRafterLength = frames * slopeLen;
+  }
+
+  let totalPurlinLength = 0;
+  if (p.roofType === "gable") {
+    const slopeLen = Math.hypot(W / 2, Hridge - Heave);
+    const purlinCount = Math.max(2, Math.round(slopeLen / 0.8));
+    totalPurlinLength = 2 * (purlinCount + 1) * L;
+  } else {
+    const slopeLen = Math.hypot(W, Hhi - Heave);
+    const purlinCount = Math.max(3, Math.round(slopeLen / 0.8));
+    totalPurlinLength = (purlinCount + 1) * L;
+  }
+
+  const heights = [0.6, 1.4, 2.2];
+  let totalGirtsLength = 0;
+  for (const h of heights) {
+    if (h >= Heave) continue;
+    const frontLen = h < p.doorHeight ? Math.max(0, W - p.doorWidth) : W;
+    const backLen = (p.personalDoorSide === "back" && p.hasPersonalDoor && h < 2.0) ? Math.max(0, W - 0.9) : W;
+    let leftLen = L;
+    if (p.personalDoorSide === "left" && p.hasPersonalDoor && h < 2.0) leftLen -= 0.9;
+    const winBottom = 1.6 - p.windowHeight / 2;
+    const winTop = 1.6 + p.windowHeight / 2;
+    if (h > winBottom && h < winTop && p.hasWindows) leftLen -= p.windowCount * p.windowWidth;
+    const rightLen = (p.personalDoorSide === "right" && p.hasPersonalDoor && h < 2.0) ? Math.max(0, L - 0.9) : L;
+    totalGirtsLength += frontLen + backLen + leftLen + rightLen;
+  }
+
+  const extW = p.hasExtension ? (p.extensionWidth ?? 3.5) : 0;
+  const extSteelLength = p.hasExtension ? (frames * Heave + frames * Math.hypot(extW, 0.3) + 3 * L) : 0;
+  const totalEaveRidgeLength = 2 * L + (p.roofType === "gable" ? L : 0);
+  const totalSteelLength = totalColLength + totalRafterLength + totalPurlinLength + totalGirtsLength + totalEaveRidgeLength + extSteelLength;
+  const totalSteelWeight = totalSteelLength * rates.steelWeightPerMeter;
+  const steelCost = totalSteelWeight * rates.steelPricePerKg;
+
+  const wallArea = 2 * W * Heave + 2 * L * Heave;
+  const gableArea = p.roofType === "gable" ? W * (Hridge - Heave) : 0;
+  const roofArea = p.roofType === "gable"
+    ? 2 * Math.hypot(W / 2, Hridge - Heave) * L
+    : Math.hypot(W, Hhi - Heave) * L;
+  const extRoofArea = p.hasExtension ? Math.hypot(extW, 0.3) * L : 0;
+  const extWallArea = p.hasExtension && p.extensionType !== "carport" ? (2 * extW * Heave + L * Heave) : 0;
+  const totalCladdingArea = wallArea + gableArea + roofArea + extRoofArea + extWallArea;
+
+  const activeCladdingUnitPrice = (p.panelType === "sandwich" || p.panelType === "smooth")
+    ? rates.sandwichPricePerSqM
+    : rates.trapezoidPricePerSqM;
+  const claddingCost = totalCladdingArea * activeCladdingUnitPrice;
+
+  const basePlatesCount = frames * 2 + (p.hasExtension ? frames : 0);
+  const basePlateCost = basePlatesCount * rates.basePlateCost;
+  const totalGates = (p.gateCount ?? 1) + (p.hasBackDoor ? 1 : 0) + (p.hasExtension && p.extensionType === "garage" ? 1 : 0);
+  const garageDoorCost = totalGates * rates.garageDoorCost;
+  const personalDoorCost = p.hasPersonalDoor ? rates.personalDoorCost : 0;
+  const windowsCost = p.hasWindows ? (p.windowCount ?? 0) * rates.windowCost : 0;
+  const foundationCost = p.showFoundation ? ((W + extW) * L * rates.foundationPricePerSqM) : 0;
+
+  const customItem1Cost = rates.customItem1Cost && rates.customItem1Cost > 0 ? rates.customItem1Cost : 0;
+  const customItem2Cost = rates.customItem2Cost && rates.customItem2Cost > 0 ? rates.customItem2Cost : 0;
+
+  const componentsSubtotal = basePlateCost + garageDoorCost + personalDoorCost + windowsCost + foundationCost;
+  const rawSubtotal = steelCost + claddingCost + componentsSubtotal + customItem1Cost + customItem2Cost;
+  const rawTotalWithExtras = rawSubtotal + rates.transportCost + rates.laborCost;
+  const marginAmount = (rawTotalWithExtras * rates.marginPercent) / 100;
+  const subtotalBeforeVat = rawTotalWithExtras + marginAmount;
+  const vatAmount = subtotalBeforeVat * 0.20;
+  const totalWithVat = subtotalBeforeVat + vatAmount;
+
+  return {
+    rates,
+    totalSteelLength,
+    totalSteelWeight,
+    steelCost,
+    totalCladdingArea,
+    activeCladdingUnitPrice,
+    claddingCost,
+    basePlateCost,
+    totalGates,
+    garageDoorCost,
+    personalDoorCost,
+    windowsCost,
+    foundationCost,
+    componentsSubtotal,
+    customItem1Cost,
+    customItem2Cost,
+    rawSubtotal,
+    rawTotalWithExtras,
+    marginAmount,
+    subtotalBeforeVat,
+    vatAmount,
+    totalWithVat,
   };
 }

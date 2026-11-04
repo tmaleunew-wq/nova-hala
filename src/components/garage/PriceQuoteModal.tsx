@@ -124,7 +124,8 @@ export function PriceQuoteModal({
 
   const basePlatesCount = frames * 2;
   const basePlateCost = basePlatesCount * pricing.basePlateCost;
-  const garageDoorCost = pricing.garageDoorCost;
+  const totalGatesCount = (p.gateCount ?? 1) + (p.hasBackDoor ? 1 : 0);
+  const garageDoorCost = totalGatesCount * pricing.garageDoorCost;
   const personalDoorCost = p.hasPersonalDoor ? pricing.personalDoorCost : 0;
   const windowsCost = p.hasWindows ? p.windowCount * pricing.windowCost : 0;
   const foundationCost = p.showFoundation ? (W * L * pricing.foundationPricePerSqM) : 0;
