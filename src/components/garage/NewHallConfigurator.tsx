@@ -27,6 +27,10 @@ import { NewHallTemplatePicker, type HallTemplateItem } from "./NewHallTemplateP
 import { NewHallBOMModal } from "./NewHallBOMModal";
 import { NewHallStandalone3D, type HiStructLayerToggles } from "./NewHallStandalone3D";
 import { NewHallSheetingModal } from "./NewHallSheetingModal";
+import { useHallOpenings } from './openings/useHallOpenings';
+import { OpeningHotspots } from './openings/OpeningHotspots';
+import { OpeningPanel } from './openings/OpeningPanel';
+import { BayOpeningMeshes, GableCap } from './openings/BayOpeningMeshes';
 
 type HiStructStep = "Geometry" | "Bays" | "Sheeting" | "Openings" | "Structure" | "GetQuote";
 
@@ -105,6 +109,10 @@ export default function NewHallConfigurator() {
     setParams((prev) => ({ ...prev, ...partial }));
   };
 
+  const openingEditor = useHallOpenings(params, activeTemplate.id);
+  const [showOpeningButtons, setShowOpeningButtons] = useState(true);
+  useEffect(() => { if (activeStep !== 'Openings') openingEditor.setModal(null); }, [activeStep]);
+
   const handleSelectTemplate = (tpl: HallTemplateItem) => {
     setActiveTemplate(tpl);
     handleSetParams({
@@ -166,8 +174,21 @@ export default function NewHallConfigurator() {
             templateId={activeTemplate.id}
             claddingOpacity={claddingOpacity}
             layerToggles={layerToggles}
+            editedSurfaces={openingEditor.surfaces}
           />
+          {effectiveParams.showCladding && layerToggles.panels && <>
+            <BayOpeningMeshes bays={openingEditor.bays} openings={openingEditor.preview} surfaces={openingEditor.surfaces}
+              selected={openingEditor.activeBay?.id} color={params.claddingColor} roofColor={params.roofColor}
+              opacity={claddingOpacity} showOpenings={layerToggles.openings} />
+            {(['front', 'back'] as const).filter(side => openingEditor.surfaces.includes(side)).map(side =>
+              <GableCap key={side} width={params.width} height={params.clearHeight} pitch={params.roofPitchDeg}
+                z={(side === 'front' ? -1 : 1) * (params.length / 2 + .05)} color={params.claddingColor} />)}
+          </>}
         </group>
+        <OpeningHotspots bays={openingEditor.bays} openings={openingEditor.openings} enabled={activeStep === 'Openings' && showOpeningButtons && layerToggles.openings && viewMode !== 'structure'}
+          modelRef={exportRef} templateId={activeTemplate.id}
+          onAdd={bay => { setActiveStep('Openings'); openingEditor.add(bay); }}
+          onEdit={opening => { setActiveStep('Openings'); openingEditor.edit(opening); }} />
 
         <ContactShadows
           position={[0, -0.09, 0]}
@@ -198,6 +219,10 @@ export default function NewHallConfigurator() {
           </GizmoHelper>
         )}
       </Canvas>
+      {openingEditor.activeModalState && openingEditor.activeBay && <OpeningPanel
+        state={openingEditor.activeModalState} bay={openingEditor.activeBay} error={openingEditor.error}
+        onState={openingEditor.setModal} onSave={openingEditor.save} onDelete={openingEditor.remove}
+        onClose={() => openingEditor.setModal(null)} />}
 
       {/* Top HiStruct Style Navigation Header */}
       <header className="absolute top-0 left-0 right-0 z-30 bg-slate-900/95 text-white border-b border-white/10 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 backdrop-blur-md shadow-xl">
@@ -270,6 +295,10 @@ export default function NewHallConfigurator() {
           </div>
 
           {/* HiStruct "Hlavné prvky" Layer Toggles Dropdown */}
+          <button type="button" aria-pressed={showOpeningButtons} onClick={() => setShowOpeningButtons(value => !value)}
+            className={`rounded-lg border px-3 py-1.5 text-xs font-bold cursor-pointer ${showOpeningButtons ? 'border-sky-400 bg-sky-500/30 text-sky-100' : 'border-white/15 bg-white/5 text-slate-300'}`}>
+            Tlačidlá
+          </button>
           <div className="relative">
             <button
               onClick={() => setShowLayerMenu((v) => !v)}

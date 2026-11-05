@@ -19,6 +19,7 @@ interface NewHallStandalone3DProps {
   templateId: string;
   claddingOpacity?: number;
   layerToggles?: HiStructLayerToggles;
+  editedSurfaces?: string[];
 }
 
 /**
@@ -30,6 +31,7 @@ export function NewHallStandalone3D({
   templateId,
   claddingOpacity = 1.0,
   layerToggles,
+  editedSurfaces = [],
 }: NewHallStandalone3DProps) {
   const lt: HiStructLayerToggles = layerToggles ?? {
     panels: true,
@@ -406,11 +408,11 @@ export function NewHallStandalone3D({
     return (
       <group name="main-envelope">
         {/* Left & Right Side Walls (from stemH up to H) */}
-        <mesh position={[-halfW - 0.06, wallMidY, 0]}>
+        <mesh visible={!editedSurfaces.includes('left')} position={[-halfW - 0.06, wallMidY, 0]}>
           <boxGeometry args={[0.1, wallH, L]} />
           <primitive object={wallMat} attach="material" />
         </mesh>
-        <mesh position={[halfW + 0.06, wallMidY, 0]}>
+        <mesh visible={!editedSurfaces.includes('right')} position={[halfW + 0.06, wallMidY, 0]}>
           <boxGeometry args={[0.1, wallH, L]} />
           <primitive object={wallMat} attach="material" />
         </mesh>
@@ -418,19 +420,19 @@ export function NewHallStandalone3D({
         {/* Concrete Stem Walls (Sokel) */}
         {stemH > 0 && (
           <group name="concrete-stem-walls">
-            <mesh position={[-halfW - 0.06, stemH / 2, 0]}>
+            <mesh visible={!editedSurfaces.includes('left')} position={[-halfW - 0.06, stemH / 2, 0]}>
               <boxGeometry args={[stemThick + 0.04, stemH, L + 0.12]} />
               <primitive object={stemMat} attach="material" />
             </mesh>
-            <mesh position={[halfW + 0.06, stemH / 2, 0]}>
+            <mesh visible={!editedSurfaces.includes('right')} position={[halfW + 0.06, stemH / 2, 0]}>
               <boxGeometry args={[stemThick + 0.04, stemH, L + 0.12]} />
               <primitive object={stemMat} attach="material" />
             </mesh>
-            <mesh position={[0, stemH / 2, -halfL - 0.05]}>
+            <mesh visible={!editedSurfaces.includes('front')} position={[0, stemH / 2, -halfL - 0.05]}>
               <boxGeometry args={[W, stemH, stemThick + 0.04]} />
               <primitive object={stemMat} attach="material" />
             </mesh>
-            <mesh position={[0, stemH / 2, halfL + 0.05]}>
+            <mesh visible={!editedSurfaces.includes('back')} position={[0, stemH / 2, halfL + 0.05]}>
               <boxGeometry args={[W, stemH, stemThick + 0.04]} />
               <primitive object={stemMat} attach="material" />
             </mesh>
@@ -445,19 +447,19 @@ export function NewHallStandalone3D({
               if (y >= H - 0.05) return null;
               return (
                 <group key={`p-joint-${i}`}>
-                  <mesh position={[-halfW - 0.115, y, 0]}>
+                  <mesh visible={!editedSurfaces.includes('left')} position={[-halfW - 0.115, y, 0]}>
                     <boxGeometry args={[0.015, 0.018, L + 0.02]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
-                  <mesh position={[halfW + 0.115, y, 0]}>
+                  <mesh visible={!editedSurfaces.includes('right')} position={[halfW + 0.115, y, 0]}>
                     <boxGeometry args={[0.015, 0.018, L + 0.02]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
-                  <mesh position={[0, y, -halfL - 0.105]}>
+                  <mesh visible={!editedSurfaces.includes('front')} position={[0, y, -halfL - 0.105]}>
                     <boxGeometry args={[W + 0.02, 0.018, 0.015]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
-                  <mesh position={[0, y, halfL + 0.105]}>
+                  <mesh visible={!editedSurfaces.includes('back')} position={[0, y, halfL + 0.105]}>
                     <boxGeometry args={[W + 0.02, 0.018, 0.015]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
@@ -486,11 +488,11 @@ export function NewHallStandalone3D({
         )}
 
         {/* Front & Back Gable Walls (Exact polygon with pitched top) */}
-        <mesh position={[0, 0, -halfL - 0.05]}>
+        <mesh visible={!editedSurfaces.includes('front')} position={[0, 0, -halfL - 0.05]}>
           <shapeGeometry args={[gableShape]} />
           <primitive object={wallMat} attach="material" />
         </mesh>
-        <mesh position={[0, 0, halfL + 0.05]}>
+        <mesh visible={!editedSurfaces.includes('back')} position={[0, 0, halfL + 0.05]}>
           <shapeGeometry args={[gableShape]} />
           <primitive object={wallMat} attach="material" />
         </mesh>
@@ -498,6 +500,7 @@ export function NewHallStandalone3D({
         {/* Left & Right Roof Slopes */}
         <mesh
           position={[-halfW / 2, (H + Hridge) / 2 + 0.08, 0]}
+          visible={!editedSurfaces.includes('roof-left')}
           rotation={[0, 0, pitchRad]}
         >
           <boxGeometry args={[slopeLen, 0.1, L + 0.4]} />
@@ -505,6 +508,7 @@ export function NewHallStandalone3D({
         </mesh>
         <mesh
           position={[halfW / 2, (H + Hridge) / 2 + 0.08, 0]}
+          visible={!editedSurfaces.includes('roof-right')}
           rotation={[0, 0, -pitchRad]}
         >
           <boxGeometry args={[slopeLen, 0.1, L + 0.4]} />
@@ -560,7 +564,7 @@ export function NewHallStandalone3D({
 
   // Helper: Ribbon Window (Pásové okno)
   const renderWindow = (x: number, y: number, z: number, rotY: number, ww = 3.6, wh = 1.2, keyStr = "win") => (
-    <group key={keyStr} position={[x, y, z]} rotation={[0, rotY, 0]}>
+    <group key={keyStr} position={[x, y, z]} rotation={[0, rotY, 0]} userData={{ hotspotWindow: { width: ww, height: wh } }}>
       <mesh>
         <boxGeometry args={[ww, wh, 0.16]} />
         <primitive object={glassMat} attach="material" />

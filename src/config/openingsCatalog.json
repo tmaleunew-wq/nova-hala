@@ -1,0 +1,13 @@
+{
+  "palette": [{"name":"RAL 7040","hex":"#9da3a6"},{"name":"RAL 9006","hex":"#a5a5a5"},{"name":"RAL 7035","hex":"#d7d7d7"},{"name":"RAL 6003","hex":"#50533c"}],
+  "categories": [
+    {"id":"frame","label":"Čistý otvor / Rám","roof":false,"minWidth":0.5,"minHeight":0.5,"width":2,"height":2.5,"sill":0,"subtypes":[{"id":"open","label":"Čistý otvor"},{"id":"framed","label":"Oceľový rám"}]},
+    {"id":"window","label":"Okno","roof":false,"minWidth":0.4,"minHeight":0.4,"width":2,"height":1.2,"sill":1.2,"subtypes":[{"id":"fixed","label":"Pevné okno"},{"id":"tilt","label":"Výklopné okno"},{"id":"ribbon","label":"Okenný pás"}]},
+    {"id":"door","label":"Personálne dvere","roof":false,"minWidth":0.8,"minHeight":1.9,"width":1,"height":2.1,"sill":0,"subtypes":[{"id":"solid","label":"Plné dvere"},{"id":"glazed","label":"Presklené dvere"}]},
+    {"id":"sectional","label":"Sekčná brána","roof":false,"minWidth":2,"minHeight":2,"width":4,"height":4,"sill":0,"subtypes":[{"id":"solid","label":"Plná sekčná brána"},{"id":"glazed","label":"S preskleným pásom"},{"id":"wicket","label":"S integrovanými dverami"},{"id":"rapid","label":"Rýchlobežná brána"}]},
+    {"id":"sliding","label":"Posuvná dvojkrídlová brána","roof":false,"minWidth":2,"minHeight":2,"width":4,"height":3,"sill":0,"subtypes":[{"id":"solid","label":"Plná dvojkrídlová"},{"id":"glazed","label":"Presklená dvojkrídlová"}]},
+    {"id":"roller","label":"Rolovacia brána","roof":false,"minWidth":1.5,"minHeight":2,"width":3,"height":3,"sill":0,"subtypes":[{"id":"solid","label":"Plná rolovacia"},{"id":"insulated","label":"Zateplená rolovacia"}]},
+    {"id":"skylight","label":"Presvetľovací pás / Svetlík","roof":true,"minWidth":0.4,"minHeight":0.4,"width":1.2,"height":2,"sill":0.2,"subtypes":[{"id":"polycarbonate","label":"Polykarbonátový pás"},{"id":"glass","label":"Presklený svetlík"}]},
+    {"id":"dock","label":"Nakladací mostík","roof":false,"minWidth":2.4,"minHeight":2.5,"width":3,"height":3,"sill":0,"subtypes":[{"id":"standard","label":"Nakladací mostík"},{"id":"shelter","label":"Mostík s tesnením"}]}
+  ]
+}
