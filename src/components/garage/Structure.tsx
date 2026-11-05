@@ -35,7 +35,10 @@ export function getPersonalDoorZ(p: GarageParams): number {
   const zs = getFrameZ(p);
   const isBack = p.personalDoorPosition === "back";
   let base = 0;
-  if (zs.length >= 3) {
+  if (typeof p.personalDoorBay === "number" && p.personalDoorBay >= 0 && p.personalDoorBay < zs.length - 1) {
+    const b = p.personalDoorBay;
+    base = (zs[b] + zs[b + 1]) / 2;
+  } else if (zs.length >= 3) {
     if (isBack) {
       base = (zs[zs.length - 2] + zs[zs.length - 1]) / 2;
     } else {
@@ -269,7 +272,9 @@ export function getWindowCoords(p: any): number[] {
   const basePositions: number[] = [];
   for (let i = 0; i < winCount; i++) {
     let bayIdx = 0;
-    if (winCount <= p.bayCount) {
+    if (Array.isArray(p.windowBays) && typeof p.windowBays[i] === "number" && p.windowBays[i] >= 0 && p.windowBays[i] < p.bayCount) {
+      bayIdx = p.windowBays[i];
+    } else if (winCount <= p.bayCount) {
       bayIdx = Math.floor(((i + 0.5) / winCount) * p.bayCount);
     } else {
       bayIdx = i % p.bayCount;

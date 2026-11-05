@@ -14,6 +14,7 @@ import { Route as Variant4RouteImport } from './routes/variant4'
 import { Route as Variant3RouteImport } from './routes/variant3'
 import { Route as Variant2RouteImport } from './routes/variant2'
 import { Route as PonukaRouteImport } from './routes/ponuka'
+import { Route as NovaHalaRouteImport } from './routes/nova-hala'
 import { Route as DokumentaciaRouteImport } from './routes/dokumentacia'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -43,6 +44,11 @@ const PonukaRoute = PonukaRouteImport.update({
   path: '/ponuka',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NovaHalaRoute = NovaHalaRouteImport.update({
+  id: '/nova-hala',
+  path: '/nova-hala',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DokumentaciaRoute = DokumentaciaRouteImport.update({
   id: '/dokumentacia',
   path: '/dokumentacia',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/dokumentacia': typeof DokumentaciaRoute
+  '/nova-hala': typeof NovaHalaRoute
   '/ponuka': typeof PonukaRoute
   '/variant2': typeof Variant2Route
   '/variant3': typeof Variant3Route
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/dokumentacia': typeof DokumentaciaRoute
+  '/nova-hala': typeof NovaHalaRoute
   '/ponuka': typeof PonukaRoute
   '/variant2': typeof Variant2Route
   '/variant3': typeof Variant3Route
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/dokumentacia': typeof DokumentaciaRoute
+  '/nova-hala': typeof NovaHalaRoute
   '/ponuka': typeof PonukaRoute
   '/variant2': typeof Variant2Route
   '/variant3': typeof Variant3Route
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/dokumentacia'
+    | '/nova-hala'
     | '/ponuka'
     | '/variant2'
     | '/variant3'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/dokumentacia'
+    | '/nova-hala'
     | '/ponuka'
     | '/variant2'
     | '/variant3'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/dokumentacia'
+    | '/nova-hala'
     | '/ponuka'
     | '/variant2'
     | '/variant3'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   DokumentaciaRoute: typeof DokumentaciaRoute
+  NovaHalaRoute: typeof NovaHalaRoute
   PonukaRoute: typeof PonukaRoute
   Variant2Route: typeof Variant2Route
   Variant3Route: typeof Variant3Route
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PonukaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/nova-hala': {
+      id: '/nova-hala'
+      path: '/nova-hala'
+      fullPath: '/nova-hala'
+      preLoaderRoute: typeof NovaHalaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dokumentacia': {
       id: '/dokumentacia'
       path: '/dokumentacia'
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   DokumentaciaRoute: DokumentaciaRoute,
+  NovaHalaRoute: NovaHalaRoute,
   PonukaRoute: PonukaRoute,
   Variant2Route: Variant2Route,
   Variant3Route: Variant3Route,

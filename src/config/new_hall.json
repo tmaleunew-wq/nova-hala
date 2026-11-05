@@ -1,0 +1,47 @@
+{
+  "name": "Nová Oceľová Hala",
+  "baseModel": "Hala S-10",
+  "imageKey": "KD10",
+  "type": "gable",
+  "width": 10.0,
+  "minLength": 12.0,
+  "moduleLength": 4.0,
+  "heights": [
+    4.026,
+    5.026
+  ],
+  "roofPitchDeg": 10,
+  "framework": "IPE 160",
+  "gablePillars": "RK 120x120x4",
+  "bracing": "ø10.7",
+  "tieRods": "ø16",
+  "steelGrade": "S355",
+  "gableSteelGrade": "S235",
+  "snowZone": "III",
+  "windZone": "I",
+  "claddingVersion": "ZU",
+  "defaultBays": 5,
+  "defaultLength": 20.0,
+  "versions": [
+    {
+      "label": "Výška stĺpa 4 m",
+      "poleHeight": 4,
+      "H": 4.026,
+      "H1": 4.9,
+      "H2": 3.85,
+      "D": 2.6,
+      "E": 4.8
+    },
+    {
+      "label": "Výška stĺpa 5 m",
+      "poleHeight": 5,
+      "H": 5.026,
+      "H1": 5.9,
+      "H2": 4.85,
+      "D": 2.6,
+      "E": 4.8
+    }
+  ],
+  "description": "Nová modulárna oceľová hala s IPE rámovou konštrukciou a samostatnými funkciami.",
+  "features": {}
+}

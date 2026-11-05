@@ -56,6 +56,7 @@ export interface GarageParams {
   personalDoorWidth?: number;
   personalDoorHeight?: number;
   personalDoorOffset?: number;
+  personalDoorBay?: number;
   doorFocus?: "gate" | "personalDoor";
   hasWindows: boolean;
   hasSkylights: boolean;
@@ -69,6 +70,7 @@ export interface GarageParams {
   windowHeight: number;
   windowOffset?: number;
   windowElevation?: number;
+  windowBays?: number[];
   // view
   showCladding: boolean;
   showStructure: boolean;
@@ -90,6 +92,35 @@ export interface GarageParams {
   extensionWidth?: number;
   extensionType?: "garage" | "carport" | "storage";
   extensionGateOpen?: boolean;
+  hasCenterColumns?: boolean;
+  structureType?: "ipe" | "c_profile";
+  wallMode?: "full" | "open" | "plinth";
+  plinthHeight?: number;
+  hasRidgeSkylight?: boolean;
+  hasOfficeAnnex?: boolean;
+  // HiStruct sheeting properties
+  stemWallHeight?: number;
+  stemWallThickness?: number;
+  stemWallColor?: string;
+  wallPanelWidth?: number;
+  wallInnerColor?: string;
+  roofInnerColor?: string;
+  purlinProfile?: string;
+  girtProfile?: string;
+  roofPanelName?: string;
+  wallPanelName?: string;
+  hasStemWall?: boolean;
+  wallProduction?: string;
+  roofProduction?: string;
+  purlinMaxSpan?: number;
+  twinRoof?: boolean;
+  hasCanopy?: boolean;
+  canopySide?: "left" | "right";
+  canopyWidth?: number;
+  hasDualExtensions?: boolean;
+  dualExtensionWidth?: number;
+  officeAnnexFloors?: number;
+  isLShape?: boolean;
 }
 
 const defaultG = (defaultConfig as any)?.defaultGarage || {};
@@ -164,6 +195,12 @@ export const DEFAULT_PARAMS: GarageParams = {
   hasAttic: false,
   atticHeight: 0.35,
   hasExtension: false,
+  hasCenterColumns: false,
+  structureType: "ipe",
+  wallMode: "full",
+  plinthHeight: 1.2,
+  hasRidgeSkylight: false,
+  hasOfficeAnnex: false,
   extensionSide: "right",
   extensionWidth: 3.5,
   extensionType: "garage",
