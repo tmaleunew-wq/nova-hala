@@ -61,7 +61,7 @@ export function OpeningPanel({ state, bay, error, onState, onSave, onDelete, onC
         <input aria-label={f.label} type="number" className="w-24 border rounded p-1" min={f.min} max={f.max} step={.01} value={Number(state.draft![f.key].toFixed(2))} onChange={e => { const value = e.target.valueAsNumber; if (Number.isFinite(value)) update({ [f.key]: Math.max(f.min, Math.min(f.max, value)) }); }} />
       </div></label>)}
       {(['frameColor', 'fillColor'] as const).map(key => <fieldset key={key}><legend className="text-sm mb-2">{key === 'frameColor' ? 'Farba rámu' : 'Farba výplne'}</legend><div className="grid grid-cols-4 gap-1">{catalog.palette.map(color => <button key={color.name} aria-pressed={state.draft![key] === color.hex} onClick={() => update({ [key]: color.hex })} className={`text-[10px] rounded border p-1 ${state.draft![key] === color.hex ? 'border-sky-600 ring-1 ring-sky-600' : 'border-slate-200'}`}><span className="block h-6 rounded mb-1" style={{ background: color.hex }} />{color.name}</button>)}</div></fieldset>)}
-      <button className="text-sky-700 text-sm" onClick={() => onState({ ...state, step: 'SUBTYPE' })}>Zmeniť typ</button>
+      <button className="text-sky-700 text-sm" onClick={() => onState({ ...state, step: 'CATEGORY' })}>Zmeniť typ</button>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       <div className="flex justify-between gap-3"><button className="bg-sky-700 text-white rounded px-4 py-2 disabled:opacity-40" disabled={!!error} onClick={onSave}>Uložiť prvok</button><button className="text-red-700 flex items-center gap-1" onClick={onDelete}><Trash2 size={16} />Odstrániť prvok</button></div>
     </div>}

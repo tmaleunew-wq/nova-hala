@@ -26,6 +26,7 @@ interface NewHallStandalone3DProps {
   claddingOpacity?: number;
   layerToggles?: HiStructLayerToggles;
   editedSurfaces?: string[];
+  replacedWindowIds?: string[];
 }
 
 /**
@@ -38,6 +39,7 @@ export function NewHallStandalone3D({
   claddingOpacity = 1.0,
   layerToggles,
   editedSurfaces = [],
+  replacedWindowIds = [],
 }: NewHallStandalone3DProps) {
   const lt: HiStructLayerToggles = layerToggles ?? {
     panels: true,
@@ -604,9 +606,15 @@ export function NewHallStandalone3D({
     const panelH = actualDoorHeight / panels;
     const R = 0.25;
     const hCurveStart = actualDoorHeight - 0.02;
+    // Sectional door details use local -Z as the exterior face.
+    const sideWall = Math.abs(Math.sin(rotY)) > 0.5;
+    const outward = sideWall ? Math.sign(cx) || 1 : Math.sign(cz) || -1;
+    const gateRotation = sideWall ? -outward * Math.PI / 2 : outward < 0 ? 0 : Math.PI;
+    const visionCount = Math.max(1, Math.floor(gateWidth / 0.95));
+    const visionSpacing = (gateWidth - 0.3) / visionCount;
 
     return (
-      <group key={keyStr} position={[cx, 0, cz]} rotation={[0, rotY, 0]}>
+      <group key={keyStr} position={[cx + (sideWall ? outward * .08 : 0), 0, cz + (sideWall ? 0 : outward * .08)]} rotation={[0, gateRotation, 0]}>
         <GateJambDetails width={gateWidth} height={actualDoorHeight} wireframe={p.wireframe} />
         {/* 0. PORTÁLOVÝ KRYCÍ RÁM OTVORU (Jambs & Header Portal Frame) */}
         <group>
@@ -649,9 +657,9 @@ export function NewHallStandalone3D({
               {/* Presklená sekcia (panoramatické okná) na 3. lamele */}
               {i === 2 && (
                 <group position={[0, 0, -0.022]}>
-                  {[-1.3, -0.43, 0.43, 1.3].map((wx, wi) => (
-                    <mesh key={`gate-vis-${wi}`} position={[wx, 0, 0]} castShadow>
-                      <boxGeometry args={[0.72, panelH * 0.52, 0.015]} />
+                  {Array.from({ length: visionCount }, (_, wi) => (wi - (visionCount - 1) / 2) * visionSpacing).map((wx, wi) => (
+                    <mesh key={`gate-vis-${wi}`} position={[wx, 0, -.012]}>
+                      <boxGeometry args={[Math.min(.72, visionSpacing * .82), panelH * 0.52, 0.015]} />
                       <primitive object={glassMat} attach="material" />
                     </mesh>
                   ))}
@@ -677,9 +685,14 @@ export function NewHallStandalone3D({
     const handleX = doorWidth / 2 - 0.08;
     const handleY = 1.0;
     const exterior = Math.abs(rotY) < 0.1 ? -1 : 1;
+    const doorSurfaceOffset = 0.08;
 
     return (
-      <group key={keyStr} position={[x, 0, z]} rotation={[0, rotY, 0]}>
+      <group key={keyStr} position={[
+        x + Math.sin(rotY) * exterior * doorSurfaceOffset,
+        0,
+        z + Math.cos(rotY) * exterior * doorSurfaceOffset,
+      ]} rotation={[0, rotY, 0]}>
         <PersonalDoorFrameFinish
           width={doorWidth}
           height={doorHeight}
@@ -798,13 +811,18 @@ export function NewHallStandalone3D({
   ) => {
     const frameColor = p.windowColor || "#2b2f36";
     const frameThickness = 0.075;
+    // Window finishes use local +Z as the exterior face, on every facade.
+    const sideWall = Math.abs(Math.sin(rotY)) > 0.5;
+    const outward = sideWall ? Math.sign(x) || 1 : Math.sign(z) || -1;
+    const windowRotation = sideWall ? outward * Math.PI / 2 : outward < 0 ? Math.PI : 0;
 
     return (
       <group
         key={keyStr}
-        position={[x, y, z]}
-        rotation={[0, rotY, 0]}
-        userData={{ hotspotWindow: { width: windowWidth, height: windowHeight } }}
+        position={[x + (sideWall ? outward * .08 : 0), y, z + (sideWall ? 0 : outward * .08)]}
+        rotation={[0, windowRotation, 0]}
+        visible={!replacedWindowIds.includes(`template-window-${keyStr}`)}
+        userData={{ hotspotWindow: { id: `template-window-${keyStr}`, width: windowWidth, height: windowHeight, frameColor } }}
       >
         <WindowDetails
           width={windowWidth}
@@ -813,14 +831,14 @@ export function NewHallStandalone3D({
           color={frameColor}
           wireframe={p.wireframe}
         />
-        {/* Dark interior reveal cavity so glass has realistic depth and clear transparent contrast */}
+        {/* Light blue-grey backing for the template's glazed window preview. */}
         <mesh position={[0, 0, -0.01]}>
           <boxGeometry args={[windowWidth - 0.04, windowHeight - 0.04, 0.05]} />
-          <meshStandardMaterial color="#0c121e" roughness={0.9} />
+          <meshStandardMaterial color="#9bb7c7" roughness={0.45} metalness={0.15} />
         </mesh>
 
         {/* Truly transparent architectural glass */}
-        <mesh position={[0, 0, 0.015]} castShadow receiveShadow>
+        <mesh position={[0, 0, 0.025]} receiveShadow>
           <boxGeometry args={[windowWidth - 0.04, windowHeight - 0.04, 0.012]} />
           <primitive object={glassMat} attach="material" />
         </mesh>
@@ -1109,12 +1127,12 @@ export function NewHallStandalone3D({
             const hasWin = idx % 2 === 0;
             return (
               <group key={`sklad-left-${idx}`}>
-                {hasWin && renderWindow(-halfW - 0.06, 3.27, zc, -Math.PI / 2, 4.0, 1.0, `sklad-lw-${idx}`)}
+                {hasWin && renderWindow(-halfW - 0.06, 3.27, zc, -Math.PI / 2, Math.min(4.0, bayLen - 0.4), 1.0, `sklad-lw-${idx}`)}
                 {/* Personnel door in Bay 4 */}
                 {idx === 4 &&
                   renderPersonnelDoor(-halfW - 0.06, z + bayLen * 0.85, -Math.PI / 2, 1.1, 2.1, "sklad-side-door")}
                 {/* Sectional gate 4.0x4.25m in Bay 5 */}
-                {idx === 5 && renderSectionalGate(-halfW - 0.06, z + bayLen * 0.85, Math.PI / 2, 4.0, 4.25, "sklad-side-gate")}
+                {idx === 5 && renderSectionalGate(-halfW - 0.06, zc, Math.PI / 2, Math.min(4.0, bayLen - 0.4), 4.25, "sklad-side-gate")}
               </group>
             );
           })}
@@ -1124,7 +1142,7 @@ export function NewHallStandalone3D({
             const zc = z + bayLen / 2;
             const hasWin = idx % 2 === 0;
             if (!hasWin) return null;
-            return renderWindow(halfW + 0.06, 3.27, zc, Math.PI / 2, 4.0, 1.0, `sklad-rw-${idx}`);
+            return renderWindow(halfW + 0.06, 3.27, zc, Math.PI / 2, Math.min(4.0, bayLen - 0.4), 1.0, `sklad-rw-${idx}`);
           })}
         </>
       )}

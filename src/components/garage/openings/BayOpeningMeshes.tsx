@@ -3,16 +3,16 @@ import { BoxGeometry, DoubleSide, Shape } from 'three';
 import { splitBayPanels, type Bay, type Opening, type Rect } from '@/lib/garage/openingSystem';
 
 /** Metre-based UVs retain the material's physical repeat across every rectangular piece. */
-export function createBayPanelGeometry(rect: Rect, bay: Bay) {
-  const geometry = new BoxGeometry(rect.width, rect.height, .1);
+export function createBayPanelGeometry(rect: Rect, bay: Bay, thickness = .1) {
+  const geometry = new BoxGeometry(rect.width, rect.height, thickness);
   geometry.translate(rect.x + rect.width / 2 - bay.width / 2, rect.y + rect.height / 2 - bay.height / 2, 0);
   const position = geometry.getAttribute('position'), uv = geometry.getAttribute('uv');
   for (let i = 0; i < position.count; i++) uv.setXY(i, position.getX(i) + bay.width / 2, position.getY(i) + bay.height / 2);
   uv.needsUpdate = true;
   return geometry;
 }
-function PanelPiece({ rect, bay, color, opacity }: { rect: Rect; bay: Bay; color: string; opacity: number }) {
-  const geometry = useMemo(() => createBayPanelGeometry(rect, bay), [rect, bay]);
+function PanelPiece({ rect, bay, color, opacity, thickness = .1 }: { rect: Rect; bay: Bay; color: string; opacity: number; thickness?: number }) {
+  const geometry = useMemo(() => createBayPanelGeometry(rect, bay, thickness), [rect, bay, thickness]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   return <mesh geometry={geometry} castShadow receiveShadow><meshStandardMaterial color={color} metalness={.25} roughness={.7} transparent={opacity < 1} opacity={opacity} /></mesh>;
 }
@@ -35,14 +35,23 @@ function OpeningModel({ o }: { o: Opening }) {
   </group>;
 }
 
-export function BayOpeningMeshes({ bays, openings, surfaces, selected, color, roofColor, opacity, showOpenings }: {
+export function BayOpeningMeshes({ bays, openings, surfaces, selected, color, roofColor, opacity, showOpenings, stemHeight = 0, stemColor = '#a5a5a5', stemThickness = .14 }: {
   bays: Bay[]; openings: Opening[]; surfaces: string[]; selected?: string; color: string; roofColor: string; opacity: number; showOpenings: boolean;
+  stemHeight?: number; stemColor?: string; stemThickness?: number;
 }) {
   return <group name="editable-bay-openings">{bays.map(bay => {
     const elements = openings.filter(o => o.bayId === bay.id);
     const panels = surfaces.includes(bay.surface) ? splitBayPanels(bay.width, bay.height, elements) : [];
+    const baseHeight = bay.roof ? 0 : Math.max(0, Math.min(stemHeight, bay.height));
+    const cladding = panels.map(rect => {
+      const y = Math.max(rect.y, baseHeight);
+      return { ...rect, y, height: rect.y + rect.height - y };
+    }).filter(rect => rect.height > 1e-6);
+    const basePanels = panels.map(rect => ({ ...rect, height: Math.min(rect.y + rect.height, baseHeight) - rect.y }))
+      .filter(rect => rect.height > 1e-6);
     return <group key={bay.id} position={bay.position3D} rotation={bay.rotation}>
-      {panels.map((rect, i) => <PanelPiece key={i} rect={rect} bay={bay} color={bay.roof ? roofColor : color} opacity={opacity} />)}
+      {cladding.map((rect, i) => <PanelPiece key={i} rect={rect} bay={bay} color={bay.roof ? roofColor : color} opacity={opacity} />)}
+      {basePanels.map((rect, i) => <PanelPiece key={`stem-${i}`} rect={rect} bay={bay} color={stemColor} opacity={1} thickness={stemThickness} />)}
       {selected === bay.id && <mesh position={[0, 0, .09]} raycast={() => null}><planeGeometry args={[bay.width, bay.height]} /><meshBasicMaterial color="#38bdf8" transparent opacity={.14} depthWrite={false} side={DoubleSide} /></mesh>}
       {showOpenings && elements.map(o => <group key={o.id} position={[o.x + o.width / 2 - bay.width / 2, o.y + o.height / 2 - bay.height / 2, .08]}><OpeningModel o={o} /></group>)}
     </group>;

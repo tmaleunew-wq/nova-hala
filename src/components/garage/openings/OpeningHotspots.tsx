@@ -6,9 +6,10 @@ import { addHotspotPosition, gridBubbles, surfacePoint } from '@/lib/garage/surf
 import catalog from '@/config/openingsCatalog.json';
 import { SurfaceHotspot } from './SurfaceHotspot';
 
-export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, modelRef, templateId }: {
+export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, modelRef, templateId, replacedWindowIds = [] }: {
   bays: Bay[]; openings: Opening[]; enabled: boolean;
   modelRef?: RefObject<Group | null>; templateId?: string;
+  replacedWindowIds?: string[];
   onAdd: (bay: Bay) => void; onEdit: (opening: Opening) => void;
 }) {
   const [templateWindows, setTemplateWindows] = useState<Opening[]>([]);
@@ -24,26 +25,31 @@ export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, modelR
       for (const bay of bays.filter(b => !b.roof)) {
         const local = centre.clone().sub(new Vector3(...bay.position3D))
           .applyQuaternion(new Quaternion().setFromEuler(new Euler(...bay.rotation)).invert());
-        if (Math.abs(local.z) > .2 || Math.abs(local.x) >= (bay.width + window.width) / 2) continue;
-        windows.push({ id: `template-${object.uuid}-${bay.id}`, bayId: bay.id, category: 'window', subtype: 'fixed',
-          width: window.width + .12, height: window.height + .12,
-          x: local.x + bay.width / 2 - (window.width + .12) / 2,
-          y: local.y + bay.height / 2 - (window.height + .12) / 2, frameColor: '', fillColor: '' });
+        if (Math.abs(local.z) > .2 || Math.abs(local.x) >= bay.width / 2) continue;
+        windows.push({ id: window.id, bayId: bay.id, category: 'window', subtype: 'fixed',
+          width: window.width, height: window.height,
+          x: local.x + bay.width / 2 - window.width / 2,
+          y: local.y + bay.height / 2 - window.height / 2, frameColor: window.frameColor || '#2b2f36', fillColor: '#9bb7c7' });
+        break;
       }
     });
     setTemplateWindows(windows);
   }, [bays, modelRef, templateId, enabled]);
   const bubbles = useMemo(() => gridBubbles(bays), [bays]);
+  const existingWindows = templateWindows.filter(o => !replacedWindowIds.includes(o.id));
   const points = useMemo(() => bays.map(bay => {
     const elements = openings.filter(o => o.bayId === bay.id);
     const free = splitBayPanels(bay.width, bay.height, elements);
     const canAdd = catalog.categories.some(c => c.roof === bay.roof && free.some(r => r.width >= c.minWidth + .2 && r.height >= c.minHeight + .1));
-    return { bay, elements, addPosition: canAdd ? addHotspotPosition(bay, [...openings, ...templateWindows]) : null };
-  }), [bays, openings, templateWindows]);
+    return { bay, elements: [...elements, ...existingWindows.filter(o => o.bayId === bay.id)], addPosition: canAdd ? addHotspotPosition(bay, [...openings, ...existingWindows]) : null };
+  }), [bays, openings, templateWindows, replacedWindowIds.join('|')]);
   if (!enabled) return null;
   return <group name="surface-opening-hotspots">
     {points.map(({ bay, elements, addPosition }) => <group key={bay.id}>
-      {addPosition && <SurfaceHotspot position={addPosition} normal={bay.normal} onActivate={() => onAdd(bay)} />}
+      {addPosition && <SurfaceHotspot position={addPosition} normal={bay.normal} onActivate={() => {
+        const existing = existingWindows.find(o => o.bayId === bay.id);
+        existing ? onEdit(existing) : onAdd(bay);
+      }} />}
       {elements.map(opening => {
         const large = ['sectional', 'sliding', 'roller', 'dock', 'skylight'].includes(opening.category);
         const y = opening.y + opening.height * (large && !bay.roof ? .65 : .5);

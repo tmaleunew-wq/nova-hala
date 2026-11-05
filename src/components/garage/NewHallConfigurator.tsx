@@ -175,10 +175,13 @@ export default function NewHallConfigurator() {
             claddingOpacity={claddingOpacity}
             layerToggles={layerToggles}
             editedSurfaces={openingEditor.surfaces}
+            replacedWindowIds={openingEditor.replacedWindowIds}
           />
           {effectiveParams.showCladding && layerToggles.panels && <>
             <BayOpeningMeshes bays={openingEditor.bays} openings={openingEditor.preview} surfaces={openingEditor.surfaces}
               selected={openingEditor.activeBay?.id} color={params.claddingColor} roofColor={params.roofColor}
+              stemHeight={params.hasStemWall !== false ? (params.stemWallHeight ?? .27) : 0}
+              stemColor={params.stemWallColor ?? '#a5a5a5'} stemThickness={(params.stemWallThickness ?? .1) + .04}
               opacity={claddingOpacity} showOpenings={layerToggles.openings} />
             {(['front', 'back'] as const).filter(side => openingEditor.surfaces.includes(side)).map(side =>
               <GableCap key={side} width={params.width} height={params.clearHeight} pitch={params.roofPitchDeg}
@@ -187,6 +190,7 @@ export default function NewHallConfigurator() {
         </group>
         <OpeningHotspots bays={openingEditor.bays} openings={openingEditor.openings} enabled={activeStep === 'Openings' && showOpeningButtons && layerToggles.openings && viewMode !== 'structure'}
           modelRef={exportRef} templateId={activeTemplate.id}
+          replacedWindowIds={openingEditor.replacedWindowIds}
           onAdd={bay => { setActiveStep('Openings'); openingEditor.add(bay); }}
           onEdit={opening => { setActiveStep('Openings'); openingEditor.edit(opening); }} />
 
