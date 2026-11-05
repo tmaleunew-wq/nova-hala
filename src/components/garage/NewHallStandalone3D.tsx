@@ -1,7 +1,13 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
+import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { SteelTube, SteelPlate } from "./SteelTube";
 import { type GarageParams } from "@/lib/garage/types";
+import { PersonalDoorDetails, WindowDetails } from "./AccessoryDetails";
+import { PersonalDoorLeafFinish, PersonalDoorFrameFinish } from "./PersonalDoorFinish";
+import { SectionalPanelDetails, SectionalGuideDetails } from "./SectionalDoorDetails";
+import { GateJambDetails } from "./GateSurfaceDetails";
+import { createPBRSmoothMaterial, createPBRWoodMaterial, setupProceduralEnvMap } from "@/lib/garage/pbrMaterialHelper";
 
 export interface HiStructLayerToggles {
   panels: boolean;
@@ -43,6 +49,19 @@ export function NewHallStandalone3D({
     structuralComponents: true,
     basePlate: true,
   };
+
+  const { gl, scene } = useThree();
+
+  useEffect(() => {
+    const envMap = setupProceduralEnvMap(scene, gl);
+    return () => {
+      if (scene.environment === envMap) {
+        scene.environment = null;
+      }
+      envMap.dispose();
+    };
+  }, [gl, scene]);
+
   const W = p.width;
   const L = p.length;
   const H = p.clearHeight;
@@ -110,24 +129,55 @@ export function NewHallStandalone3D({
     [trimColor]
   );
 
-  const gateMat = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: gateColor,
-        roughness: 0.5,
-        metalness: 0.3,
-      }),
-    [gateColor]
-  );
+  const gateMaterial = useMemo(() => {
+    if (p.gateDecor === "wood_oak") {
+      return createPBRWoodMaterial("golden_oak", "horizontal");
+    }
+    if (p.gateDecor === "wood_walnut") {
+      return createPBRWoodMaterial("walnut", "horizontal");
+    }
+    return new THREE.MeshStandardMaterial({
+      color: p.sectionalDoorColor || gateColor,
+      metalness: 0.6,
+      roughness: 0.35,
+      wireframe: p.wireframe,
+    });
+  }, [p.gateDecor, p.sectionalDoorColor, gateColor, p.wireframe]);
+
+  const gateMat = gateMaterial;
+
+  const doorMaterial = useMemo(() => {
+    if (p.wireframe) return null;
+    if (p.doorDecor === "wood_oak") {
+      return createPBRWoodMaterial("golden_oak", "vertical");
+    }
+    if (p.doorDecor === "wood_walnut") {
+      return createPBRWoodMaterial("walnut", "vertical");
+    }
+    if (p.doorDecor === "none" && p.doorColor) {
+      return createPBRSmoothMaterial(p.doorColor);
+    }
+    if (p.gateDecor === "wood_oak" && !p.doorColor) {
+      return createPBRWoodMaterial("golden_oak", "vertical");
+    }
+    if (p.gateDecor === "wood_walnut" && !p.doorColor) {
+      return createPBRWoodMaterial("walnut", "vertical");
+    }
+    return createPBRSmoothMaterial(p.doorColor || "#3a3f47");
+  }, [p.doorDecor, p.gateDecor, p.doorColor, p.wireframe]);
 
   const glassMat = useMemo(
     () =>
       new THREE.MeshPhysicalMaterial({
-        color: "#bae6fd",
+        color: "#cbe7f7",
         transparent: true,
-        opacity: 0.65,
-        roughness: 0.1,
+        opacity: 0.38,
+        roughness: 0.04,
         metalness: 0.1,
+        transmission: 0.72,
+        ior: 1.5,
+        thickness: 0.03,
+        depthWrite: false,
       }),
     []
   );
@@ -193,10 +243,10 @@ export function NewHallStandalone3D({
               <group key={`frame-${idx}`}>
                 {/* Left & Right Primary Columns */}
                 <SteelTube from={[-halfW, 0, z]} to={[-halfW, H, z]} size={colSize} color={steelColor} />
-                <SteelPlate center={[-halfW, 0.015, z]} size={[colSize * 2, 0.03, colSize * 2]} color="#d7d7d7" />
+                <SteelPlate position={[-halfW, 0.015, z]} size={[colSize * 2, 0.03, colSize * 2]} color="#d7d7d7" />
 
                 <SteelTube from={[halfW, 0, z]} to={[halfW, H, z]} size={colSize} color={steelColor} />
-                <SteelPlate center={[halfW, 0.015, z]} size={[colSize * 2, 0.03, colSize * 2]} color="#d7d7d7" />
+                <SteelPlate position={[halfW, 0.015, z]} size={[colSize * 2, 0.03, colSize * 2]} color="#d7d7d7" />
 
                 {/* Eave Haunches (Nábehy pri odkvape) */}
                 <SteelTube
@@ -228,7 +278,7 @@ export function NewHallStandalone3D({
                 {hasCenterCol && (
                   <>
                     <SteelTube from={[0, 0, z]} to={[0, Hridge, z]} size={colSize * 0.95} color={steelColor} />
-                    <SteelPlate center={[0, 0.015, z]} size={[colSize * 1.8, 0.03, colSize * 1.8]} color="#d7d7d7" />
+                    <SteelPlate position={[0, 0.015, z]} size={[colSize * 1.8, 0.03, colSize * 1.8]} color="#d7d7d7" />
                     <SteelTube
                       from={[0, H - 0.6, z]}
                       to={[-1.2, Hridge - 1.2 * Math.tan(pitchRad), z]}
@@ -541,40 +591,278 @@ export function NewHallStandalone3D({
     );
   };
 
-  // Helper: Industrial Sectional Gate
-  const renderSectionalGate = (x: number, z: number, rotY: number, gw = 4.0, gh = 4.2, keyStr = "gate") => (
-    <group key={keyStr} position={[x, gh / 2, z]} rotation={[0, rotY, 0]}>
-      {/* Gate panel */}
-      <mesh>
-        <boxGeometry args={[gw, gh, 0.16]} />
-        <primitive object={gateMat} attach="material" />
-      </mesh>
-      {/* Vision strip (presklená lamela) */}
-      <mesh position={[0, gh * 0.15, 0]}>
-        <boxGeometry args={[gw * 0.88, 0.45, 0.18]} />
-        <primitive object={glassMat} attach="material" />
-      </mesh>
-      {/* Frame border */}
-      <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[gw + 0.18, gh + 0.1, 0.14]} />
-        <primitive object={trimMat} attach="material" />
-      </mesh>
-    </group>
-  );
+  // Helper: Exact Industrial Sectional Gate from Steel Hall (Accessories.tsx)
+  const renderSectionalGate = (
+    cx: number,
+    cz: number,
+    rotY: number,
+    gateWidth = 4.0,
+    actualDoorHeight = 4.25,
+    keyStr = "gate"
+  ) => {
+    const panels = Math.max(4, Math.min(8, Math.round(actualDoorHeight / 0.52)));
+    const panelH = actualDoorHeight / panels;
+    const R = 0.25;
+    const hCurveStart = actualDoorHeight - 0.02;
 
-  // Helper: Ribbon Window (Pásové okno)
-  const renderWindow = (x: number, y: number, z: number, rotY: number, ww = 3.6, wh = 1.2, keyStr = "win") => (
-    <group key={keyStr} position={[x, y, z]} rotation={[0, rotY, 0]} userData={{ hotspotWindow: { width: ww, height: wh } }}>
-      <mesh>
-        <boxGeometry args={[ww, wh, 0.16]} />
-        <primitive object={glassMat} attach="material" />
-      </mesh>
-      <mesh>
-        <boxGeometry args={[ww + 0.12, wh + 0.12, 0.14]} />
-        <primitive object={trimMat} attach="material" />
-      </mesh>
-    </group>
-  );
+    return (
+      <group key={keyStr} position={[cx, 0, cz]} rotation={[0, rotY, 0]}>
+        <GateJambDetails width={gateWidth} height={actualDoorHeight} wireframe={p.wireframe} />
+        {/* 0. PORTÁLOVÝ KRYCÍ RÁM OTVORU (Jambs & Header Portal Frame) */}
+        <group>
+          {/* Ľavé ostenie */}
+          <mesh position={[-gateWidth / 2 - 0.03, actualDoorHeight / 2 + 0.01, 0.005]} castShadow receiveShadow>
+            <boxGeometry args={[0.07, actualDoorHeight + 0.04, 0.12]} />
+            <meshStandardMaterial color="#3a3f42" metalness={0.7} roughness={0.35} wireframe={p.wireframe} />
+          </mesh>
+          {/* Pravé ostenie */}
+          <mesh position={[gateWidth / 2 + 0.03, actualDoorHeight / 2 + 0.01, 0.005]} castShadow receiveShadow>
+            <boxGeometry args={[0.07, actualDoorHeight + 0.04, 0.12]} />
+            <meshStandardMaterial color="#3a3f42" metalness={0.7} roughness={0.35} wireframe={p.wireframe} />
+          </mesh>
+          {/* Horné nadpražie */}
+          <mesh position={[0, actualDoorHeight + 0.04, 0.005]} castShadow receiveShadow>
+            <boxGeometry args={[gateWidth + 0.13, 0.07, 0.12]} />
+            <meshStandardMaterial color="#3a3f42" metalness={0.7} roughness={0.35} wireframe={p.wireframe} />
+          </mesh>
+        </group>
+
+        {/* 1. SEKČNÁ BRÁNA */}
+        <SectionalGuideDetails width={gateWidth} height={actualDoorHeight} radius={R} curveStart={hCurveStart} wireframe={p.wireframe} />
+        {Array.from({ length: panels }).map((_, i) => {
+          const panelY = 0.02 + i * panelH + panelH / 2;
+          return (
+            <group
+              key={i}
+              position={[0, panelY, 0]}
+            >
+              <mesh castShadow receiveShadow material={gateMaterial}>
+                <boxGeometry args={[gateWidth, panelH - 0.004, 0.04]} />
+              </mesh>
+              <SectionalPanelDetails
+                width={gateWidth}
+                height={panelH}
+                index={i}
+                material={gateMaterial}
+                wireframe={p.wireframe}
+              />
+              {/* Presklená sekcia (panoramatické okná) na 3. lamele */}
+              {i === 2 && (
+                <group position={[0, 0, -0.022]}>
+                  {[-1.3, -0.43, 0.43, 1.3].map((wx, wi) => (
+                    <mesh key={`gate-vis-${wi}`} position={[wx, 0, 0]} castShadow>
+                      <boxGeometry args={[0.72, panelH * 0.52, 0.015]} />
+                      <primitive object={glassMat} attach="material" />
+                    </mesh>
+                  ))}
+                </group>
+              )}
+            </group>
+          );
+        })}
+      </group>
+    );
+  };
+
+  // Helper: Exact Personal Door from Steel Hall (Accessories.tsx)
+  const renderPersonnelDoor = (
+    x: number,
+    z: number,
+    rotY: number,
+    doorWidth = 1.0,
+    doorHeight = 2.1,
+    keyStr = "door"
+  ) => {
+    const frameThickness = 0.075;
+    const handleX = doorWidth / 2 - 0.08;
+    const handleY = 1.0;
+    const exterior = Math.abs(rotY) < 0.1 ? -1 : 1;
+
+    return (
+      <group key={keyStr} position={[x, 0, z]} rotation={[0, rotY, 0]}>
+        <PersonalDoorFrameFinish
+          width={doorWidth}
+          height={doorHeight}
+          depth={frameThickness}
+          color={p.doorColor || "#3a3f47"}
+          wood={!!p.doorDecor?.startsWith("wood_") || (!p.doorColor && !!p.gateDecor?.startsWith("wood_"))}
+          wireframe={p.wireframe}
+        />
+        <PersonalDoorDetails
+          width={doorWidth}
+          height={doorHeight}
+          frameDepth={frameThickness}
+          exterior={exterior}
+          wireframe={p.wireframe}
+        />
+        {/* Door Frame (Zárubeň) - Left, Right, Top */}
+        <group>
+          {/* Left frame post */}
+          <mesh position={[-doorWidth / 2 - 0.015, doorHeight / 2 + 0.01, 0]} castShadow>
+            <boxGeometry args={[0.03, doorHeight + 0.02, frameThickness]} />
+            <meshStandardMaterial color="#2d3139" metalness={0.7} roughness={0.4} wireframe={p.wireframe} />
+          </mesh>
+          {/* Right frame post */}
+          <mesh position={[doorWidth / 2 + 0.015, doorHeight / 2 + 0.01, 0]} castShadow>
+            <boxGeometry args={[0.03, doorHeight + 0.02, frameThickness]} />
+            <meshStandardMaterial color="#2d3139" metalness={0.7} roughness={0.4} wireframe={p.wireframe} />
+          </mesh>
+          {/* Top frame header */}
+          <mesh position={[0, doorHeight + 0.015, 0]} castShadow>
+            <boxGeometry args={[doorWidth + 0.06, 0.03, frameThickness]} />
+            <meshStandardMaterial color="#2d3139" metalness={0.7} roughness={0.4} wireframe={p.wireframe} />
+          </mesh>
+        </group>
+
+        {/* Door Leaf (Dverné krídlo) */}
+        <mesh position={[0, doorHeight / 2, 0]} castShadow receiveShadow material={doorMaterial || undefined}>
+          <boxGeometry args={[doorWidth, doorHeight, 0.04]} />
+          {p.wireframe && (
+            <meshStandardMaterial color={p.doorColor} side={THREE.DoubleSide} wireframe />
+          )}
+          <PersonalDoorLeafFinish
+            width={doorWidth}
+            height={doorHeight}
+            color={p.doorColor || "#3a3f47"}
+            wood={!!p.doorDecor?.startsWith("wood_") || (!p.doorColor && !!p.gateDecor?.startsWith("wood_"))}
+            base={doorMaterial}
+            wireframe={p.wireframe}
+          />
+        </mesh>
+
+        {/* Presklenie v hornej časti dverí */}
+        <mesh position={[0, doorHeight * 0.65, exterior * 0.022]} castShadow>
+          <boxGeometry args={[doorWidth * 0.48, doorHeight * 0.28, 0.012]} />
+          <primitive object={glassMat} attach="material" />
+        </mesh>
+
+        {/* Realistic Door Handle & Escutcheon */}
+        {/* Outer side handle */}
+        <group position={[handleX, handleY, exterior * 0.021]}>
+          <mesh castShadow>
+            <boxGeometry args={[0.04, 0.16, 0.005]} />
+            <meshStandardMaterial color="#1a1d21" metalness={0.9} roughness={0.2} wireframe={p.wireframe} />
+          </mesh>
+          <mesh position={[0, -0.04, 0.003 * exterior]}>
+            <cylinderGeometry args={[0.006, 0.006, 0.005, 8]} />
+            <meshStandardMaterial color="#d4af37" metalness={0.95} roughness={0.2} wireframe={p.wireframe} />
+          </mesh>
+          <mesh position={[0, 0.03, 0.015 * exterior]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.008, 0.008, 0.03, 12]} />
+            <meshStandardMaterial color="#d4af37" metalness={0.95} roughness={0.15} wireframe={p.wireframe} />
+          </mesh>
+          <mesh position={[-0.04, 0.03, 0.03 * exterior]} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <cylinderGeometry args={[0.008, 0.008, 0.1, 12]} />
+            <meshStandardMaterial color="#d4af37" metalness={0.95} roughness={0.15} wireframe={p.wireframe} />
+          </mesh>
+        </group>
+
+        {/* Inner side handle */}
+        <group position={[handleX, handleY, -exterior * 0.021]}>
+          <mesh castShadow>
+            <boxGeometry args={[0.04, 0.16, 0.005]} />
+            <meshStandardMaterial color="#1a1d21" metalness={0.9} roughness={0.2} wireframe={p.wireframe} />
+          </mesh>
+          <mesh position={[0, 0.03, -0.015 * exterior]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.008, 0.008, 0.03, 12]} />
+            <meshStandardMaterial color="#d4af37" metalness={0.95} roughness={0.15} wireframe={p.wireframe} />
+          </mesh>
+          <mesh position={[-0.04, 0.03, -0.03 * exterior]} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <cylinderGeometry args={[0.008, 0.008, 0.1, 12]} />
+            <meshStandardMaterial color="#d4af37" metalness={0.95} roughness={0.15} wireframe={p.wireframe} />
+          </mesh>
+        </group>
+
+        {/* Hinges (Pánty) */}
+        {[-0.6, 0.6].map((hy, idx) => (
+          <group key={idx} position={[-doorWidth / 2 - 0.005, doorHeight / 2 + hy, 0]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
+              <cylinderGeometry args={[0.008, 0.008, 0.05, 12]} />
+              <meshStandardMaterial color="#2d3139" metalness={0.9} roughness={0.3} wireframe={p.wireframe} />
+            </mesh>
+          </group>
+        ))}
+      </group>
+    );
+  };
+
+  // Helper: Exact Window from Steel Hall (Accessories.tsx)
+  const renderWindow = (
+    x: number,
+    y: number,
+    z: number,
+    rotY: number,
+    windowWidth = 4.0,
+    windowHeight = 1.0,
+    keyStr = "win"
+  ) => {
+    const frameColor = p.windowColor || "#2b2f36";
+    const frameThickness = 0.075;
+
+    return (
+      <group
+        key={keyStr}
+        position={[x, y, z]}
+        rotation={[0, rotY, 0]}
+        userData={{ hotspotWindow: { width: windowWidth, height: windowHeight } }}
+      >
+        <WindowDetails
+          width={windowWidth}
+          height={windowHeight}
+          frameDepth={frameThickness}
+          color={frameColor}
+          wireframe={p.wireframe}
+        />
+        {/* Dark interior reveal cavity so glass has realistic depth and clear transparent contrast */}
+        <mesh position={[0, 0, -0.01]}>
+          <boxGeometry args={[windowWidth - 0.04, windowHeight - 0.04, 0.05]} />
+          <meshStandardMaterial color="#0c121e" roughness={0.9} />
+        </mesh>
+
+        {/* Truly transparent architectural glass */}
+        <mesh position={[0, 0, 0.015]} castShadow receiveShadow>
+          <boxGeometry args={[windowWidth - 0.04, windowHeight - 0.04, 0.012]} />
+          <primitive object={glassMat} attach="material" />
+        </mesh>
+
+        {/* Vertical mullions (stĺpiky) dividing ribbon window into ~1.0m panes */}
+        {Array.from({ length: Math.max(0, Math.round(windowWidth / 1.05) - 1) }).map((_, mi) => {
+          const count = Math.max(1, Math.round(windowWidth / 1.05));
+          const paneW = windowWidth / count;
+          const mX = -windowWidth / 2 + (mi + 1) * paneW;
+          return (
+            <mesh key={`mullion-${mi}`} position={[mX, 0, 0.022]} castShadow>
+              <boxGeometry args={[0.045, windowHeight - 0.02, 0.045]} />
+              <meshStandardMaterial color={frameColor} metalness={0.4} roughness={0.5} wireframe={p.wireframe} />
+            </mesh>
+          );
+        })}
+        {/* frame wrapping the cladding edge */}
+        <group>
+          {/* Left frame post */}
+          <mesh position={[-windowWidth / 2 - 0.015, 0, 0]} castShadow>
+            <boxGeometry args={[0.03, windowHeight + 0.06, frameThickness]} />
+            <meshStandardMaterial color={frameColor} metalness={0.4} roughness={0.6} wireframe={p.wireframe} />
+          </mesh>
+          {/* Right frame post */}
+          <mesh position={[windowWidth / 2 + 0.015, 0, 0]} castShadow>
+            <boxGeometry args={[0.03, windowHeight + 0.06, frameThickness]} />
+            <meshStandardMaterial color={frameColor} metalness={0.4} roughness={0.6} wireframe={p.wireframe} />
+          </mesh>
+          {/* Top frame header */}
+          <mesh position={[0, windowHeight / 2 + 0.015, 0]} castShadow>
+            <boxGeometry args={[windowWidth + 0.06, 0.03, frameThickness]} />
+            <meshStandardMaterial color={frameColor} metalness={0.4} roughness={0.6} wireframe={p.wireframe} />
+          </mesh>
+          {/* Bottom frame sill */}
+          <mesh position={[0, -windowHeight / 2 - 0.015, 0]} castShadow>
+            <boxGeometry args={[windowWidth + 0.06, 0.03, frameThickness]} />
+            <meshStandardMaterial color={frameColor} metalness={0.4} roughness={0.6} wireframe={p.wireframe} />
+          </mesh>
+        </group>
+      </group>
+    );
+  };
 
   // Helper: Structural Ridge Skylight (Sedlový hrebeňový svetlík)
   const renderRidgeSkylight = (xOffset = 0, yBase = Hridge) => {
@@ -649,7 +937,7 @@ export function NewHallStandalone3D({
             {frameZs.slice(startBayIdx, endBayIdx + 1).map((z, idx) => (
               <group key={`lean-frame-${sideSign}-${idx}`}>
                 <SteelTube from={[outerX, 0, z]} to={[outerX, leanHOuter, z]} size={0.16} color={steelColor} />
-                <SteelPlate center={[outerX, 0.015, z]} size={[0.3, 0.03, 0.3]} color={steelColor} />
+                <SteelPlate position={[outerX, 0.015, z]} size={[0.3, 0.03, 0.3]} color={steelColor} />
                 <SteelTube from={[innerX, leanHInner, z]} to={[outerX, leanHOuter, z]} size={0.16} color={steelColor} />
               </group>
             ))}
@@ -697,10 +985,10 @@ export function NewHallStandalone3D({
             {/* Office 2-level ribbon windows if vyrobna_hala */}
             {hasOfficeWindows && !isOpenCanopy && (
               <>
-                {renderWindow(outerX + sideSign * 0.06, 1.4, zMid, Math.PI / 2, len * 0.82, 1.0, "off-win-1")}
-                {renderWindow(outerX + sideSign * 0.06, 3.0, zMid, Math.PI / 2, len * 0.82, 1.0, "off-win-2")}
-                {renderWindow((innerX + outerX) / 2, 1.4, zStart - 0.06, 0, leanW * 0.75, 1.0, "off-win-f1")}
-                {renderWindow((innerX + outerX) / 2, 3.0, zStart - 0.06, 0, leanW * 0.75, 1.0, "off-win-f2")}
+                {renderWindow(outerX + sideSign * 0.06, 1.4, zMid, sideSign > 0 ? Math.PI / 2 : -Math.PI / 2, len * 0.82, 1.0, "off-win-1")}
+                {renderWindow(outerX + sideSign * 0.06, 3.0, zMid, sideSign > 0 ? Math.PI / 2 : -Math.PI / 2, len * 0.82, 1.0, "off-win-2")}
+                {renderWindow((innerX + outerX) / 2, 1.4, zStart - 0.06, Math.PI, leanW * 0.75, 1.0, "off-win-f1")}
+                {renderWindow((innerX + outerX) / 2, 3.0, zStart - 0.06, Math.PI, leanW * 0.75, 1.0, "off-win-f2")}
               </>
             )}
           </group>
@@ -758,15 +1046,12 @@ export function NewHallStandalone3D({
         <>
           {/* Front gable wall (z = -halfL): 3 spans [-halfW..-halfW/3], [-halfW/3..halfW/3], [halfW/3..halfW] */}
           {/* Left span: 2nd floor window (y=5.4m) */}
-          {renderWindow(-halfW * (2 / 3), 5.4, -halfL - 0.06, 0, halfW * 0.58, 1.0, "kanc-f-l2")}
+          {renderWindow(-halfW * (2 / 3), 5.4, -halfL - 0.06, Math.PI, halfW * 0.58, 1.0, "kanc-f-l2")}
           {/* Middle span: Entrance door (0.9x2.1m) + 1st floor window (y=2.4m) */}
-          <mesh position={[-halfW / 3 + 1.0, 1.05, -halfL - 0.07]}>
-            <boxGeometry args={[1.0, 2.1, 0.16]} />
-            <primitive object={trimMat} attach="material" />
-          </mesh>
-          {renderWindow(0, 2.4, -halfL - 0.06, 0, halfW * 0.58, 1.0, "kanc-f-m1")}
+          {renderPersonnelDoor(-halfW / 3 + 1.0, -halfL - 0.06, 0, 1.0, 2.1, "kanc-f-door")}
+          {renderWindow(0, 2.4, -halfL - 0.06, Math.PI, halfW * 0.58, 1.0, "kanc-f-m1")}
           {/* Right span: 2nd floor window (y=5.4m) */}
-          {renderWindow(halfW * (2 / 3), 5.4, -halfL - 0.06, 0, halfW * 0.58, 1.0, "kanc-f-r2")}
+          {renderWindow(halfW * (2 / 3), 5.4, -halfL - 0.06, Math.PI, halfW * 0.58, 1.0, "kanc-f-r2")}
 
           {/* Side walls: Bays 0 & 1 (Office 2-storey ribbon windows 5.25x1.0m on BOTH left and right walls!) */}
           {frameZs.slice(0, -1).map((z, idx) => {
@@ -779,20 +1064,15 @@ export function NewHallStandalone3D({
                   {renderWindow(halfW + 0.06, 2.4, zCenter, Math.PI / 2, winW, 1.0, `kw-r1-${idx}`)}
                   {renderWindow(halfW + 0.06, 5.4, zCenter, Math.PI / 2, winW, 1.0, `kw-r2-${idx}`)}
                   {/* Left side wall (-halfW): 1st & 2nd floor windows */}
-                  {renderWindow(-halfW - 0.06, 2.4, zCenter, Math.PI / 2, winW, 1.0, `kw-l1-${idx}`)}
-                  {renderWindow(-halfW - 0.06, 5.4, zCenter, Math.PI / 2, winW, 1.0, `kw-l2-${idx}`)}
+                  {renderWindow(-halfW - 0.06, 2.4, zCenter, -Math.PI / 2, winW, 1.0, `kw-l1-${idx}`)}
+                  {renderWindow(-halfW - 0.06, 5.4, zCenter, -Math.PI / 2, winW, 1.0, `kw-l2-${idx}`)}
                 </group>
               );
             }
             return (
               <group key={`kanc-storage-${idx}`}>
                 {/* Left side wall (-halfW) in storage section: personnel door in Bay 3, sectional gate 4.0x4.0m in Bay 4 */}
-                {idx === 3 && (
-                  <mesh position={[-halfW - 0.07, 1.05, zCenter]}>
-                    <boxGeometry args={[0.16, 2.1, 1.0]} />
-                    <primitive object={trimMat} attach="material" />
-                  </mesh>
-                )}
+                {idx === 3 && renderPersonnelDoor(-halfW - 0.06, zCenter, -Math.PI / 2, 1.0, 2.1, `kanc-side-door-${idx}`)}
                 {idx === 4 && renderSectionalGate(-halfW - 0.06, zCenter, Math.PI / 2, 4.0, 4.0, "ks-gate")}
               </group>
             );
@@ -809,7 +1089,7 @@ export function NewHallStandalone3D({
               {renderSectionalGate(-halfW - 0.06, frameZs[1] - bayLen / 2, Math.PI / 2, 3.8, 4.0, "can-g1")}
               {renderSectionalGate(-halfW - 0.06, frameZs[2] - bayLen / 2, Math.PI / 2, 3.8, 4.0, "can-g2")}
               {frameZs.slice(2, -1).map((z, idx) =>
-                renderWindow(-halfW - 0.06, 2.4, z + bayLen / 2, Math.PI / 2, bayLen * 0.65, 1.2, `can-w-${idx}`)
+                renderWindow(-halfW - 0.06, 2.4, z + bayLen / 2, -Math.PI / 2, bayLen * 0.65, 1.2, `can-w-${idx}`)
               )}
             </>
           )}
@@ -821,10 +1101,7 @@ export function NewHallStandalone3D({
         <>
           {/* Front Gable Wall: Center sectional gate 4.0x4.25m + personal entrance door 1.1x2.1m */}
           {renderSectionalGate(0, -halfL - 0.06, 0, 4.0, 4.25, "sklad-front-gate")}
-          <mesh position={[-3.55, 1.05, -halfL - 0.07]}>
-            <boxGeometry args={[1.1, 2.1, 0.16]} />
-            <primitive object={trimMat} attach="material" />
-          </mesh>
+          {renderPersonnelDoor(-3.55, -halfL - 0.06, 0, 1.1, 2.1, "sklad-front-door")}
 
           {/* Left Side Wall (-halfW): 5 ribbon windows 4.0x1.0m, side personal door, side sectional gate 4.0x4.25m */}
           {frameZs.slice(0, -1).map((z, idx) => {
@@ -832,14 +1109,10 @@ export function NewHallStandalone3D({
             const hasWin = idx % 2 === 0;
             return (
               <group key={`sklad-left-${idx}`}>
-                {hasWin && renderWindow(-halfW - 0.06, 3.27, zc, Math.PI / 2, 4.0, 1.0, `sklad-lw-${idx}`)}
+                {hasWin && renderWindow(-halfW - 0.06, 3.27, zc, -Math.PI / 2, 4.0, 1.0, `sklad-lw-${idx}`)}
                 {/* Personnel door in Bay 4 */}
-                {idx === 4 && (
-                  <mesh position={[-halfW - 0.07, 1.05, z + bayLen * 0.85]}>
-                    <boxGeometry args={[0.16, 2.1, 1.1]} />
-                    <primitive object={trimMat} attach="material" />
-                  </mesh>
-                )}
+                {idx === 4 &&
+                  renderPersonnelDoor(-halfW - 0.06, z + bayLen * 0.85, -Math.PI / 2, 1.1, 2.1, "sklad-side-door")}
                 {/* Sectional gate 4.0x4.25m in Bay 5 */}
                 {idx === 5 && renderSectionalGate(-halfW - 0.06, z + bayLen * 0.85, Math.PI / 2, 4.0, 4.25, "sklad-side-gate")}
               </group>
@@ -864,7 +1137,7 @@ export function NewHallStandalone3D({
             return (
               <group key={`sklad-bay-sv-${idx}`}>
                 {idx === 2 && renderSectionalGate(-halfW - 0.06, zc, Math.PI / 2, 3.8, 4.0, `sklad-sg-${idx}`)}
-                {idx !== 2 && renderWindow(-halfW - 0.06, H - 1.1, zc, Math.PI / 2, bayLen * 0.72, 0.9, `sklad-w-${idx}`)}
+                {idx !== 2 && renderWindow(-halfW - 0.06, H - 1.1, zc, -Math.PI / 2, bayLen * 0.72, 0.9, `sklad-w-${idx}`)}
               </group>
             );
           })}
@@ -874,7 +1147,7 @@ export function NewHallStandalone3D({
       {/* 4E. JEDNOLOĎOVÁ HALA (PEM_KOSTA) */}
       {templateId === "jednolodna_hala" && showClad && (
         <>
-          {renderWindow(halfW * 0.45, 2.2, -halfL - 0.06, 0, halfW * 0.75, 1.5, "jedn-fw")}
+          {renderWindow(halfW * 0.45, 2.2, -halfL - 0.06, Math.PI, halfW * 0.75, 1.5, "jedn-fw")}
           {renderSectionalGate(-halfW * 0.45, -halfL - 0.06, 0, 4.2, 4.0, "jedn-fg")}
           {frameZs.slice(0, -1).map((z, idx) => {
             const zc = z + bayLen / 2;
@@ -956,22 +1229,19 @@ export function NewHallStandalone3D({
       {templateId === "prazdna_hala" && showClad && (
         <>
           {renderSectionalGate(0, -halfL - 0.06, 0, p.doorWidth || 4.2, p.doorHeight || 4.0, "blank-front-gate")}
-          {p.hasPersonalDoor && (
-            <mesh
-              position={[
-                p.personalDoorSide === "right" ? halfW + 0.07 : -halfW - 0.07,
-                1.05,
-                frameZs[Math.min(p.personalDoorBay ?? 0, bayCount - 1)] + bayLen / 2,
-              ]}
-            >
-              <boxGeometry args={[0.12, 2.1, 1.0]} />
-              <primitive object={gateMat} attach="material" />
-            </mesh>
-          )}
+          {p.hasPersonalDoor &&
+            renderPersonnelDoor(
+              p.personalDoorSide === "right" ? halfW + 0.06 : -halfW - 0.06,
+              frameZs[Math.min(p.personalDoorBay ?? 0, bayCount - 1)] + bayLen / 2,
+              p.personalDoorSide === "right" ? Math.PI / 2 : -Math.PI / 2,
+              1.0,
+              2.1,
+              "blank-door"
+            )}
           {(p.windowBays || []).map((bIdx) => {
             if (bIdx >= bayCount) return null;
             const zc = frameZs[bIdx] + bayLen / 2;
-            return renderWindow(-halfW - 0.06, 2.5, zc, Math.PI / 2, bayLen * 0.65, 1.2, `custom-win-${bIdx}`);
+            return renderWindow(-halfW - 0.06, 2.5, zc, -Math.PI / 2, bayLen * 0.65, 1.2, `custom-win-${bIdx}`);
           })}
         </>
       )}
