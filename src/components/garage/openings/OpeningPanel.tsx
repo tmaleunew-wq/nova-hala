@@ -47,7 +47,7 @@ export function OpeningPanel({ state, bay, error, onState, onSave, onDelete, onC
       <button aria-label="Zavrieť bez uloženia" onClick={onClose}><X size={20} /></button>
     </div>
     <p className="text-xs text-slate-500 mb-4">{bay.width.toFixed(2)} × {bay.height.toFixed(2)} m · {state.step === 'CATEGORY' ? '1. Kategória' : state.step === 'SUBTYPE' ? '2. Podtyp' : '3. Parametre'}</p>
-    {state.step === 'CATEGORY' && <div className="grid grid-cols-2 gap-3">{catalog.categories.map(c => <button key={c.id} disabled={!validCategory(c)} title={!validCategory(c) ? (c.roof !== bay.roof ? 'Tento typ patrí na inú plochu haly.' : `Vyžaduje aspoň ${c.minWidth} × ${c.minHeight} m a okraj 0,1 m.`) : c.label}
+    {state.step === 'CATEGORY' && <div className="grid grid-cols-2 gap-3">{catalog.categories.filter(c => c.roof === bay.roof).map(c => <button key={c.id} disabled={!validCategory(c)} title={!validCategory(c) ? (c.roof !== bay.roof ? 'Tento typ patrí na inú plochu haly.' : `Vyžaduje aspoň ${c.minWidth} × ${c.minHeight} m a okraj 0,1 m.`) : c.label}
       onClick={() => selectCategory(c)} className="text-xs disabled:opacity-35 disabled:cursor-not-allowed">
       <span className="block rounded-lg bg-sky-700 p-3 text-white mb-1"><OpeningIcon type={c.id} /></span>{c.label}
     </button>)}</div>}

@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { BoxGeometry, DoubleSide, Shape } from 'three';
 import { splitBayPanels, type Bay, type Opening, type Rect } from '@/lib/garage/openingSystem';
+import { RoofSheetDetails } from '../RoofSheetDetails';
 
 /** Metre-based UVs retain the material's physical repeat across every rectangular piece. */
 export function createBayPanelGeometry(rect: Rect, bay: Bay, thickness = .1) {
@@ -51,6 +52,8 @@ export function BayOpeningMeshes({ bays, openings, surfaces, selected, color, ro
       .filter(rect => rect.height > 1e-6);
     return <group key={bay.id} position={bay.position3D} rotation={bay.rotation}>
       {cladding.map((rect, i) => <PanelPiece key={i} rect={rect} bay={bay} color={bay.roof ? roofColor : color} opacity={opacity} />)}
+      {bay.roof && panels.length > 0 && <RoofSheetDetails width={bay.width} height={bay.height}
+        panels={panels} offset={-bay.position3D[2] - bay.height / 2} color={roofColor} opacity={opacity} />}
       {basePanels.map((rect, i) => <PanelPiece key={`stem-${i}`} rect={rect} bay={bay} color={stemColor} opacity={1} thickness={stemThickness} />)}
       {selected === bay.id && <mesh position={[0, 0, .09]} raycast={() => null}><planeGeometry args={[bay.width, bay.height]} /><meshBasicMaterial color="#38bdf8" transparent opacity={.14} depthWrite={false} side={DoubleSide} /></mesh>}
       {showOpenings && elements.map(o => <group key={o.id} position={[o.x + o.width / 2 - bay.width / 2, o.y + o.height / 2 - bay.height / 2, .08]}><OpeningModel o={o} /></group>)}

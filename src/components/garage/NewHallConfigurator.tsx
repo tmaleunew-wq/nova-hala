@@ -49,7 +49,7 @@ export default function NewHallConfigurator() {
   const [isMobile, setIsMobile] = useState(false);
   const [quoteRequestSignal, setQuoteRequestSignal] = useState(0);
 
-  // Open template selector by default (like https://app.histruct.com/pem-haly/sk/guest)
+  // Template selector for standalone halls.
   const [showTemplatePicker, setShowTemplatePicker] = useState<boolean>(false);
   const [showBOM, setShowBOM] = useState<boolean>(false);
   const [showSheetingModal, setShowSheetingModal] = useState<boolean>(false);
@@ -380,13 +380,6 @@ export default function NewHallConfigurator() {
       <aside className="absolute left-3.5 top-16 z-20 w-[340px] max-w-[calc(100vw-28px)] max-h-[calc(100vh-110px)] overflow-y-auto rounded-2xl bg-slate-900/92 text-white border border-white/15 backdrop-blur-md shadow-2xl p-4 space-y-4">
         {/* Active Standalone Hall Header */}
         <div className="flex items-center gap-3 pb-3 border-b border-white/10">
-          {activeTemplate.imageUrl && (
-            <img
-              src={activeTemplate.imageUrl}
-              alt={activeTemplate.title}
-              className="w-14 h-14 rounded-lg bg-white p-1 object-contain shrink-0"
-            />
-          )}
           <div className="min-w-0 flex-1">
             <span className="text-[10px] font-mono uppercase tracking-wider text-sky-400 block">
               Samostatná šablóna haly
@@ -526,7 +519,7 @@ export default function NewHallConfigurator() {
           </div>
         )}
 
-        {/* STEP 3: SHEETING (Opláštenie — podľa dialógu HiStruct PEM Haly) */}
+        {/* STEP 3: SHEETING (Opláštenie) */}
         {activeStep === "Sheeting" && (
           <div className="space-y-3 text-xs">
             {/* HiStruct Modal Open Button */}

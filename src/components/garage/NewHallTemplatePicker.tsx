@@ -9,7 +9,6 @@ export interface HallTemplateItem {
   title: string;
   subtitle: string;
   category: string;
-  imageUrl?: string;
   width: number;
   length: number;
   clearHeight: number;
@@ -147,21 +146,6 @@ export const NewHallTemplatePicker: React.FC<NewHallTemplatePickerProps> = ({
                     </span>
                   )}
 
-                  {/* Thumbnail Image */}
-                  <div className="w-full aspect-square flex items-center justify-center overflow-hidden mb-3 p-1">
-                    {tpl.imageUrl ? (
-                      <img
-                        src={tpl.imageUrl}
-                        alt={`${tpl.title} ${tpl.subtitle}`}
-                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 text-xs">
-                        3D Model
-                      </div>
-                    )}
-                  </div>
-
                   {/* Title & Subtitle */}
                   <h3 className="text-xs sm:text-sm font-semibold text-slate-700 uppercase tracking-wide group-hover:text-sky-700 transition-colors">
                     {tpl.title}
@@ -185,7 +169,7 @@ export const NewHallTemplatePicker: React.FC<NewHallTemplatePickerProps> = ({
 
         {/* Footer */}
         <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-          <span>VBAU s.r.o. · Konfigurátor oceľových hál podľa štandardu HiStruct / PEM</span>
+          <span>VBAU s.r.o. · Konfigurátor oceľových hál</span>
           <span>Vyberte samostatný typ haly pre načítanie jej špecifickej 3D konštrukcie</span>
         </div>
       </div>

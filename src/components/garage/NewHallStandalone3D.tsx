@@ -7,6 +7,7 @@ import { PersonalDoorDetails, WindowDetails } from "./AccessoryDetails";
 import { PersonalDoorLeafFinish, PersonalDoorFrameFinish } from "./PersonalDoorFinish";
 import { SectionalPanelDetails, SectionalGuideDetails } from "./SectionalDoorDetails";
 import { GateJambDetails } from "./GateSurfaceDetails";
+import { RoofSheetDetails } from "./RoofSheetDetails";
 import { createPBRSmoothMaterial, createPBRWoodMaterial, setupProceduralEnvMap } from "@/lib/garage/pbrMaterialHelper";
 
 export interface HiStructLayerToggles {
@@ -30,7 +31,7 @@ interface NewHallStandalone3DProps {
 }
 
 /**
- * Renders a complete, standalone industrial steel hall where each of the 10 PEM/HiStruct
+ * Renders a complete, standalone industrial steel hall where each of the 10 standalone
  * archetypes has its own dedicated structural frame system and architectural envelope.
  */
 export function NewHallStandalone3D({
@@ -112,8 +113,8 @@ export function NewHallStandalone3D({
     () =>
       new THREE.MeshStandardMaterial({
         color: roofColor,
-        roughness: 0.55,
-        metalness: 0.2,
+        roughness: 0.62,
+        metalness: 0.3,
         transparent: isGhostClad,
         opacity: claddingOpacity,
         side: THREE.DoubleSide,
@@ -554,6 +555,7 @@ export function NewHallStandalone3D({
           position={[-halfW / 2, (H + Hridge) / 2 + 0.08, 0]}
           visible={!editedSurfaces.includes('roof-left')}
           rotation={[0, 0, pitchRad]}
+          castShadow receiveShadow
         >
           <boxGeometry args={[slopeLen, 0.1, L + 0.4]} />
           <primitive object={roofMat} attach="material" />
@@ -562,12 +564,37 @@ export function NewHallStandalone3D({
           position={[halfW / 2, (H + Hridge) / 2 + 0.08, 0]}
           visible={!editedSurfaces.includes('roof-right')}
           rotation={[0, 0, -pitchRad]}
+          castShadow receiveShadow
         >
           <boxGeometry args={[slopeLen, 0.1, L + 0.4]} />
           <primitive object={roofMat} attach="material" />
         </mesh>
 
         {/* Corner & Ridge Flashings (Klampiarske lemovanie) */}
+        {[-1, 1].map(side => (
+          <group key={`roof-detail-${side}`}
+            position={[side * halfW / 2, (H + Hridge) / 2 + .08, 0]}
+            rotation={[-Math.PI / 2, side * pitchRad, 0]}>
+            {!editedSurfaces.includes(side < 0 ? 'roof-left' : 'roof-right') && (
+              <RoofSheetDetails width={slopeLen} height={L + .4} offset={-halfL - .2}
+                color={roofColor} opacity={claddingOpacity} />
+            )}
+            {lt.flashings && <>
+              {[-1, 1].map(end => <mesh key={`verge-${end}`} position={[0, end * (halfL + .2), .065]}>
+                <boxGeometry args={[slopeLen, .075, .08]} />
+                <primitive object={trimMat} attach="material" />
+              </mesh>)}
+              <mesh position={[side * slopeLen / 2, 0, .025]}>
+                <boxGeometry args={[.075, L + .4, .14]} />
+                <primitive object={trimMat} attach="material" />
+              </mesh>
+              <mesh position={[-side * (halfW / (2 * Math.cos(pitchRad)) - .12), 0, .07]}>
+                <boxGeometry args={[.28, L + .44, .035]} />
+                <primitive object={trimMat} attach="material" />
+              </mesh>
+            </>}
+          </group>
+        ))}
         {lt.flashings && (
           <>
             {[
@@ -1046,7 +1073,7 @@ export function NewHallStandalone3D({
       )}
 
       {/* 4. Specific Standalone Hall Constructions & Openings */}
-      {/* 4A. VÝROBNÁ HALA s kancelárskou časťou (PEM_MetalTrade) */}
+      {/* 4A. VÝROBNÁ HALA s kancelárskou časťou */}
       {isProdWithOffice && (
         <>
           {renderLeanToAisle(1, 5.5, 4.4, 3.6, 0, Math.min(3, bayCount), false, true)}
@@ -1098,7 +1125,7 @@ export function NewHallStandalone3D({
         </>
       )}
 
-      {/* 4C. BUDOVA s bočným prestrešením (PEM_Kotrbaty) */}
+      {/* 4C. BUDOVA s bočným prestrešením */}
       {isSideCanopy && (
         <>
           {renderLeanToAisle(-1, p.canopyWidth || 4.5, H, H - 0.9, 0, bayCount, true, false)}
@@ -1162,7 +1189,7 @@ export function NewHallStandalone3D({
         </>
       )}
 
-      {/* 4E. JEDNOLOĎOVÁ HALA (PEM_KOSTA) */}
+      {/* 4E. JEDNOLOĎOVÁ HALA */}
       {templateId === "jednolodna_hala" && showClad && (
         <>
           {renderWindow(halfW * 0.45, 2.2, -halfL - 0.06, Math.PI, halfW * 0.75, 1.5, "jedn-fw")}
@@ -1177,7 +1204,7 @@ export function NewHallStandalone3D({
         </>
       )}
 
-      {/* 4F. DVOJLOĎOVÁ HALA (PEM_PalettenTrade) */}
+      {/* 4F. DVOJLOĎOVÁ HALA */}
       {isDoubleSpan && showClad && (
         <>
           {/* Two front gates — one for each structural aisle */}
