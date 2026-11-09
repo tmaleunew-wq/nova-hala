@@ -91,7 +91,7 @@ export function BuildingQrModal({
         </head>
         <body>
           <div class="label-card">
-            <div class="header">BAUBOX — DOKUMENTÁCIA STAVBY</div>
+            <div class="header">VBAU — DOKUMENTÁCIA STAVBY</div>
             <img class="qr-code" src="${qrImageUrl}" alt="QR Kód" />
             <div class="title">${clientName || "Zákazka"}</div>
             <div class="dim">${params.width}m × ${params.length}m × ${params.clearHeight}m</div>

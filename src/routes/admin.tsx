@@ -29,7 +29,7 @@ export const Route = createFileRoute("/admin")({
   ),
   head: () => ({
     meta: [
-      { title: "Admin Dashboard — BAUBOX Steel Shed Forge" },
+      { title: "Admin Dashboard — VBAU Steel Shed Forge" },
       { name: "description", content: "Administrátorský systém pre spravovanie a nacenenie dopytov garáží." },
     ],
   }),
@@ -682,7 +682,7 @@ function AdminDashboard() {
                   <span className="text-white font-bold break-all">{clientEmail || "—"}</span>
                   {clientEmail && (
                     <a
-                      href={`mailto:${clientEmail}?subject=${encodeURIComponent(`Cenová ponuka BAUBOX - Garáž ${W}x${L}m`)}`}
+                      href={`mailto:${clientEmail}?subject=${encodeURIComponent(`Cenová ponuka VBAU - Garáž ${W}x${L}m`)}`}
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 text-[11px] font-sans"
                       title="Napísať e-mail"
                     >
@@ -707,7 +707,7 @@ function AdminDashboard() {
                         Volať
                       </a>
                       <a
-                        href={`https://wa.me/${clientPhone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Dobrý deň ${clientName ? clientName : ""}, ohľadom Vašej cenovej ponuky na garáž BAUBOX:`)}`}
+                        href={`https://wa.me/${clientPhone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Dobrý deň ${clientName ? clientName : ""}, ohľadom Vašej cenovej ponuky na garáž VBAU:`)}`}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-500/20 text-green-300 border border-green-500/30 hover:bg-green-500/30 text-[11px] font-sans"

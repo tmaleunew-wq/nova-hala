@@ -94,7 +94,7 @@ export function AdminAuthGate({ children }: AdminAuthGateProps) {
           </div>
 
           <h2 className="text-center text-sm font-bold tracking-widest text-white uppercase mb-1">
-            BAUBOX ADMIN VSTUP
+            VBAU ADMIN VSTUP
           </h2>
           <p className="text-center text-[11px] text-white/50 mb-6">
             Zadajte heslo pre prístup k správe dopytov a kalkulačke.

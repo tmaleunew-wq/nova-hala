@@ -285,7 +285,7 @@ export function PriceQuoteModal({
           <div className="flex justify-between items-start border-b-2 border-emerald-500 pb-4 print:pb-3">
             <div>
               <div className="text-2xl font-extrabold tracking-tight text-white print:text-black print:text-xl">
-                BAUBOX <span className="text-emerald-400 print:text-emerald-700">STEEL SHED FORGE</span>
+                VBAU <span className="text-emerald-400 print:text-emerald-700">STEEL SHED FORGE</span>
               </div>
               <div className="text-xs text-white/50 print:text-slate-600 mt-0.5 font-mono">
                 Dodávateľ montovaných oceľových garáží a hál
@@ -511,7 +511,7 @@ export function PriceQuoteModal({
               </div>
               <div className="text-right">
                 <strong className="text-white/80 print:text-black block mb-1">Vystavil:</strong>
-                <p>Tím BAUBOX Steel Shed Forge</p>
+                <p>Tím VBAU Steel Shed Forge</p>
                 <p>Tel: +421 900 123 456</p>
                 <p>E-mail: info@steelshedforge.com</p>
               </div>

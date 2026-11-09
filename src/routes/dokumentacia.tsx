@@ -41,7 +41,7 @@ export const Route = createFileRoute("/dokumentacia")({
   component: BuildingDocumentationPage,
   head: () => ({
     meta: [
-      { title: "Dokumentácia Stavby — BAUBOX" },
+      { title: "Dokumentácia Stavby — VBAU" },
       { name: "description", content: "Kompletná technická dokumentácia stavby, PDF výkresy a AR zobrazenie v priestore." },
     ],
   }),
