@@ -172,8 +172,8 @@ export default function NewHallConfigurator() {
         shadows
         frameloop="always"
         dpr={[1, isMobile ? 1.5 : 2]}
-        camera={{ position: [-22, 12, -26], fov: 35, near: 0.4, far: 500 }}
-        gl={{ antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance" }}
+        camera={{ position: [-22, 12, -26], fov: 35, near: 0.5, far: 600 }}
+        gl={{ antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance", logarithmicDepthBuffer: true }}
       >
         <color attach="background" args={["#eef2f6"]} />
         <fog attach="fog" args={["#eef2f6", 90, 420]} />
@@ -184,6 +184,14 @@ export default function NewHallConfigurator() {
           intensity={1.35}
           castShadow
           shadow-mapSize={[2048, 2048]}
+          shadow-camera-left={-40}
+          shadow-camera-right={40}
+          shadow-camera-top={40}
+          shadow-camera-bottom={-40}
+          shadow-camera-near={0.5}
+          shadow-camera-far={150}
+          shadow-bias={-0.0001}
+          shadow-normalBias={0.035}
         />
         <directionalLight position={[-20, 18, 25]} intensity={0.55} />
 
@@ -214,14 +222,14 @@ export default function NewHallConfigurator() {
           onEdit={opening => { setActiveStep('Openings'); openingEditor.edit(opening); }} />
 
         <ContactShadows
-          position={[0, -0.09, 0]}
+          position={[0, -0.160, 0]}
           opacity={0.35}
           scale={80}
           blur={2.2}
           far={25}
         />
 
-        <gridHelper args={[100, 50, "#cbd5e1", "#e2e8f0"]} position={[0, -0.1, 0]} />
+        <gridHelper args={[100, 50, "#cbd5e1", "#e2e8f0"]} position={[0, -0.161, 0]} />
 
         <OrbitControls
           makeDefault

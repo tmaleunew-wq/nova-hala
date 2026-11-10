@@ -57,12 +57,12 @@ export function Scene({
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-camera-left={-22}
-        shadow-camera-right={22}
-        shadow-camera-top={22}
-        shadow-camera-bottom={-22}
-        shadow-bias={-0.00002}
-        shadow-normalBias={0.04}
+        shadow-camera-left={-36}
+        shadow-camera-right={36}
+        shadow-camera-top={36}
+        shadow-camera-bottom={-36}
+        shadow-bias={-0.00005}
+        shadow-normalBias={0.035}
       />
       <directionalLight position={[-6, 8, 6]} intensity={0.4} />
       <hemisphereLight args={["#ffffff", "#888e99", 0.6]} />
@@ -102,7 +102,7 @@ export function Scene({
           fadeDistance={80}
           fadeStrength={1.2}
           infiniteGrid
-          position={[0, -0.149, 0]}
+          position={[0, -0.161, 0]}
         />
       )}
     </>

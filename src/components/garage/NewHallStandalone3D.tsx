@@ -89,6 +89,24 @@ export function NewHallStandalone3D({
   const showOpenings = showClad && lt.openings;
   const isGhostClad = claddingOpacity < 0.99;
 
+  // Standalone archetype identification & slab calculations
+  const isDoubleSpan = templateId === "dvojlodna_hala" || !!p.hasCenterColumns;
+  const isOfficeWithStorage = templateId === "kancelarska_budova";
+  const isProdWithOffice = templateId === "vyrobna_hala";
+  const isSideCanopy = templateId === "budova_pristresok";
+  const isBothLeans = templateId === "budova_pristavky";
+  const isLShape = templateId === "nakreslit_pudorys";
+  const hasSkylight =
+    templateId === "skladovacia_hala_svetlik" ||
+    templateId === "budova_pristresok" ||
+    templateId === "dvojlodna_hala" ||
+    !!p.hasRidgeSkylight;
+
+  const slabMinX = -halfW - 0.3 - (isSideCanopy ? (p.canopyWidth || 4.5) : isBothLeans || isLShape ? 5.3 : 0);
+  const slabMaxX = halfW + 0.3 + (isProdWithOffice || isBothLeans || isOfficeWithStorage ? 6.0 : 0);
+  const slabWidth = slabMaxX - slabMinX;
+  const slabCenterX = (slabMinX + slabMaxX) / 2;
+
   // Colors & Materials (defaulting steel to HiStruct blue #3b83bd)
   const steelColor = p.steelColor || "#3b83bd";
   const wallColor = p.claddingColor || "#d1d5db";
@@ -441,20 +459,11 @@ export function NewHallStandalone3D({
             );
           })}
 
-        {/* Base Concrete Slab + Stem Wall (Základná plocha + sokel) */}
+        {/* Base Concrete Slab (Základová doska pre celý stavebný komplex) */}
         {p.showFoundation !== false && lt.basePlate && (
-          <group name="base-plate-and-stem-wall">
-            <mesh position={[0, -0.08, 0]} receiveShadow>
-              <boxGeometry args={[W + 0.6, 0.16, L + 0.6]} />
-              <primitive object={concreteMat} attach="material" />
-            </mesh>
-            {/* Concrete Stem Wall Perimeter (Betónový sokel 0.30 m) */}
-            <mesh position={[-halfW - 0.04, 0.15, 0]}>
-              <boxGeometry args={[0.14, 0.3, L + 0.1]} />
-              <primitive object={concreteMat} attach="material" />
-            </mesh>
-            <mesh position={[halfW + 0.04, 0.15, 0]}>
-              <boxGeometry args={[0.14, 0.3, L + 0.1]} />
+          <group name="base-plate">
+            <mesh position={[slabCenterX, -0.08, 0]} receiveShadow>
+              <boxGeometry args={[slabWidth, 0.16, L + 0.6]} />
               <primitive object={concreteMat} attach="material" />
             </mesh>
           </group>
@@ -472,32 +481,32 @@ export function NewHallStandalone3D({
     return (
       <group name="main-envelope">
         {/* Left & Right Side Walls (from stemH up to H) */}
-        <mesh visible={!editedSurfaces.includes('left')} position={[-halfW - 0.06, wallMidY, 0]}>
+        <mesh visible={!editedSurfaces.includes('left')} position={[-halfW - 0.07, wallMidY, 0]}>
           <boxGeometry args={[0.1, wallH, L]} />
           <primitive object={wallMat} attach="material" />
         </mesh>
-        <mesh visible={!editedSurfaces.includes('right')} position={[halfW + 0.06, wallMidY, 0]}>
+        <mesh visible={!editedSurfaces.includes('right')} position={[halfW + 0.07, wallMidY, 0]}>
           <boxGeometry args={[0.1, wallH, L]} />
           <primitive object={wallMat} attach="material" />
         </mesh>
 
-        {/* Concrete Stem Walls (Sokel) */}
+        {/* Concrete Stem Walls (Sokel - 4 strany s precíznym rohovým napojením bez prekrývania a Z-fighting) */}
         {stemH > 0 && (
           <group name="concrete-stem-walls">
-            <mesh visible={!editedSurfaces.includes('left')} position={[-halfW - 0.06, stemH / 2, 0]}>
-              <boxGeometry args={[stemThick + 0.04, stemH, L + 0.12]} />
+            <mesh visible={!editedSurfaces.includes('left')} position={[-halfW - 0.07, stemH / 2, 0]}>
+              <boxGeometry args={[0.14, stemH, L]} />
               <primitive object={stemMat} attach="material" />
             </mesh>
-            <mesh visible={!editedSurfaces.includes('right')} position={[halfW + 0.06, stemH / 2, 0]}>
-              <boxGeometry args={[stemThick + 0.04, stemH, L + 0.12]} />
+            <mesh visible={!editedSurfaces.includes('right')} position={[halfW + 0.07, stemH / 2, 0]}>
+              <boxGeometry args={[0.14, stemH, L]} />
               <primitive object={stemMat} attach="material" />
             </mesh>
-            <mesh visible={!editedSurfaces.includes('front')} position={[0, stemH / 2, -halfL - 0.05]}>
-              <boxGeometry args={[W, stemH, stemThick + 0.04]} />
+            <mesh visible={!editedSurfaces.includes('front')} position={[0, stemH / 2, -halfL - 0.07]}>
+              <boxGeometry args={[W + 0.28, stemH, 0.14]} />
               <primitive object={stemMat} attach="material" />
             </mesh>
-            <mesh visible={!editedSurfaces.includes('back')} position={[0, stemH / 2, halfL + 0.05]}>
-              <boxGeometry args={[W, stemH, stemThick + 0.04]} />
+            <mesh visible={!editedSurfaces.includes('back')} position={[0, stemH / 2, halfL + 0.07]}>
+              <boxGeometry args={[W + 0.28, stemH, 0.14]} />
               <primitive object={stemMat} attach="material" />
             </mesh>
           </group>
@@ -511,19 +520,19 @@ export function NewHallStandalone3D({
               if (y >= H - 0.05) return null;
               return (
                 <group key={`p-joint-${i}`}>
-                  <mesh visible={!editedSurfaces.includes('left')} position={[-halfW - 0.115, y, 0]}>
+                  <mesh visible={!editedSurfaces.includes('left')} position={[-halfW - 0.122, y, 0]}>
                     <boxGeometry args={[0.015, 0.018, L + 0.02]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
-                  <mesh visible={!editedSurfaces.includes('right')} position={[halfW + 0.115, y, 0]}>
+                  <mesh visible={!editedSurfaces.includes('right')} position={[halfW + 0.122, y, 0]}>
                     <boxGeometry args={[0.015, 0.018, L + 0.02]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
-                  <mesh visible={!editedSurfaces.includes('front')} position={[0, y, -halfL - 0.102]}>
+                  <mesh visible={!editedSurfaces.includes('front')} position={[0, y, -halfL - 0.122]}>
                     <boxGeometry args={[W + 0.02, 0.018, 0.006]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
-                  <mesh visible={!editedSurfaces.includes('back')} position={[0, y, halfL + 0.102]}>
+                  <mesh visible={!editedSurfaces.includes('back')} position={[0, y, halfL + 0.122]}>
                     <boxGeometry args={[W + 0.02, 0.018, 0.006]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
@@ -537,11 +546,11 @@ export function NewHallStandalone3D({
               const gSpan = (1 - (gy - H) / (Hridge - H)) * W;
               return (
                 <group key={`g-joint-${gi}`}>
-                  <mesh position={[0, gy, -halfL - 0.102]}>
+                  <mesh position={[0, gy, -halfL - 0.122]}>
                     <boxGeometry args={[gSpan, 0.018, 0.006]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
-                  <mesh position={[0, gy, halfL + 0.102]}>
+                  <mesh position={[0, gy, halfL + 0.122]}>
                     <boxGeometry args={[gSpan, 0.018, 0.006]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
@@ -552,11 +561,11 @@ export function NewHallStandalone3D({
         )}
 
         {/* Front & Back Gable Walls (Solid 100mm sandwich panel polygon) */}
-        <mesh visible={!editedSurfaces.includes('front')} position={[0, 0, -halfL - 0.1]}>
+        <mesh visible={!editedSurfaces.includes('front')} position={[0, 0, -halfL - 0.12]}>
           <extrudeGeometry args={[gableShape, gableExtrudeSettings]} />
           <primitive object={wallMat} attach="material" />
         </mesh>
-        <mesh visible={!editedSurfaces.includes('back')} position={[0, 0, halfL]}>
+        <mesh visible={!editedSurfaces.includes('back')} position={[0, 0, halfL + 0.02]}>
           <extrudeGeometry args={[gableShape, gableExtrudeSettings]} />
           <primitive object={wallMat} attach="material" />
         </mesh>
@@ -606,10 +615,10 @@ export function NewHallStandalone3D({
         {lt.flashings && (
           <>
             {[
-              [-halfW - 0.08, -halfL - 0.08],
-              [halfW + 0.08, -halfL - 0.08],
-              [-halfW - 0.08, halfL + 0.08],
-              [halfW + 0.08, halfL + 0.08],
+              [-halfW - 0.07, -halfL - 0.07],
+              [halfW + 0.07, -halfL - 0.07],
+              [-halfW - 0.07, halfL + 0.07],
+              [halfW + 0.07, halfL + 0.07],
             ].map(([cx, cz], ci) => {
               // When an office wing is attached on front-right (vyrobna_hala / budova_pristavky),
               // omit the corner trim at this junction so the front facade connects seamlessly
@@ -1028,16 +1037,23 @@ export function NewHallStandalone3D({
             {/* Closed walls if not an open canopy */}
             {!isOpenCanopy && (
               <>
-                <mesh position={[outerX + sideSign * 0.05, leanHOuter / 2, zMid]}>
-                  <boxGeometry args={[0.1, leanHOuter, len]} />
+                {/* Lean-to Outer Stem Wall (Sokel prístavku) */}
+                {stemH > 0 && (
+                  <mesh position={[outerX + sideSign * 0.07, stemH / 2, zMid]}>
+                    <boxGeometry args={[0.14, stemH, len]} />
+                    <primitive object={stemMat} attach="material" />
+                  </mesh>
+                )}
+                <mesh position={[outerX + sideSign * 0.07, stemH + (leanHOuter - stemH) / 2, zMid]}>
+                  <boxGeometry args={[0.1, leanHOuter - stemH, len]} />
                   <primitive object={wallMat} attach="material" />
                 </mesh>
                 {/* Front and back gable walls flush with main envelope */}
-                <mesh position={[0, 0, zStart - 0.1]}>
+                <mesh position={[0, 0, zStart - 0.12]}>
                   <extrudeGeometry args={[leanGableShape, gableExtrudeSettings]} />
                   <primitive object={wallMat} attach="material" />
                 </mesh>
-                <mesh position={[0, 0, zEnd]}>
+                <mesh position={[0, 0, zEnd + 0.02]}>
                   <extrudeGeometry args={[leanGableShape, gableExtrudeSettings]} />
                   <primitive object={wallMat} attach="material" />
                 </mesh>
@@ -1103,18 +1119,7 @@ export function NewHallStandalone3D({
     );
   };
 
-  // Determine structural features based on standalone hall templateId
-  const isDoubleSpan = templateId === "dvojlodna_hala" || !!p.hasCenterColumns;
-  const isOfficeWithStorage = templateId === "kancelarska_budova";
-  const isProdWithOffice = templateId === "vyrobna_hala";
-  const isSideCanopy = templateId === "budova_pristresok";
-  const isBothLeans = templateId === "budova_pristavky";
-  const isLShape = templateId === "nakreslit_pudorys";
-  const hasSkylight =
-    templateId === "skladovacia_hala_svetlik" ||
-    templateId === "budova_pristresok" ||
-    templateId === "dvojlodna_hala" ||
-    !!p.hasRidgeSkylight;
+  // Structural features using hoisted archetype definitions
 
   return (
     <group name={`standalone-hall-${templateId}`}>
