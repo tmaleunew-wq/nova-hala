@@ -27,6 +27,9 @@ import { NewHallTemplatePicker, type HallTemplateItem } from "./NewHallTemplateP
 import { NewHallBOMModal } from "./NewHallBOMModal";
 import { NewHallStandalone3D, type HiStructLayerToggles } from "./NewHallStandalone3D";
 import { NewHallSheetingModal } from "./NewHallSheetingModal";
+import { TechnicalDrawingsModal } from "./TechnicalDrawingsModal";
+import { ProjectsCrmModal } from "./ProjectsCrmModal";
+import { Compass, FolderKanban, FileText, CheckCircle2 } from "lucide-react";
 import { useHallOpenings } from './openings/useHallOpenings';
 import { OpeningHotspots } from './openings/OpeningHotspots';
 import { OpeningPanel } from './openings/OpeningPanel';
@@ -53,6 +56,8 @@ export default function NewHallConfigurator() {
   const [showTemplatePicker, setShowTemplatePicker] = useState<boolean>(() => typeof window !== "undefined" ? !new URLSearchParams(window.location.search).get("template") : false);
   const [showBOM, setShowBOM] = useState<boolean>(false);
   const [showSheetingModal, setShowSheetingModal] = useState<boolean>(false);
+  const [showDrawingsModal, setShowDrawingsModal] = useState<boolean>(false);
+  const [showCrmModal, setShowCrmModal] = useState<boolean>(false);
   const [showLayerMenu, setShowLayerMenu] = useState<boolean>(false);
   const [activeStep, setActiveStep] = useState<HiStructStep>("Geometry");
   const [viewMode, setViewMode] = useState<"both" | "xray" | "structure">("both");
@@ -113,6 +118,14 @@ export default function NewHallConfigurator() {
   const openingEditor = useHallOpenings(params, activeTemplate.id);
   const [showOpeningButtons, setShowOpeningButtons] = useState(true);
   useEffect(() => { if (activeStep !== 'Openings') openingEditor.setModal(null); }, [activeStep]);
+
+  const handleLoadProject = (newParams: GarageParams, templateId?: string) => {
+    if (templateId) {
+      const found = allTemplates.find((t) => t.id === templateId);
+      if (found) setActiveTemplate(found);
+    }
+    setParams(newParams);
+  };
 
   const handleSelectTemplate = (tpl: HallTemplateItem) => {
     setActiveTemplate(tpl);
@@ -363,6 +376,24 @@ export default function NewHallConfigurator() {
               </div>
             )}
           </div>
+
+          <button
+            onClick={() => setShowDrawingsModal(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-emerald-400/40 bg-emerald-500/20 px-3 py-1.5 text-xs font-bold text-emerald-200 hover:bg-emerald-500/30 transition cursor-pointer"
+            title="Generovať 2D technické výkresy (PDF, CAD DXF, SVG)"
+          >
+            <Compass className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="hidden md:inline">Výkresy 2D</span>
+          </button>
+
+          <button
+            onClick={() => setShowCrmModal(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-purple-400/40 bg-purple-500/20 px-3 py-1.5 text-xs font-bold text-purple-200 hover:bg-purple-500/30 transition cursor-pointer"
+            title="Správa projektov a zákazníkov (CRM)"
+          >
+            <FolderKanban className="h-3.5 w-3.5 text-purple-400" />
+            <span className="hidden md:inline">Projekty CRM</span>
+          </button>
 
           <button
             onClick={() => setShowBOM(true)}
@@ -841,6 +872,115 @@ export default function NewHallConfigurator() {
         </div>
       </aside>
 
+      {/* Right Engineering & Live Spec Summary Panel (Desktop 3-panel platform) */}
+      <aside className="hidden xl:flex flex-col absolute right-3.5 top-16 z-20 w-[310px] max-h-[calc(100vh-110px)] overflow-y-auto rounded-2xl bg-slate-900/92 text-white border border-white/15 backdrop-blur-md shadow-2xl p-4 space-y-4 font-sans text-xs">
+        <div>
+          <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-sky-400 font-bold">
+              Technický & cenový súhrn
+            </span>
+            <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30">
+              Parametrické dáta
+            </span>
+          </div>
+          <h3 className="text-sm font-bold text-white mt-2 truncate">{activeTemplate.title}</h3>
+          <p className="text-[11px] text-slate-400">{activeTemplate.framework} · {activeTemplate.subtitle}</p>
+        </div>
+
+        {/* Live Geometry Calculations */}
+        <div className="space-y-2 p-3 rounded-xl bg-white/[0.03] border border-white/10 font-mono text-[11px]">
+          <div className="flex justify-between">
+            <span className="text-slate-400">Pôdorysné rozmery:</span>
+            <span className="text-white font-bold">{params.width} × {params.length} m</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Zastavaná plocha:</span>
+            <span className="text-sky-300 font-bold">{(params.width * params.length).toFixed(0)} m²</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Výška v odkvape (H):</span>
+            <span className="text-white font-bold">{params.clearHeight.toFixed(2)} m</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Výška v hrebeni:</span>
+            <span className="text-white font-bold">{(params.clearHeight + (params.width / 2) * Math.tan(((params.roofPitchDeg ?? 10) * Math.PI) / 180)).toFixed(2)} m</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Obostavaný priestor:</span>
+            <span className="text-slate-200">~{Math.round(params.width * params.length * (params.clearHeight + (params.width / 4) * Math.tan(((params.roofPitchDeg ?? 10) * Math.PI) / 180))).toLocaleString()} m³</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Počet nosných rámov:</span>
+            <span className="text-slate-200">{params.bayCount + 1} ks (raster {(params.length / params.bayCount).toFixed(1)}m)</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Odhadovaná oceľ:</span>
+            <span className="text-cyan-400 font-bold">~{Math.round((params.bayCount + 1) * (params.clearHeight * 2 + params.width * 1.1) * 16 + params.length * 40).toLocaleString()} kg</span>
+          </div>
+        </div>
+
+        {/* Pricing Estimation */}
+        <div className="p-3 rounded-xl bg-gradient-to-br from-sky-500/10 to-emerald-500/10 border border-sky-500/20 space-y-1">
+          <span className="text-[10px] font-mono uppercase text-slate-400 block font-semibold">Orientačná cena haly:</span>
+          <div className="text-lg font-bold font-mono text-emerald-400">
+            ~{Math.round(params.width * params.length * 235).toLocaleString()} €
+            <span className="text-xs font-normal text-slate-400 ml-1">bez DPH</span>
+          </div>
+          <p className="text-[10px] text-slate-400 leading-tight">
+            Vrátane nosnej konštrukcie, opláštenia PUR 100mm a sekcionálnej brány.
+          </p>
+        </div>
+
+        {/* Quick Engineering Action Buttons */}
+        <div className="space-y-2 pt-1 border-t border-white/10">
+          <span className="text-[10px] font-mono uppercase text-slate-400 block">Inžinierske výstupy:</span>
+          
+          <button
+            onClick={() => setShowDrawingsModal(true)}
+            className="w-full py-2.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold flex items-center justify-between transition shadow-md cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <Compass className="h-4 w-4 text-sky-200" />
+              <span>2D Technické výkresy</span>
+            </div>
+            <span className="text-[10px] font-mono bg-sky-900/60 px-1.5 py-0.5 rounded text-sky-200">CAD & PDF</span>
+          </button>
+
+          <button
+            onClick={() => setShowBOM(true)}
+            className="w-full py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold flex items-center justify-between transition cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <Layers className="h-4 w-4 text-cyan-400" />
+              <span>Kusovník materiálov</span>
+            </div>
+            <span className="text-[10px] font-mono bg-white/10 px-1.5 py-0.5 rounded text-slate-300">CSV & XLS</span>
+          </button>
+
+          <button
+            onClick={() => setQuoteRequestSignal((s) => s + 1)}
+            className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center justify-between transition shadow-md cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-emerald-200" />
+              <span>Cenová ponuka</span>
+            </div>
+            <span className="text-[10px] font-mono bg-emerald-900/60 px-1.5 py-0.5 rounded text-emerald-200">PDF</span>
+          </button>
+
+          <button
+            onClick={() => setShowCrmModal(true)}
+            className="w-full py-2.5 px-3 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 border border-purple-500/40 text-purple-200 font-bold flex items-center justify-between transition cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <FolderKanban className="h-4 w-4 text-purple-400" />
+              <span>Správa projektov CRM</span>
+            </div>
+            <span className="text-[10px] font-mono bg-purple-900/60 px-1.5 py-0.5 rounded text-purple-300">Projekty</span>
+          </button>
+        </div>
+      </aside>
+
       {/* Bottom Status Bar */}
       <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 max-w-[92vw] truncate rounded-full border border-slate-300 bg-white/90 px-4 py-1.5 font-mono text-[11px] text-slate-800 backdrop-blur-md shadow-lg flex items-center gap-2">
         <span className="h-2 w-2 rounded-full bg-sky-600" />
@@ -879,6 +1019,23 @@ export default function NewHallConfigurator() {
         onClose={() => setShowSheetingModal(false)}
         p={params}
         onChange={handleSetParams}
+      />
+
+      {/* Technical 2D Drawings Modal (8 výkresov, SVG, CAD DXF, Multi-page PDF) */}
+      <TechnicalDrawingsModal
+        isOpen={showDrawingsModal}
+        onClose={() => setShowDrawingsModal(false)}
+        params={params}
+        hallName={`${activeTemplate.title} (${activeTemplate.subtitle})`}
+      />
+
+      {/* Projects & Customer CRM Modal */}
+      <ProjectsCrmModal
+        isOpen={showCrmModal}
+        onClose={() => setShowCrmModal(false)}
+        currentParams={params}
+        activeTemplateId={activeTemplate.id}
+        onLoadProject={handleLoadProject}
       />
     </div>
   );

@@ -307,16 +307,32 @@ export function CameraRig({
         pos = target.clone().add(doorDir.multiplyScalar(backDist));
       }
     } else {
+      // Calculate distance based on both horizontal and vertical bounds
+      const frontDist = Math.max(
+        boundSpanY / vertFactor,
+        boundSpanX / horizFactor
+      ) * (isMobileViewport ? 1.38 : 1.30);
+
+      const sideDist = Math.max(
+        boundSpanY / vertFactor,
+        boundSpanZ / horizFactor
+      ) * (isMobileViewport ? 1.38 : 1.30);
+
+      const planDist = Math.max(
+        boundSpanZ / vertFactor,
+        boundSpanX / horizFactor
+      ) * (isMobileViewport ? 1.38 : 1.30);
+
       switch (preset) {
         case "plan":
           // Epsilon offset on Z to prevent gimbal-lock singularity with camera.up
-          pos = new THREE.Vector3(target.x, target.y + (Math.max(boundSpanX, boundSpanZ) / effectiveFactor) * margin, 0.005);
+          pos = new THREE.Vector3(target.x, target.y + planDist, target.z + 0.005);
           break;
         case "front":
-          pos = new THREE.Vector3(target.x, target.y, -L / 2 - (Math.max(boundSpanX, boundSpanY) / effectiveFactor) * margin);
+          pos = new THREE.Vector3(target.x, target.y, -L / 2 - frontDist);
           break;
         case "side":
-          pos = new THREE.Vector3(boundMaxX + (Math.max(boundSpanZ, boundSpanY) / effectiveFactor) * margin, target.y, target.z);
+          pos = new THREE.Vector3(boundMaxX + sideDist, target.y, target.z);
           break;
         case "iso":
         default: {

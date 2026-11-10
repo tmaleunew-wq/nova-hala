@@ -226,12 +226,20 @@ export function NewHallStandalone3D({
     const s = new THREE.Shape();
     s.moveTo(-halfW, stemH);
     s.lineTo(halfW, stemH);
-    s.lineTo(halfW, H);
-    s.lineTo(0, Hridge);
-    s.lineTo(-halfW, H);
+    s.lineTo(halfW, H + 0.08);
+    s.lineTo(0, Hridge + 0.08);
+    s.lineTo(-halfW, H + 0.08);
     s.closePath();
     return s;
   }, [halfW, H, Hridge, stemH]);
+
+  const gableExtrudeSettings = useMemo(
+    () => ({
+      depth: 0.1,
+      bevelEnabled: false,
+    }),
+    []
+  );
 
   // Helper: Renders a duopitch portal frame at Z with optional center column and purlins
   const renderMainPortalFrames = (hasCenterCol: boolean, hasMezzanineBays = 0) => {
@@ -511,12 +519,12 @@ export function NewHallStandalone3D({
                     <boxGeometry args={[0.015, 0.018, L + 0.02]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
-                  <mesh visible={!editedSurfaces.includes('front')} position={[0, y, -halfL - 0.105]}>
-                    <boxGeometry args={[W + 0.02, 0.018, 0.015]} />
+                  <mesh visible={!editedSurfaces.includes('front')} position={[0, y, -halfL - 0.102]}>
+                    <boxGeometry args={[W + 0.02, 0.018, 0.006]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
-                  <mesh visible={!editedSurfaces.includes('back')} position={[0, y, halfL + 0.105]}>
-                    <boxGeometry args={[W + 0.02, 0.018, 0.015]} />
+                  <mesh visible={!editedSurfaces.includes('back')} position={[0, y, halfL + 0.102]}>
+                    <boxGeometry args={[W + 0.02, 0.018, 0.006]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
                 </group>
@@ -525,16 +533,16 @@ export function NewHallStandalone3D({
             {/* Gable triangle seams above H up to Hridge */}
             {Array.from({ length: Math.max(0, Math.floor((Hridge - H) / panelW)) }).map((_, gi) => {
               const gy = H + (gi + 1) * panelW;
-              if (gy >= Hridge - 0.05) return null;
+              if (gy >= Hridge - 0.35) return null;
               const gSpan = (1 - (gy - H) / (Hridge - H)) * W;
               return (
                 <group key={`g-joint-${gi}`}>
-                  <mesh position={[0, gy, -halfL - 0.105]}>
-                    <boxGeometry args={[gSpan, 0.018, 0.015]} />
+                  <mesh position={[0, gy, -halfL - 0.102]}>
+                    <boxGeometry args={[gSpan, 0.018, 0.006]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
-                  <mesh position={[0, gy, halfL + 0.105]}>
-                    <boxGeometry args={[gSpan, 0.018, 0.015]} />
+                  <mesh position={[0, gy, halfL + 0.102]}>
+                    <boxGeometry args={[gSpan, 0.018, 0.006]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
                 </group>
@@ -543,13 +551,13 @@ export function NewHallStandalone3D({
           </group>
         )}
 
-        {/* Front & Back Gable Walls (Exact polygon with pitched top) */}
-        <mesh visible={!editedSurfaces.includes('front')} position={[0, 0, -halfL - 0.05]}>
-          <shapeGeometry args={[gableShape]} />
+        {/* Front & Back Gable Walls (Solid 100mm sandwich panel polygon) */}
+        <mesh visible={!editedSurfaces.includes('front')} position={[0, 0, -halfL - 0.1]}>
+          <extrudeGeometry args={[gableShape, gableExtrudeSettings]} />
           <primitive object={wallMat} attach="material" />
         </mesh>
-        <mesh visible={!editedSurfaces.includes('back')} position={[0, 0, halfL + 0.05]}>
-          <shapeGeometry args={[gableShape]} />
+        <mesh visible={!editedSurfaces.includes('back')} position={[0, 0, halfL]}>
+          <extrudeGeometry args={[gableShape, gableExtrudeSettings]} />
           <primitive object={wallMat} attach="material" />
         </mesh>
 
@@ -604,17 +612,10 @@ export function NewHallStandalone3D({
               [halfW + 0.08, halfL + 0.08],
             ].map(([cx, cz], ci) => {
               // When an office wing is attached on front-right (vyrobna_hala / budova_pristavky),
-              // do not slice through the facade: trim only above the office roof level
+              // omit the corner trim at this junction so the front facade connects seamlessly
               const hasRightWing = (isProdWithOffice || isBothLeans) && ci === 1;
-              const wingTopY = 4.4;
               if (hasRightWing) {
-                const trimH = Math.max(0.1, H - wingTopY);
-                return (
-                  <mesh key={`corner-trim-${ci}`} position={[cx, wingTopY + trimH / 2, cz]}>
-                    <boxGeometry args={[0.16, trimH, 0.16]} />
-                    <primitive object={trimMat} attach="material" />
-                  </mesh>
-                );
+                return null;
               }
               return (
                 <mesh key={`corner-trim-${ci}`} position={[cx, H / 2, cz]}>
@@ -979,13 +980,13 @@ export function NewHallStandalone3D({
     if (sideSign === 1) {
       leanGableShape.moveTo(innerX, 0);
       leanGableShape.lineTo(outerX, 0);
-      leanGableShape.lineTo(outerX, leanHOuter);
-      leanGableShape.lineTo(innerX, leanHInner);
+      leanGableShape.lineTo(outerX, leanHOuter + 0.05);
+      leanGableShape.lineTo(innerX, leanHInner + 0.05);
     } else {
       leanGableShape.moveTo(outerX, 0);
       leanGableShape.lineTo(innerX, 0);
-      leanGableShape.lineTo(innerX, leanHInner);
-      leanGableShape.lineTo(outerX, leanHOuter);
+      leanGableShape.lineTo(innerX, leanHInner + 0.05);
+      leanGableShape.lineTo(outerX, leanHOuter + 0.05);
     }
     leanGableShape.closePath();
 
@@ -1031,13 +1032,13 @@ export function NewHallStandalone3D({
                   <boxGeometry args={[0.1, leanHOuter, len]} />
                   <primitive object={wallMat} attach="material" />
                 </mesh>
-                {/* Front and back gable walls flush with main envelope (-halfL - 0.05) */}
-                <mesh position={[0, 0, zStart - 0.05]}>
-                  <shapeGeometry args={[leanGableShape]} />
+                {/* Front and back gable walls flush with main envelope */}
+                <mesh position={[0, 0, zStart - 0.1]}>
+                  <extrudeGeometry args={[leanGableShape, gableExtrudeSettings]} />
                   <primitive object={wallMat} attach="material" />
                 </mesh>
-                <mesh position={[0, 0, zEnd + 0.05]}>
-                  <shapeGeometry args={[leanGableShape]} />
+                <mesh position={[0, 0, zEnd]}>
+                  <extrudeGeometry args={[leanGableShape, gableExtrudeSettings]} />
                   <primitive object={wallMat} attach="material" />
                 </mesh>
                 {/* Horizontal panel seams on lean-to outer wall */}

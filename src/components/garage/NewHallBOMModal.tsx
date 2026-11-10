@@ -1,6 +1,7 @@
 import React from "react";
 import { type GarageParams } from "@/lib/garage/types";
-import { X, Printer, Download, Layers, ShieldCheck, Box, Ruler } from "lucide-react";
+import { X, Printer, Download, Layers, ShieldCheck, Box, Ruler, FileSpreadsheet, FileText } from "lucide-react";
+import { toast } from "sonner";
 
 interface NewHallBOMModalProps {
   isOpen: boolean;
@@ -58,6 +59,63 @@ export function NewHallBOMModal({
     window.print();
   };
 
+  const handleExportCsv = () => {
+    const rows = [
+      ["Kod", "Kategoria", "Polozka", "Specifikacia", "Pocet ks", "Dlzka / Plocha", "Jednotka", "Hmotnost kg", "Poznamka"],
+      ["ST-01", "Ocelova konstrukcia", "Nosne stlpy (hlavne)", params.structureType === "c_profiles" ? "C 200" : "IPE 160", framesCount * 2, (framesCount * 2 * h).toFixed(1), "bm", Math.round(framesCount * 2 * h * colKgPerM), "S355JR / STN EN 10025"],
+      ["ST-02", "Ocelova konstrukcia", "Stresne priecle / vazniky", params.structureType === "c_profiles" ? "C 200" : "IPE 160", raftersCount, (raftersCount * slopeLen).toFixed(1), "bm", Math.round(rafterWeight), "Sedlovy ram"],
+      ["ST-03", "Ocelova konstrukcia", "Stresne vaznice", "Z 200 / 1.5mm", purlinTotalCount, purlinsTotalLength.toFixed(1), "bm", Math.round(purlinWeight), "Rozostup max 1.5m"],
+      ["ST-04", "Ocelova konstrukcia", "Stuzidla stien a strechy", "Tahadla M16 / L 50", bays * 4, (bays * 4 * 5.5).toFixed(0), "bm", bracingWeight, "Zavetrovaci kriz"],
+      ["CL-01", "Oplastenie strechy", "Stresne panely", "PIR Stresny 5-vlna", roofPanelsCount, roofAreaM2, "m2", "-", "Presah 150mm"],
+      ["CL-02", "Oplastenie stien", "Stenove panely", "PIR Stenovy panel 1000mm", wallPanelsCount, wallAreaM2, "m2", "-", "Odpad ~5%"],
+      ["DR-01", "Vyplne otvorov", "Sekcionalna priemyselna brana", String(params.doorWidth || 4.0) + " x " + String(params.doorHeight || 4.25) + " m", 1, 1, "ks", "-", "Elektricky priemyselny pohon"],
+      ["DR-02", "Vyplne otvorov", "Vstupne dvere", "0.9 x 2.0 m", doorCount, doorCount, "ks", "-", "Kovanie, klucka"],
+      ["FL-01", "Klampiarske prvky", "Hrebenac", "Hrebenova lista r.s. 400", 1, l, "bm", "-", "RAL nastrek"],
+      ["FL-02", "Klampiarske prvky", "Odkvapove a zaveterne listy", "Ukoncovacie profily", 1, (2 * l + 4 * slopeLen).toFixed(0), "bm", "-", "Lemovanie"],
+    ];
+    const csvContent = "\uFEFF" + rows.map((r) => r.map((c) => `"${c}"`).join(";")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `VBAU_Kusovnik_BOM_${w}x${l}m.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Kusovnik materialov (BOM) bol exportovany do CSV!");
+  };
+
+  const handleExportExcel = () => {
+    const tableHeader = '<tr style="background-color:#0f172a; color:#ffffff;"><th>Kod</th><th>Kategoria</th><th>Polozka</th><th>Specifikacia</th><th>Pocet</th><th>Mnozstvo</th><th>Jednotka</th><th>Hmotnost kg</th><th>Poznamka</th></tr>';
+    const rowsHtml = [
+      '<tr><td>ST-01</td><td>Ocelova konstrukcia</td><td>Nosne stlpy (hlavne)</td><td>' + (params.structureType === "c_profiles" ? "C 200" : "IPE 160") + '</td><td>' + (framesCount * 2) + '</td><td>' + (framesCount * 2 * h).toFixed(1) + '</td><td>bm</td><td>' + Math.round(framesCount * 2 * h * colKgPerM) + '</td><td>S355JR</td></tr>',
+      '<tr><td>ST-02</td><td>Ocelova konstrukcia</td><td>Stresne priecle / vazniky</td><td>' + (params.structureType === "c_profiles" ? "C 200" : "IPE 160") + '</td><td>' + raftersCount + '</td><td>' + (raftersCount * slopeLen).toFixed(1) + '</td><td>bm</td><td>' + Math.round(rafterWeight) + '</td><td>Sedlovy ram</td></tr>',
+      '<tr><td>ST-03</td><td>Ocelova konstrukcia</td><td>Stresne vaznice</td><td>Z 200 / 1.5mm</td><td>' + purlinTotalCount + '</td><td>' + purlinsTotalLength.toFixed(1) + '</td><td>bm</td><td>' + Math.round(purlinWeight) + '</td><td>Z-profil</td></tr>',
+      '<tr><td>ST-04</td><td>Ocelova konstrukcia</td><td>Stuzidla stien a strechy</td><td>Tahadla M16 / L 50</td><td>' + (bays * 4) + '</td><td>' + (bays * 4 * 5.5).toFixed(0) + '</td><td>bm</td><td>' + bracingWeight + '</td><td>X-bracing</td></tr>',
+      '<tr><td>CL-01</td><td>Oplastenie strechy</td><td>Stresne panely</td><td>PIR Stresny 5-vlna</td><td>' + roofPanelsCount + '</td><td>' + roofAreaM2 + '</td><td>m2</td><td>-</td><td>1000mm modul</td></tr>',
+      '<tr><td>CL-02</td><td>Oplastenie stien</td><td>Stenove panely</td><td>PIR Stenovy panel 1000mm</td><td>' + wallPanelsCount + '</td><td>' + wallAreaM2 + '</td><td>m2</td><td>-</td><td>Odpad ~5%</td></tr>',
+      '<tr><td>DR-01</td><td>Vyplne otvorov</td><td>Sekcionalna priemyselna brana</td><td>' + (params.doorWidth || 4.0) + ' x ' + (params.doorHeight || 4.25) + ' m</td><td>1</td><td>1</td><td>ks</td><td>-</td><td>Priemyselny pohon</td></tr>',
+      '<tr><td>DR-02</td><td>Vyplne otvorov</td><td>Vstupne dvere</td><td>0.9 x 2.0 m</td><td>' + doorCount + '</td><td>' + doorCount + '</td><td>ks</td><td>-</td><td>Kovanie</td></tr>',
+      '<tr><td>FL-01</td><td>Klampiarske prvky</td><td>Hrebenac</td><td>Hrebenova lista r.s. 400</td><td>1</td><td>' + l + '</td><td>bm</td><td>-</td><td>RAL nastrek</td></tr>',
+      '<tr><td>FL-02</td><td>Klampiarske prvky</td><td>Odkvapove a zaveterne listy</td><td>Ukoncovacie profily</td><td>1</td><td>' + (2 * l + 4 * slopeLen).toFixed(0) + '</td><td>bm</td><td>-</td><td>Lemovanie</td></tr>',
+      '<tr style="background-color:#f1f5f9; font-weight:bold;"><td colspan="7">CELKOVA HMOTNOST OCELOVEJ KONSTRUKCIE</td><td>' + totalSteelWeightKg.toLocaleString() + ' kg</td><td>Vyzaduje staticke posudenie</td></tr>'
+    ].join("");
+
+    const htmlTable = '<html><head><meta charset="utf-8"></head><body><h2>VBAU Haly s.r.o. — Materialovy vykaz a kusovnik (BOM)</h2><p>Projekt: ' + hallName + ' | Rozmery: ' + w + ' x ' + l + ' x ' + h + ' m</p><table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse; font-family:sans-serif;">' + tableHeader + rowsHtml + '</table></body></html>';
+
+    const blob = new Blob([htmlTable], { type: "application/vnd.ms-excel;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `VBAU_Kusovnik_BOM_${w}x${l}m.xls`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Kusovnik materialov bol stiahnuty vo formate Excel (XLS)!");
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-4xl max-h-[90vh] bg-slate-900 border border-cyan-500/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
@@ -81,11 +139,27 @@ export function NewHallBOMModal({
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={handleExportCsv}
+              className="px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-white text-xs font-mono font-bold flex items-center gap-1.5 transition cursor-pointer"
+              title="Stiahnuť kusovník ako CSV súbor"
+            >
+              <Download className="h-3.5 w-3.5 text-sky-400" />
+              CSV
+            </button>
+            <button
+              onClick={handleExportExcel}
+              className="px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 text-xs font-mono font-bold flex items-center gap-1.5 transition cursor-pointer"
+              title="Stiahnuť formátovaný Excel zošit"
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-400" />
+              Excel (XLS)
+            </button>
+            <button
               onClick={handlePrint}
               className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs font-mono flex items-center gap-1.5 transition cursor-pointer"
             >
               <Printer className="h-3.5 w-3.5" />
-              Tlač / PDF
+              Tlač
             </button>
             <button
               onClick={onClose}
@@ -292,10 +366,15 @@ export function NewHallBOMModal({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-3 border-t border-white/10 bg-white/[0.02] text-xs font-mono text-white/40">
-          <span>Generované systémom VBAU HiStruct Configurator</span>
-          <span>Súlad s normami STN EN 1090-2 & Eurocode 3</span>
+        {/* Footer with engineering disclaimer */}
+        <div className="px-6 py-3 border-t border-white/10 bg-white/[0.02] space-y-1.5 text-xs font-mono text-white/50">
+          <div className="flex items-center justify-between">
+            <span>Generované systémom VBAU HiStruct 3D Configurator</span>
+            <span>Súlad s normami STN EN 1090-2 & Eurokód 3</span>
+          </div>
+          <p className="text-[10px] text-amber-300/80 leading-normal">
+            * UPOZORNENIE: Uvedené rozmery oceľových profilov, hmotnosti a počty spojovacieho materiálu vychádzajú z orientačných modulových pravidiel a vyžadujú technické doplnenie a schválenie autorizovaným statikom podľa konkrétneho snehového a vetrového zaťaženia staveniska.
+          </p>
         </div>
       </div>
     </div>
