@@ -233,23 +233,57 @@ export function NewHallStandalone3D({
       new THREE.MeshStandardMaterial({
         color: "#272e38",
         roughness: 0.8,
-        polygonOffset: true,
-        polygonOffsetFactor: -1,
-        polygonOffsetUnits: -1,
       }),
     []
   );
 
+  const colSize = p.profileSize || 0.22;
+  const colHalf = colSize / 2;
+
+  const hasFrontGate =
+    templateId === "prazdna_hala" ||
+    templateId === "skladovacia_hala" ||
+    templateId === "skladovacia_hala_svetlik" ||
+    templateId === "budova_pristavky";
+
+  const frontGateW = hasFrontGate ? (p.doorWidth || 4.2) : 0;
+  const frontGateH = hasFrontGate ? (p.doorHeight || 4.0) : 0;
+
   const gableShape = useMemo(() => {
     const s = new THREE.Shape();
-    s.moveTo(-halfW, stemH);
-    s.lineTo(halfW, stemH);
-    s.lineTo(halfW, H + 0.08);
+    const eavesY = H + colHalf * Math.tan(pitchRad) + 0.08;
+    s.moveTo(-halfW + colHalf, stemH);
+    s.lineTo(halfW - colHalf, stemH);
+    s.lineTo(halfW - colHalf, eavesY);
     s.lineTo(0, Hridge + 0.08);
-    s.lineTo(-halfW, H + 0.08);
+    s.lineTo(-halfW + colHalf, eavesY);
     s.closePath();
     return s;
-  }, [halfW, H, Hridge, stemH]);
+  }, [halfW, H, Hridge, stemH, colHalf, pitchRad]);
+
+  const frontGableShape = useMemo(() => {
+    const s = new THREE.Shape();
+    const eavesY = H + colHalf * Math.tan(pitchRad) + 0.08;
+    s.moveTo(-halfW + colHalf, stemH);
+    s.lineTo(halfW - colHalf, stemH);
+    s.lineTo(halfW - colHalf, eavesY);
+    s.lineTo(0, Hridge + 0.08);
+    s.lineTo(-halfW + colHalf, eavesY);
+    s.closePath();
+
+    if (hasFrontGate && frontGateW > 0 && frontGateH > stemH) {
+      const gw = frontGateW / 2;
+      const gh = frontGateH;
+      const hole = new THREE.Path();
+      hole.moveTo(-gw, stemH);
+      hole.lineTo(gw, stemH);
+      hole.lineTo(gw, gh);
+      hole.lineTo(-gw, gh);
+      hole.lineTo(-gw, stemH);
+      s.holes.push(hole);
+    }
+    return s;
+  }, [halfW, H, Hridge, stemH, colHalf, pitchRad, hasFrontGate, frontGateW, frontGateH]);
 
   const gableExtrudeSettings = useMemo(
     () => ({
@@ -275,32 +309,36 @@ export function NewHallStandalone3D({
               <group key={`frame-${idx}`}>
                 {/* Left & Right Primary Columns */}
                 <SteelTube from={[-halfW, 0, z]} to={[-halfW, H, z]} size={colSize} color={steelColor} />
-                <SteelPlate position={[-halfW, 0.015, z]} size={[colSize * 2, 0.03, colSize * 2]} color="#d7d7d7" />
+                <SteelPlate position={[-halfW, 0.015, z]} size={[colSize * 1.35, 0.025, colSize]} color="#d7d7d7" />
 
                 <SteelTube from={[halfW, 0, z]} to={[halfW, H, z]} size={colSize} color={steelColor} />
-                <SteelPlate position={[halfW, 0.015, z]} size={[colSize * 2, 0.03, colSize * 2]} color="#d7d7d7" />
+                <SteelPlate position={[halfW, 0.015, z]} size={[colSize * 1.35, 0.025, colSize]} color="#d7d7d7" />
 
-                {/* Eave Haunches (Nábehy pri odkvape) */}
-                <SteelTube
-                  from={[-halfW, H - 0.55, z]}
-                  to={[-halfW + 1.4, H + 1.4 * Math.tan(pitchRad), z]}
-                  size={rafterSize * 0.8}
-                  color={steelColor}
-                />
-                <SteelTube
-                  from={[halfW, H - 0.55, z]}
-                  to={[halfW - 1.4, H + 1.4 * Math.tan(pitchRad), z]}
-                  size={rafterSize * 0.8}
-                  color={steelColor}
-                />
+                {/* Eave & Ridge Haunches only on internal portal frames (not on gable walls) */}
+                {!isGable && (
+                  <>
+                    <SteelTube
+                      from={[-halfW, H - 0.55, z]}
+                      to={[-halfW + 1.4, H + 1.4 * Math.tan(pitchRad), z]}
+                      size={rafterSize * 0.8}
+                      color={steelColor}
+                    />
+                    <SteelTube
+                      from={[halfW, H - 0.55, z]}
+                      to={[halfW - 1.4, H + 1.4 * Math.tan(pitchRad), z]}
+                      size={rafterSize * 0.8}
+                      color={steelColor}
+                    />
 
-                {/* Ridge Haunches (Nábehy v hrebeni) */}
-                <SteelTube
-                  from={[-1.0, Hridge - 1.0 * Math.tan(pitchRad) - 0.12, z]}
-                  to={[1.0, Hridge - 1.0 * Math.tan(pitchRad) - 0.12, z]}
-                  size={rafterSize * 0.65}
-                  color={steelColor}
-                />
+                    {/* Ridge Haunches (Nábehy v hrebeni) */}
+                    <SteelTube
+                      from={[-1.0, Hridge - 1.0 * Math.tan(pitchRad) - 0.12, z]}
+                      to={[1.0, Hridge - 1.0 * Math.tan(pitchRad) - 0.12, z]}
+                      size={rafterSize * 0.65}
+                      color={steelColor}
+                    />
+                  </>
+                )}
 
                 {/* Left & Right Rafters */}
                 <SteelTube from={[-halfW, H, z]} to={[0, Hridge, z]} size={rafterSize} color={steelColor} />
@@ -331,10 +369,14 @@ export function NewHallStandalone3D({
                   <>
                     {[-halfW / 3, halfW / 3].map((gx, gi) => {
                       const gy = H + (halfW - Math.abs(gx)) * Math.tan(pitchRad);
+                      const isFront = z === frameZs[0];
+                      const insideGate = isFront && hasFrontGate && Math.abs(gx) < frontGateW / 2 + 0.1;
+                      const startY = insideGate ? frontGateH : 0;
+                      if (startY >= gy) return null;
                       return (
                         <SteelTube
                           key={`gable-col-${gi}`}
-                          from={[gx, 0, z]}
+                          from={[gx, startY, z]}
                           to={[gx, gy, z]}
                           size={colSize * 0.72}
                           color={steelColor}
@@ -474,45 +516,103 @@ export function NewHallStandalone3D({
 
   // Helper: Main Duopitch Cladding Envelope
   const renderMainEnvelope = () => {
+    const colSize = p.profileSize || 0.22;
+    const colHalf = colSize / 2;
     const slopeLen = Math.hypot(halfW, Hridge - H) + 0.25;
     const wallH = H - stemH;
     const wallMidY = stemH + wallH / 2;
 
+    const wallThick = 0.10;
+    const sokelThick = 0.12;
+    // 8mm architectural relief inset for panels so steel columns stand proud
+    const inset = 0.008;
+    const leftWallX = -halfW - colHalf + inset + wallThick / 2;
+    const rightWallX = halfW + colHalf - inset - wallThick / 2;
+    const leftSokelX = -halfW - colHalf + 0.004 + sokelThick / 2;
+    const rightSokelX = halfW + colHalf - 0.004 - sokelThick / 2;
+    const leftSeamX = -halfW - colHalf + inset - 0.003;
+    const rightSeamX = halfW + colHalf - inset + 0.003;
+
+    // Segmented bay spans: panels, plinths and seams strictly fit between steel columns
+    const sideBays = [];
+    for (let b = 0; b < bayCount; b++) {
+      const z0 = frameZs[b];
+      const z1 = frameZs[b + 1];
+      if (z1 === undefined) continue;
+      const baySpan = (z1 - z0) - colSize;
+      const bayMidZ = (z0 + z1) / 2;
+      sideBays.push({ b, z0, z1, baySpan: Math.max(0.05, baySpan), bayMidZ });
+    }
+
     return (
       <group name="main-envelope">
-        {/* Left & Right Side Walls (from stemH up to H) */}
-        <mesh visible={!editedSurfaces.includes('left')} position={[-halfW - 0.07, wallMidY, 0]}>
-          <boxGeometry args={[0.1, wallH, L]} />
-          <primitive object={wallMat} attach="material" />
-        </mesh>
-        <mesh visible={!editedSurfaces.includes('right')} position={[halfW + 0.07, wallMidY, 0]}>
-          <boxGeometry args={[0.1, wallH, L]} />
-          <primitive object={wallMat} attach="material" />
-        </mesh>
+        {/* Left & Right Side Walls (segmented per bay between steel columns, eliminating Z-fighting) */}
+        {sideBays.map(({ b, baySpan, bayMidZ }) => (
+          <group key={`side-wall-bay-${b}`}>
+            <mesh visible={!editedSurfaces.includes('left')} position={[leftWallX, wallMidY, bayMidZ]}>
+              <boxGeometry args={[wallThick, wallH, baySpan]} />
+              <primitive object={wallMat} attach="material" />
+            </mesh>
+            <mesh visible={!editedSurfaces.includes('right')} position={[rightWallX, wallMidY, bayMidZ]}>
+              <boxGeometry args={[wallThick, wallH, baySpan]} />
+              <primitive object={wallMat} attach="material" />
+            </mesh>
+          </group>
+        ))}
 
-        {/* Concrete Stem Walls (Sokel - 4 strany s precíznym rohovým napojením bez prekrývania a Z-fighting) */}
+        {/* Concrete Stem Walls (Sokel - bočné polia medzi stĺpmi + štítové steny) */}
         {stemH > 0 && (
           <group name="concrete-stem-walls">
-            <mesh visible={!editedSurfaces.includes('left')} position={[-halfW - 0.07, stemH / 2, 0]}>
-              <boxGeometry args={[0.14, stemH, L]} />
-              <primitive object={stemMat} attach="material" />
-            </mesh>
-            <mesh visible={!editedSurfaces.includes('right')} position={[halfW + 0.07, stemH / 2, 0]}>
-              <boxGeometry args={[0.14, stemH, L]} />
-              <primitive object={stemMat} attach="material" />
-            </mesh>
-            <mesh visible={!editedSurfaces.includes('front')} position={[0, stemH / 2, -halfL - 0.07]}>
-              <boxGeometry args={[W + 0.28, stemH, 0.14]} />
-              <primitive object={stemMat} attach="material" />
-            </mesh>
-            <mesh visible={!editedSurfaces.includes('back')} position={[0, stemH / 2, halfL + 0.07]}>
-              <boxGeometry args={[W + 0.28, stemH, 0.14]} />
+            {sideBays.map(({ b, baySpan, bayMidZ }) => (
+              <group key={`stem-bay-${b}`}>
+                <mesh visible={!editedSurfaces.includes('left')} position={[leftSokelX, stemH / 2, bayMidZ]}>
+                  <boxGeometry args={[sokelThick, stemH, baySpan]} />
+                  <primitive object={stemMat} attach="material" />
+                </mesh>
+                <mesh visible={!editedSurfaces.includes('right')} position={[rightSokelX, stemH / 2, bayMidZ]}>
+                  <boxGeometry args={[sokelThick, stemH, baySpan]} />
+                  <primitive object={stemMat} attach="material" />
+                </mesh>
+              </group>
+            ))}
+            {/* Front sokel: cleanly splits around front gate if present */}
+            {hasFrontGate && frontGateW > 0 ? (
+              <>
+                <mesh
+                  visible={!editedSurfaces.includes('front')}
+                  position={[(-halfW + colHalf - frontGateW / 2) / 2, stemH / 2, -halfL - colHalf + 0.004 + sokelThick / 2]}
+                >
+                  <boxGeometry args={[(halfW - colHalf) - frontGateW / 2, stemH, sokelThick]} />
+                  <primitive object={stemMat} attach="material" />
+                </mesh>
+                <mesh
+                  visible={!editedSurfaces.includes('front')}
+                  position={[(frontGateW / 2 + halfW - colHalf) / 2, stemH / 2, -halfL - colHalf + 0.004 + sokelThick / 2]}
+                >
+                  <boxGeometry args={[(halfW - colHalf) - frontGateW / 2, stemH, sokelThick]} />
+                  <primitive object={stemMat} attach="material" />
+                </mesh>
+              </>
+            ) : (
+              <mesh
+                visible={!editedSurfaces.includes('front')}
+                position={[0, stemH / 2, -halfL - colHalf + 0.004 + sokelThick / 2]}
+              >
+                <boxGeometry args={[W - colSize, stemH, sokelThick]} />
+                <primitive object={stemMat} attach="material" />
+              </mesh>
+            )}
+            <mesh
+              visible={!editedSurfaces.includes('back')}
+              position={[0, stemH / 2, halfL + colHalf - 0.004 - sokelThick / 2]}
+            >
+              <boxGeometry args={[W - colSize, stemH, sokelThick]} />
               <primitive object={stemMat} attach="material" />
             </mesh>
           </group>
         )}
 
-        {/* Horizontal Sandwich Panel Joint Lines (Drážky/škáry panelov každých panelW metrov) */}
+        {/* Horizontal Sandwich Panel Joint Lines (Drážky/škáry panelov v poliach - neprechádzajú cez stĺpy) */}
         {isHorizontal && (
           <group name="horizontal-panel-joints">
             {Array.from({ length: Math.max(1, Math.floor((H - stemH) / panelW)) }).map((_, i) => {
@@ -520,20 +620,50 @@ export function NewHallStandalone3D({
               if (y >= H - 0.05) return null;
               return (
                 <group key={`p-joint-${i}`}>
-                  <mesh visible={!editedSurfaces.includes('left')} position={[-halfW - 0.122, y, 0]}>
-                    <boxGeometry args={[0.015, 0.018, L + 0.02]} />
-                    <primitive object={seamMat} attach="material" />
-                  </mesh>
-                  <mesh visible={!editedSurfaces.includes('right')} position={[halfW + 0.122, y, 0]}>
-                    <boxGeometry args={[0.015, 0.018, L + 0.02]} />
-                    <primitive object={seamMat} attach="material" />
-                  </mesh>
-                  <mesh visible={!editedSurfaces.includes('front')} position={[0, y, -halfL - 0.122]}>
-                    <boxGeometry args={[W + 0.02, 0.018, 0.006]} />
-                    <primitive object={seamMat} attach="material" />
-                  </mesh>
-                  <mesh visible={!editedSurfaces.includes('back')} position={[0, y, halfL + 0.122]}>
-                    <boxGeometry args={[W + 0.02, 0.018, 0.006]} />
+                  {sideBays.map(({ b, baySpan, bayMidZ }) => (
+                    <group key={`p-joint-bay-${b}-${i}`}>
+                      <mesh visible={!editedSurfaces.includes('left')} position={[leftSeamX, y, bayMidZ]}>
+                        <boxGeometry args={[0.008, 0.016, baySpan]} />
+                        <primitive object={seamMat} attach="material" />
+                      </mesh>
+                      <mesh visible={!editedSurfaces.includes('right')} position={[rightSeamX, y, bayMidZ]}>
+                        <boxGeometry args={[0.008, 0.016, baySpan]} />
+                        <primitive object={seamMat} attach="material" />
+                      </mesh>
+                    </group>
+                  ))}
+                  {/* Front seams: split around gate for heights below frontGateH */}
+                  {hasFrontGate && frontGateW > 0 && y < frontGateH ? (
+                    <>
+                      <mesh
+                        visible={!editedSurfaces.includes('front')}
+                        position={[(-halfW + colHalf - frontGateW / 2) / 2, y, -halfL - colHalf + inset - 0.003]}
+                      >
+                        <boxGeometry args={[(halfW - colHalf) - frontGateW / 2, 0.016, 0.008]} />
+                        <primitive object={seamMat} attach="material" />
+                      </mesh>
+                      <mesh
+                        visible={!editedSurfaces.includes('front')}
+                        position={[(frontGateW / 2 + halfW - colHalf) / 2, y, -halfL - colHalf + inset - 0.003]}
+                      >
+                        <boxGeometry args={[(halfW - colHalf) - frontGateW / 2, 0.016, 0.008]} />
+                        <primitive object={seamMat} attach="material" />
+                      </mesh>
+                    </>
+                  ) : (
+                    <mesh
+                      visible={!editedSurfaces.includes('front')}
+                      position={[0, y, -halfL - colHalf + inset - 0.003]}
+                    >
+                      <boxGeometry args={[W - colSize, 0.016, 0.008]} />
+                      <primitive object={seamMat} attach="material" />
+                    </mesh>
+                  )}
+                  <mesh
+                    visible={!editedSurfaces.includes('back')}
+                    position={[0, y, halfL + colHalf - inset + 0.003]}
+                  >
+                    <boxGeometry args={[W - colSize, 0.016, 0.008]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
                 </group>
@@ -543,14 +673,14 @@ export function NewHallStandalone3D({
             {Array.from({ length: Math.max(0, Math.floor((Hridge - H) / panelW)) }).map((_, gi) => {
               const gy = H + (gi + 1) * panelW;
               if (gy >= Hridge - 0.35) return null;
-              const gSpan = (1 - (gy - H) / (Hridge - H)) * W;
+              const gSpan = (1 - (gy - H) / (Hridge - H)) * (W - colSize);
               return (
                 <group key={`g-joint-${gi}`}>
-                  <mesh position={[0, gy, -halfL - 0.122]}>
+                  <mesh position={[0, gy, -halfL - colHalf + inset - 0.003]}>
                     <boxGeometry args={[gSpan, 0.018, 0.006]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
-                  <mesh position={[0, gy, halfL + 0.122]}>
+                  <mesh position={[0, gy, halfL + colHalf - inset + 0.003]}>
                     <boxGeometry args={[gSpan, 0.018, 0.006]} />
                     <primitive object={seamMat} attach="material" />
                   </mesh>
@@ -560,12 +690,12 @@ export function NewHallStandalone3D({
           </group>
         )}
 
-        {/* Front & Back Gable Walls (Solid 100mm sandwich panel polygon) */}
-        <mesh visible={!editedSurfaces.includes('front')} position={[0, 0, -halfL - 0.12]}>
-          <extrudeGeometry args={[gableShape, gableExtrudeSettings]} />
+        {/* Front & Back Gable Walls (recessed by 8mm from column faces, avoiding coplanar Z-fighting) */}
+        <mesh visible={!editedSurfaces.includes('front')} position={[0, 0, -halfL - colHalf + inset]}>
+          <extrudeGeometry args={[frontGableShape, gableExtrudeSettings]} />
           <primitive object={wallMat} attach="material" />
         </mesh>
-        <mesh visible={!editedSurfaces.includes('back')} position={[0, 0, halfL + 0.02]}>
+        <mesh visible={!editedSurfaces.includes('back')} position={[0, 0, halfL + colHalf - inset - 0.10]}>
           <extrudeGeometry args={[gableShape, gableExtrudeSettings]} />
           <primitive object={wallMat} attach="material" />
         </mesh>
@@ -614,25 +744,27 @@ export function NewHallStandalone3D({
         ))}
         {lt.flashings && (
           <>
-            {[
-              [-halfW - 0.07, -halfL - 0.07],
-              [halfW + 0.07, -halfL - 0.07],
-              [-halfW - 0.07, halfL + 0.07],
-              [halfW + 0.07, halfL + 0.07],
-            ].map(([cx, cz], ci) => {
-              // When an office wing is attached on front-right (vyrobna_hala / budova_pristavky),
-              // omit the corner trim at this junction so the front facade connects seamlessly
-              const hasRightWing = (isProdWithOffice || isBothLeans) && ci === 1;
-              if (hasRightWing) {
-                return null;
-              }
-              return (
-                <mesh key={`corner-trim-${ci}`} position={[cx, H / 2, cz]}>
-                  <boxGeometry args={[0.16, H, 0.16]} />
-                  <primitive object={trimMat} attach="material" />
-                </mesh>
-              );
-            })}
+            {/* Corner trims: only used in cladding-only mode without structural frame to prevent clipping steel corner columns */}
+            {!showStruct &&
+              [
+                [-halfW - 0.07, -halfL - 0.07],
+                [halfW + 0.07, -halfL - 0.07],
+                [-halfW - 0.07, halfL + 0.07],
+                [halfW + 0.07, halfL + 0.07],
+              ].map(([cx, cz], ci) => {
+                // When an office wing is attached on front-right (vyrobna_hala / budova_pristavky),
+                // omit the corner trim at this junction so the front facade connects seamlessly
+                const hasRightWing = (isProdWithOffice || isBothLeans) && ci === 1;
+                if (hasRightWing) {
+                  return null;
+                }
+                return (
+                  <mesh key={`corner-trim-${ci}`} position={[cx, H / 2, cz]}>
+                    <boxGeometry args={[0.16, H, 0.16]} />
+                    <primitive object={trimMat} attach="material" />
+                  </mesh>
+                );
+              })}
 
             {/* Solid Unified Ridge Cap (Hrebenáč bez Z-fighting) */}
             <mesh position={[0, Hridge + 0.12, 0]}>
