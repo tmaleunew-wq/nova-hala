@@ -157,12 +157,40 @@ export function CameraRig({
 
     const isCustom = params.hallType === "Vlastný" || params.hallType === "vlastna_garaz" || !params.hallType;
 
-    // Calculate bounding dimensions - bring custom garage closer to the viewer
-    const islandW = isCustom ? W + 3.2 : W;
-    const islandL = isCustom ? L + 2.8 : L;
-    const diag = Math.hypot(islandW, islandL);
-    const maxDimension = Math.max(diag, H * 1.5);
-    const center = new THREE.Vector3(0, isCustom ? H * 0.42 : H / 2, isCustom ? -0.4 : 0);
+    // Calculate full 3D bounds taking extensions, lean-tos, canopies, and ridge height into account
+    const pitchRad = ((params.roofPitchDeg ?? 10) * Math.PI) / 180;
+    const Hridge = H + (W / 2) * Math.tan(pitchRad);
+
+    const htLower = (params.hallType || "").toLowerCase();
+    const hasRightOffice = htLower.includes("kancelár") || htLower.includes("výrobná");
+    const hasLeftCanopy = htLower.includes("prístreš") || htLower.includes("bočným");
+    const hasBothWings = htLower.includes("prístavk");
+    const hasLShape = htLower.includes("pôdorys") || htLower.includes("pudorys");
+
+    let boundMinX = -W / 2;
+    let boundMaxX = W / 2;
+    if (hasRightOffice) boundMaxX += 6.0;
+    if (hasLeftCanopy) boundMinX -= (params.canopyWidth || 4.5) + 0.5;
+    if (hasBothWings) {
+      boundMinX -= 5.3;
+      boundMaxX += 5.3;
+    }
+    if (hasLShape) boundMinX -= 6.2;
+    if (params.hasExtension) {
+      if (params.extensionSide === "left") boundMinX -= (params.extensionWidth ?? 3.5);
+      else boundMaxX += (params.extensionWidth ?? 3.5);
+    }
+
+    const boundCenter = new THREE.Vector3(
+      isCustom ? 0 : (boundMinX + boundMaxX) / 2,
+      isCustom ? H * 0.42 : Hridge * 0.45,
+      isCustom ? -0.4 : 0
+    );
+
+    const boundSpanX = boundMaxX - boundMinX;
+    const boundSpanY = Math.max(Hridge, H);
+    const boundSpanZ = L;
+    const boundRadius = Math.hypot(boundSpanX / 2, boundSpanY / 2, boundSpanZ / 2);
 
     // Three.js perspective camera uses vertical FOV (35 deg)
     const vFovRad = ((camera.fov || 35) * Math.PI) / 180;
@@ -190,13 +218,17 @@ export function CameraRig({
           ? 0.88
           : isExtensionFocus
           ? 0.72
-          : (isSingleGarage ? 1.02 : 1.22))
+          : (isSingleGarage ? 1.02 : 1.25))
       : (isRoofFocus
           ? 0.60
           : isExtensionFocus
           ? 0.72
-          : (isCustom ? 0.92 : 1.18));
-    const dist = (maxDimension / effectiveFactor) * margin;
+          : (isCustom ? 0.92 : 1.24));
+
+    // For standalone halls, scale distance using full bounding radius
+    const dist = isCustom
+      ? (Math.max(Math.hypot(W + 3.2, L + 2.8), H * 1.5) / effectiveFactor) * margin
+      : ((boundRadius * 2) / effectiveFactor) * margin;
 
     const isoDir = isRoofFocus
       ? new THREE.Vector3(
@@ -212,19 +244,19 @@ export function CameraRig({
         ).normalize()
       : new THREE.Vector3(
           isCustom ? -0.65 : -1.15,
-          isCustom ? 0.38 : 0.70,
+          isCustom ? 0.38 : 0.68,
           isCustom ? -1.10 : -1.0
         ).normalize();
 
-    // Shifting camera target: offset to the left of desktop screen so it is never covered by right sidebar
+    // Shifting camera target: keep building center framed with comfortable clearance
     let target = new THREE.Vector3(
       isExtensionFocus
         ? (params.extensionWidth ?? 3.5) * 0.3 * extSign
-        : (isCustom && !isMobileViewport && preset === "iso" ? 0.70 : 0),
+        : (isCustom ? (!isMobileViewport && preset === "iso" ? 0.70 : 0) : boundCenter.x),
       isMobileViewport
         ? (isRoofFocus ? mobileOffsetY + 0.45 : mobileOffsetY)
-        : (isRoofFocus ? H + 0.35 : (isCustom ? H * 0.42 : H / 2)),
-      isRoofFocus ? 0 : (isCustom ? -0.2 : 0)
+        : (isRoofFocus ? H + 0.35 : boundCenter.y),
+      isRoofFocus ? 0 : boundCenter.z
     );
 
     let pos: THREE.Vector3;
@@ -278,13 +310,13 @@ export function CameraRig({
       switch (preset) {
         case "plan":
           // Epsilon offset on Z to prevent gimbal-lock singularity with camera.up
-          pos = new THREE.Vector3(target.x, center.y + (Math.max(W, L) / effectiveFactor) * margin, 0.005);
+          pos = new THREE.Vector3(target.x, target.y + (Math.max(boundSpanX, boundSpanZ) / effectiveFactor) * margin, 0.005);
           break;
         case "front":
-          pos = new THREE.Vector3(target.x, center.y + 0.08, center.z - (Math.max(W, H) / effectiveFactor) * margin);
+          pos = new THREE.Vector3(target.x, target.y, -L / 2 - (Math.max(boundSpanX, boundSpanY) / effectiveFactor) * margin);
           break;
         case "side":
-          pos = new THREE.Vector3(center.x + (Math.max(L, H) / effectiveFactor) * margin, center.y + 0.08, 0);
+          pos = new THREE.Vector3(boundMaxX + (Math.max(boundSpanZ, boundSpanY) / effectiveFactor) * margin, target.y, target.z);
           break;
         case "iso":
         default: {
@@ -302,8 +334,8 @@ export function CameraRig({
     const isVariantSwitch = prevHallKey.current !== undefined && prevHallKey.current !== currentKey;
     prevHallKey.current = currentKey;
 
-    if (preset === "iso" && (isVariantSwitch || isInitialMount.current)) {
-      // Cinematic camera reveal: start close to building and smoothly back away ("cúvať") to frame the full building
+    if (preset === "iso" && isCustom && (isVariantSwitch || isInitialMount.current)) {
+      // Cinematic camera reveal for custom small garages only
       const closeDist = Math.max(3.2, dist * 0.25);
       const closePos = target.clone().add(isoDir.clone().multiplyScalar(closeDist));
       closePos.y = Math.max(1.8, target.y * 0.75);

@@ -215,6 +215,9 @@ export function NewHallStandalone3D({
       new THREE.MeshStandardMaterial({
         color: "#272e38",
         roughness: 0.8,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1,
       }),
     []
   );
@@ -588,10 +591,7 @@ export function NewHallStandalone3D({
                 <boxGeometry args={[.075, L + .4, .14]} />
                 <primitive object={trimMat} attach="material" />
               </mesh>
-              <mesh position={[-side * (halfW / (2 * Math.cos(pitchRad)) - .12), 0, .07]}>
-                <boxGeometry args={[.28, L + .44, .035]} />
-                <primitive object={trimMat} attach="material" />
-              </mesh>
+{/* Apex cap handled cleanly by continuous unified ridge flashing */}
             </>}
           </group>
         ))}
@@ -602,16 +602,31 @@ export function NewHallStandalone3D({
               [halfW + 0.08, -halfL - 0.08],
               [-halfW - 0.08, halfL + 0.08],
               [halfW + 0.08, halfL + 0.08],
-            ].map(([cx, cz], ci) => (
-              <mesh key={`corner-trim-${ci}`} position={[cx, H / 2, cz]}>
-                <boxGeometry args={[0.16, H, 0.16]} />
-                <primitive object={trimMat} attach="material" />
-              </mesh>
-            ))}
+            ].map(([cx, cz], ci) => {
+              // When an office wing is attached on front-right (vyrobna_hala / budova_pristavky),
+              // do not slice through the facade: trim only above the office roof level
+              const hasRightWing = (isProdWithOffice || isBothLeans) && ci === 1;
+              const wingTopY = 4.4;
+              if (hasRightWing) {
+                const trimH = Math.max(0.1, H - wingTopY);
+                return (
+                  <mesh key={`corner-trim-${ci}`} position={[cx, wingTopY + trimH / 2, cz]}>
+                    <boxGeometry args={[0.16, trimH, 0.16]} />
+                    <primitive object={trimMat} attach="material" />
+                  </mesh>
+                );
+              }
+              return (
+                <mesh key={`corner-trim-${ci}`} position={[cx, H / 2, cz]}>
+                  <boxGeometry args={[0.16, H, 0.16]} />
+                  <primitive object={trimMat} attach="material" />
+                </mesh>
+              );
+            })}
 
-            {/* Ridge Cap */}
-            <mesh position={[0, Hridge + 0.14, 0]}>
-              <boxGeometry args={[0.35, 0.08, L + 0.44]} />
+            {/* Solid Unified Ridge Cap (Hrebenáč bez Z-fighting) */}
+            <mesh position={[0, Hridge + 0.12, 0]}>
+              <boxGeometry args={[0.42, 0.09, L + 0.44]} />
               <primitive object={trimMat} attach="material" />
             </mesh>
           </>
@@ -1016,14 +1031,59 @@ export function NewHallStandalone3D({
                   <boxGeometry args={[0.1, leanHOuter, len]} />
                   <primitive object={wallMat} attach="material" />
                 </mesh>
-                <mesh position={[0, 0, zStart - 0.04]}>
+                {/* Front and back gable walls flush with main envelope (-halfL - 0.05) */}
+                <mesh position={[0, 0, zStart - 0.05]}>
                   <shapeGeometry args={[leanGableShape]} />
                   <primitive object={wallMat} attach="material" />
                 </mesh>
-                <mesh position={[0, 0, zEnd + 0.04]}>
+                <mesh position={[0, 0, zEnd + 0.05]}>
                   <shapeGeometry args={[leanGableShape]} />
                   <primitive object={wallMat} attach="material" />
                 </mesh>
+                {/* Horizontal panel seams on lean-to outer wall */}
+                {isHorizontal && (
+                  <group name={`lean-horizontal-joints-${sideSign}`}>
+                    {Array.from({ length: Math.max(1, Math.floor(leanHOuter / panelW)) }).map((_, i) => {
+                      const y = (i + 1) * panelW;
+                      if (y >= leanHOuter - 0.05) return null;
+                      return (
+                        <mesh key={`lean-p-joint-${i}`} position={[outerX + sideSign * 0.105, y, zMid]}>
+                          <boxGeometry args={[0.015, 0.018, len + 0.02]} />
+                          <primitive object={seamMat} attach="material" />
+                        </mesh>
+                      );
+                    })}
+                  </group>
+                )}
+              </>
+            )}
+
+            {/* Architectural Flashings for Lean-to Annex */}
+            {lt.flashings && (
+              <>
+                {/* Apron Flashing at intersection with main hall wall (Stenové lemovanie) */}
+                <mesh position={[innerX + sideSign * 0.04, leanHInner + 0.04, zMid]}>
+                  <boxGeometry args={[0.12, 0.10, len + 0.35]} />
+                  <primitive object={trimMat} attach="material" />
+                </mesh>
+                {/* Eaves Flashing along outer roof edge */}
+                <mesh position={[outerX + sideSign * 0.04, leanHOuter + 0.02, zMid]}>
+                  <boxGeometry args={[0.08, 0.10, len + 0.35]} />
+                  <primitive object={trimMat} attach="material" />
+                </mesh>
+                {/* Outer corner trims */}
+                {!isOpenCanopy && (
+                  <>
+                    <mesh position={[outerX + sideSign * 0.06, leanHOuter / 2, zStart - 0.06]}>
+                      <boxGeometry args={[0.14, leanHOuter, 0.14]} />
+                      <primitive object={trimMat} attach="material" />
+                    </mesh>
+                    <mesh position={[outerX + sideSign * 0.06, leanHOuter / 2, zEnd + 0.06]}>
+                      <boxGeometry args={[0.14, leanHOuter, 0.14]} />
+                      <primitive object={trimMat} attach="material" />
+                    </mesh>
+                  </>
+                )}
               </>
             )}
 

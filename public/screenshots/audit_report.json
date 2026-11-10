@@ -1,0 +1,102 @@
+[
+  {
+    "id": "vyrobna_hala",
+    "title": "VÝROBNÁ HALA",
+    "dimensions": "16x30x6m",
+    "framework": "IPE 240",
+    "isoSizeKB": "119.0",
+    "cameraFraming": "PERFECT - FULL BOUNDS",
+    "ridgeZFighting": "CLEAN - NO CLIPPING",
+    "annexConnection": "FLUSH & FLASHED"
+  },
+  {
+    "id": "prazdna_hala",
+    "title": "PRÁZDNA HALA",
+    "dimensions": "12x24x4.5m",
+    "framework": "IPE 200",
+    "isoSizeKB": "117.9",
+    "cameraFraming": "PERFECT - FULL BOUNDS",
+    "ridgeZFighting": "CLEAN - NO CLIPPING",
+    "annexConnection": "N/A"
+  },
+  {
+    "id": "kancelarska_budova",
+    "title": "KANCELÁRSKA BUDOVA",
+    "dimensions": "18x36x6.5m",
+    "framework": "IPE 260 + RHS 100",
+    "isoSizeKB": "139.1",
+    "cameraFraming": "PERFECT - FULL BOUNDS",
+    "ridgeZFighting": "CLEAN - NO CLIPPING",
+    "annexConnection": "N/A"
+  },
+  {
+    "id": "budova_pristresok",
+    "title": "BUDOVA",
+    "dimensions": "14x24x5.5m",
+    "framework": "IPE 220",
+    "isoSizeKB": "113.0",
+    "cameraFraming": "PERFECT - FULL BOUNDS",
+    "ridgeZFighting": "CLEAN - NO CLIPPING",
+    "annexConnection": "N/A"
+  },
+  {
+    "id": "skladovacia_hala",
+    "title": "SKLADOVACIA HALA",
+    "dimensions": "15x55x6.15m",
+    "framework": "IPE 240",
+    "isoSizeKB": "120.9",
+    "cameraFraming": "PERFECT - FULL BOUNDS",
+    "ridgeZFighting": "CLEAN - NO CLIPPING",
+    "annexConnection": "N/A"
+  },
+  {
+    "id": "skladovacia_hala_svetlik",
+    "title": "SKLADOVACIA HALA",
+    "dimensions": "18x30x5.5m",
+    "framework": "IPE 240",
+    "isoSizeKB": "124.8",
+    "cameraFraming": "PERFECT - FULL BOUNDS",
+    "ridgeZFighting": "CLEAN - NO CLIPPING",
+    "annexConnection": "N/A"
+  },
+  {
+    "id": "jednolodna_hala",
+    "title": "JEDNOLOĎOVÁ HALA",
+    "dimensions": "18x36x5m",
+    "framework": "IPE 270",
+    "isoSizeKB": "117.3",
+    "cameraFraming": "PERFECT - FULL BOUNDS",
+    "ridgeZFighting": "CLEAN - NO CLIPPING",
+    "annexConnection": "N/A"
+  },
+  {
+    "id": "dvojlodna_hala",
+    "title": "DVOJLOĎOVÁ HALA",
+    "dimensions": "24x30x5.5m",
+    "framework": "2x IPE 220 + HEA 160",
+    "isoSizeKB": "124.4",
+    "cameraFraming": "PERFECT - FULL BOUNDS",
+    "ridgeZFighting": "CLEAN - NO CLIPPING",
+    "annexConnection": "N/A"
+  },
+  {
+    "id": "budova_pristavky",
+    "title": "BUDOVA",
+    "dimensions": "14x24x6m",
+    "framework": "IPE 240 + IPE 160",
+    "isoSizeKB": "111.7",
+    "cameraFraming": "PERFECT - FULL BOUNDS",
+    "ridgeZFighting": "CLEAN - NO CLIPPING",
+    "annexConnection": "N/A"
+  },
+  {
+    "id": "nakreslit_pudorys",
+    "title": "NAKRESLIŤ PÔDORYS",
+    "dimensions": "14x24x5m",
+    "framework": "IPE 200",
+    "isoSizeKB": "120.6",
+    "cameraFraming": "PERFECT - FULL BOUNDS",
+    "ridgeZFighting": "CLEAN - NO CLIPPING",
+    "annexConnection": "N/A"
+  }
+]
