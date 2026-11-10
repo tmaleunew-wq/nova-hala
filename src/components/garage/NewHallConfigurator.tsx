@@ -69,7 +69,8 @@ export default function NewHallConfigurator() {
   });
 
   const allTemplates = templatesData as HallTemplateItem[];
-  const initialTpl = allTemplates.find((t) => t.id === "skladovacia_hala") || allTemplates[0];
+  const queryTplId = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("template") : null;
+  const initialTpl = allTemplates.find((t) => t.id === (queryTplId || "vyrobna_hala")) || allTemplates[0];
   const [activeTemplate, setActiveTemplate] = useState<HallTemplateItem>(initialTpl);
 
   const [params, setParams] = useState<GarageParams>(() => ({
@@ -78,7 +79,7 @@ export default function NewHallConfigurator() {
     width: initialTpl.width,
     length: initialTpl.length,
     clearHeight: initialTpl.clearHeight,
-    bayCount: initialTpl.bayCount ?? 9,
+    bayCount: initialTpl.bayCount ?? Math.max(3, Math.round(initialTpl.length / 6)),
     roofType: "gable",
     roofPitchDeg: initialTpl.roofPitchDeg,
     profileSize: 0.24,
@@ -87,10 +88,10 @@ export default function NewHallConfigurator() {
     showCladding: true,
     showFoundation: true,
     steelColor: "#7c8594",
-    claddingColor: initialTpl.claddingColor || "#d7d5ca",
-    roofColor: initialTpl.roofColor || "#a5a5a5",
-    trimmingColor: initialTpl.trimmingColor || "#9e9764",
-    sectionalDoorColor: "#9e9764",
+    claddingColor: initialTpl.claddingColor || "#6b7280",
+    roofColor: initialTpl.roofColor || "#4b5563",
+    trimmingColor: initialTpl.trimmingColor || "#1f2937",
+    sectionalDoorColor: initialTpl.trimmingColor || "#1f2937",
     doorWidth: 4.0,
     doorHeight: 4.25,
     hasRidgeSkylight: !!initialTpl.hasRidgeSkylight,
@@ -115,6 +116,11 @@ export default function NewHallConfigurator() {
 
   const handleSelectTemplate = (tpl: HallTemplateItem) => {
     setActiveTemplate(tpl);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("template", tpl.id);
+      window.history.replaceState({}, "", url.toString());
+    }
     handleSetParams({
       hallType: `${tpl.title} (${tpl.subtitle})`,
       width: tpl.width,
