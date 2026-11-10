@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, lazy, Suspense } from "react";
 
-const Configurator = lazy(() => import("@/components/garage/Configurator"));
+const NewHallConfigurator = lazy(() => import("@/components/garage/NewHallConfigurator"));
 
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Steel Garage Configurator — Parametrický 3D CAD" },
-      { name: "description", content: "Parametrický 3D konfigurátor oceľovej garáže: jakl konštrukcia, opláštenie, brána, okná. Export .glb." },
+      { title: "Nová Oceľová Hala — Samostatný Konfigurátor" },
+      { name: "description", content: "Samostatný vývojový 3D konfigurátor novej modulárnej oceľovej haly." },
     ],
   }),
 });
@@ -30,19 +30,12 @@ function Index() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen w-screen items-center justify-center bg-[#0e1116] font-mono text-sm text-emerald-300/80">
-          Načítavam 3D model haly…
+        <div className="flex h-screen w-screen items-center justify-center bg-[#0e1116] font-mono text-sm text-cyan-300/80">
+          Načítavam 3D model novej haly…
         </div>
       }
     >
-      <Configurator
-        variant={
-          new URLSearchParams(window.location.search).get("variant") ||
-          new URLSearchParams(window.location.search).get("client")
-            ? undefined
-            : "variant4"
-        }
-      />
+      <NewHallConfigurator />
     </Suspense>
   );
 }

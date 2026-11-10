@@ -50,7 +50,7 @@ export default function NewHallConfigurator() {
   const [quoteRequestSignal, setQuoteRequestSignal] = useState(0);
 
   // Template selector for standalone halls.
-  const [showTemplatePicker, setShowTemplatePicker] = useState<boolean>(false);
+  const [showTemplatePicker, setShowTemplatePicker] = useState<boolean>(() => typeof window !== "undefined" ? !new URLSearchParams(window.location.search).get("template") : false);
   const [showBOM, setShowBOM] = useState<boolean>(false);
   const [showSheetingModal, setShowSheetingModal] = useState<boolean>(false);
   const [showLayerMenu, setShowLayerMenu] = useState<boolean>(false);
@@ -237,13 +237,13 @@ export default function NewHallConfigurator() {
       {/* Top HiStruct Style Navigation Header */}
       <header className="absolute top-0 left-0 right-0 z-30 bg-slate-900/95 text-white border-b border-white/10 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 backdrop-blur-md shadow-xl">
         <div className="flex items-center gap-2.5">
-          <Link
-            to="/"
+          <button type="button" onClick={() => setShowTemplatePicker(true)} title="Späť na výber šablóny"
+
             className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs font-mono font-bold text-white hover:bg-white/10 transition"
           >
             <ArrowLeft className="h-3.5 w-3.5 text-emerald-400" />
             <span className="hidden sm:inline">Späť</span>
-          </Link>
+          </button>
 
           {/* Button to open Standalone Hall Templates */}
           <button
