@@ -47,3 +47,20 @@ export function fitOpening(o: Opening, bay: Bay): Opening {
 export function overlaps(a: Rect, b: Rect) {
   return a.x < b.x + b.width + .05 && a.x + a.width + .05 > b.x && a.y < b.y + b.height + .05 && a.y + a.height + .05 > b.y;
 }
+
+export * from './collisionEngine';
+
+export function openingToCollision(o: Opening, bay: Bay) {
+  return {
+    id: o.id,
+    category: o.category,
+    subtype: o.subtype,
+    surface: bay.surface as any,
+    x: o.x,
+    y: o.y,
+    width: o.width,
+    height: o.height,
+    bayId: bay.id,
+  };
+}
+

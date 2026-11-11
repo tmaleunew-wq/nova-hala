@@ -705,7 +705,7 @@ export function NewHallStandalone3D({
           position={[-halfW / 2, (H + Hridge) / 2 + 0.08, 0]}
           visible={!editedSurfaces.includes('roof-left')}
           rotation={[0, 0, pitchRad]}
-          castShadow receiveShadow
+          castShadow
         >
           <boxGeometry args={[slopeLen, 0.1, L + 0.4]} />
           <primitive object={roofMat} attach="material" />
@@ -714,7 +714,7 @@ export function NewHallStandalone3D({
           position={[halfW / 2, (H + Hridge) / 2 + 0.08, 0]}
           visible={!editedSurfaces.includes('roof-right')}
           rotation={[0, 0, -pitchRad]}
-          castShadow receiveShadow
+          castShadow
         >
           <boxGeometry args={[slopeLen, 0.1, L + 0.4]} />
           <primitive object={roofMat} attach="material" />
@@ -727,7 +727,7 @@ export function NewHallStandalone3D({
             rotation={[-Math.PI / 2, side * pitchRad, 0]}>
             {!editedSurfaces.includes(side < 0 ? 'roof-left' : 'roof-right') && (
               <RoofSheetDetails width={slopeLen} height={L + .4} offset={-halfL - .2}
-                color={roofColor} opacity={claddingOpacity} />
+                color={roofColor} opacity={claddingOpacity} receiveShadow={false} />
             )}
             {lt.flashings && <>
               {[-1, 1].map(end => <mesh key={`verge-${end}`} position={[0, end * (halfL + .2), .065]}>
@@ -931,6 +931,46 @@ export function NewHallStandalone3D({
         <mesh position={[0, doorHeight * 0.65, exterior * 0.022]} castShadow>
           <boxGeometry args={[doorWidth * 0.48, doorHeight * 0.28, 0.012]} />
           <primitive object={glassMat} attach="material" />
+        </mesh>
+
+        {/* Vylepšenie vzhľadu: obvodové lemovanie otvoru (ostenie) */}
+        <group position={[0, 0, exterior * 0.03]}>
+          <mesh position={[-doorWidth / 2 - 0.075, doorHeight / 2 + 0.05, 0]} castShadow>
+            <boxGeometry args={[0.07, doorHeight + 0.1, 0.035]} />
+            <primitive object={trimMat} attach="material" />
+          </mesh>
+          <mesh position={[doorWidth / 2 + 0.075, doorHeight / 2 + 0.05, 0]} castShadow>
+            <boxGeometry args={[0.07, doorHeight + 0.1, 0.035]} />
+            <primitive object={trimMat} attach="material" />
+          </mesh>
+          <mesh position={[0, doorHeight + 0.065, 0]} castShadow>
+            <boxGeometry args={[doorWidth + 0.22, 0.07, 0.035]} />
+            <primitive object={trimMat} attach="material" />
+          </mesh>
+        </group>
+
+        {/* Strieška nad dverami */}
+        <mesh position={[0, doorHeight + 0.16, exterior * 0.2]} castShadow>
+          <boxGeometry args={[doorWidth + 0.5, 0.035, 0.38]} />
+          <primitive object={trimMat} attach="material" />
+        </mesh>
+
+        {/* Prah */}
+        <mesh position={[0, 0.012, exterior * 0.06]} receiveShadow>
+          <boxGeometry args={[doorWidth + 0.16, 0.024, 0.24]} />
+          <meshStandardMaterial color="#9ca3af" metalness={0.5} roughness={0.5} wireframe={p.wireframe} />
+        </mesh>
+
+        {/* Ochranný plech v spodnej časti krídla */}
+        <mesh position={[0, 0.17, exterior * 0.0235]}>
+          <boxGeometry args={[doorWidth * 0.92, 0.28, 0.006]} />
+          <meshStandardMaterial color="#9aa0a8" metalness={0.85} roughness={0.3} wireframe={p.wireframe} />
+        </mesh>
+
+        {/* Zapustená výplň krídla (spodný panel) */}
+        <mesh position={[0, doorHeight * 0.33, exterior * 0.0235]}>
+          <boxGeometry args={[doorWidth * 0.72, doorHeight * 0.2, 0.006]} />
+          <meshStandardMaterial color="#1f2328" metalness={0.5} roughness={0.45} wireframe={p.wireframe} />
         </mesh>
 
         {/* Realistic Door Handle & Escutcheon */}
@@ -1288,13 +1328,14 @@ export function NewHallStandalone3D({
       {isOfficeWithStorage && showOpenings && (
         <>
           {/* Front gable wall (z = -halfL): 3 spans [-halfW..-halfW/3], [-halfW/3..halfW/3], [halfW/3..halfW] */}
-          {/* Left span: 2nd floor window (y=5.4m) */}
+          {/* Left span: 1st & 2nd floor windows (stacked) */}
           {renderWindow(-halfW * (2 / 3), 5.4, -halfL - 0.06, Math.PI, halfW * 0.58, 1.0, "kanc-f-l2")}
-          {/* Middle span: Entrance door (0.9x2.1m) + 1st floor window (y=2.4m) */}
-          {renderPersonnelDoor(-halfW / 3 + 1.0, -halfL - 0.06, 0, 1.0, 2.1, "kanc-f-door")}
-          {renderWindow(0, 2.4, -halfL - 0.06, Math.PI, halfW * 0.58, 1.0, "kanc-f-m1")}
-          {/* Right span: 2nd floor window (y=5.4m) */}
+          {renderWindow(-halfW * (2 / 3), 2.2, -halfL - 0.06, Math.PI, halfW * 0.58, 1.0, "kanc-f-l1")}
+          {/* Middle span: Modern entrance door (1.1x2.1m) centered at x = 0 (bez kolízie s oknami) */}
+          {renderPersonnelDoor(0, -halfL - 0.06, 0, 1.1, 2.1, "kanc-f-door")}
+          {/* Right span: 1st & 2nd floor windows (stacked) */}
           {renderWindow(halfW * (2 / 3), 5.4, -halfL - 0.06, Math.PI, halfW * 0.58, 1.0, "kanc-f-r2")}
+          {renderWindow(halfW * (2 / 3), 2.2, -halfL - 0.06, Math.PI, halfW * 0.58, 1.0, "kanc-f-r1")}
 
           {/* Side walls: Bays 0 & 1 (Office 2-storey ribbon windows 5.25x1.0m on BOTH left and right walls!) */}
           {frameZs.slice(0, -1).map((z, idx) => {

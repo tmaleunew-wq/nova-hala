@@ -26,6 +26,17 @@ interface TechnicalDrawingsModalProps {
   onClose: () => void;
   params: GarageParams;
   hallName?: string;
+  templateId?: string;
+  openings?: Array<{
+    id: string;
+    bayId: string;
+    category: string;
+    subtype?: string;
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+  }>;
 }
 
 export function TechnicalDrawingsModal({
@@ -33,14 +44,18 @@ export function TechnicalDrawingsModal({
   onClose,
   params,
   hallName = "VBAU Priemyselná hala",
+  templateId,
+  openings,
 }: TechnicalDrawingsModalProps) {
   const [activeView, setActiveView] = useState<DrawingViewType>("plan");
   const [isExporting, setIsExporting] = useState(false);
+  const [zoom, setZoom] = useState<number>(1);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   if (!isOpen) return null;
 
   const currentDef = DRAWING_DEFINITIONS.find((d) => d.id === activeView) || DRAWING_DEFINITIONS[0];
-  const svgContent = generateDrawingSvg(activeView, params);
+  const svgContent = generateDrawingSvg(activeView, params, { openings, templateId, theme });
 
   const handleDownloadPdf = () => {
     try {
@@ -57,7 +72,7 @@ export function TechnicalDrawingsModal({
 
   const handleDownloadDxf = () => {
     try {
-      const dxfContent = generateGarageDxf(params);
+      const dxfContent = generateGarageDxf(params, openings);
       const blob = new Blob([dxfContent], { type: "application/dxf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -198,20 +213,60 @@ export function TechnicalDrawingsModal({
 
           {/* Right Area: Large Vector Drawing Viewport */}
           <div className="flex-1 flex flex-col bg-slate-950 p-4 min-h-0 overflow-hidden">
-            {/* View description bar */}
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10 text-xs text-slate-300">
-              <span className="font-semibold text-white">
-                {currentDef.title} ({currentDef.scale})
-              </span>
-              <span className="text-slate-400 hidden sm:inline">{currentDef.description}</span>
+            {/* View description bar + Zoom & Theme controls */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 mb-2 border-b border-white/10 text-xs text-slate-300">
+              <div>
+                <span className="font-semibold text-white">
+                  {currentDef.title} ({currentDef.scale})
+                </span>
+                <span className="text-slate-400 hidden lg:inline ml-2">· {currentDef.description}</span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+                  className="px-2.5 py-1 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-[11px] font-semibold text-slate-200 transition cursor-pointer"
+                  title="Prepnúť farebný režim výkresu (Tmavý CAD / Biely papier)"
+                >
+                  {theme === "dark" ? "☀ Biely výkres" : "🌙 Tmavý CAD"}
+                </button>
+                <div className="flex items-center rounded-lg border border-white/15 bg-white/5 overflow-hidden text-[11px]">
+                  <button
+                    onClick={() => setZoom((z) => Math.max(0.75, +(z - 0.25).toFixed(2)))}
+                    className="px-2 py-1 hover:bg-white/10 text-slate-300 font-bold cursor-pointer"
+                    title="Oddialiť"
+                  >
+                    −
+                  </button>
+                  <button
+                    onClick={() => setZoom(1)}
+                    className="px-2 py-1 hover:bg-white/10 text-sky-400 font-mono font-bold cursor-pointer"
+                    title="Resetovať mierku zobrazenia"
+                  >
+                    {Math.round(zoom * 100)}%
+                  </button>
+                  <button
+                    onClick={() => setZoom((z) => Math.min(2.25, +(z + 0.25).toFixed(2)))}
+                    className="px-2 py-1 hover:bg-white/10 text-slate-300 font-bold cursor-pointer"
+                    title="Priblížiť"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* SVG Canvas wrapper */}
             <div
-              className="flex-1 w-full rounded-xl border border-white/10 overflow-hidden flex items-center justify-center p-2 shadow-inner"
-              style={{ backgroundColor: "#0b1120" }}
-              dangerouslySetInnerHTML={{ __html: svgContent }}
-            />
+              className="flex-1 w-full rounded-xl border border-white/10 overflow-auto flex items-center justify-center p-2 shadow-inner"
+              style={{ backgroundColor: theme === "light" ? "#f8fafc" : "#0b1120" }}
+            >
+              <div
+                className="w-full h-full flex items-center justify-center transition-transform duration-150 origin-center"
+                style={{ transform: `scale(${zoom})` }}
+                dangerouslySetInnerHTML={{ __html: svgContent }}
+              />
+            </div>
           </div>
         </div>
       </div>

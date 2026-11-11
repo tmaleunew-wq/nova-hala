@@ -15,9 +15,10 @@ export function OpeningIcon({ type }: { type: string }) {
   </svg>;
 }
 
-export function OpeningPanel({ state, bay, error, onState, onSave, onDelete, onClose }: {
+export function OpeningPanel({ state, bay, error, onState, onSave, onDelete, onClose, suggestedPosition, onSnapToValid }: {
   state: NonNullable<ActiveModalState>; bay: Bay; error?: string;
   onState: (state: NonNullable<ActiveModalState>) => void; onSave: () => void; onDelete: () => void; onClose: () => void;
+  suggestedPosition?: { x: number; y: number }; onSnapToValid?: () => void;
 }) {
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -62,7 +63,26 @@ export function OpeningPanel({ state, bay, error, onState, onSave, onDelete, onC
       </div></label>)}
       {(['frameColor', 'fillColor'] as const).map(key => <fieldset key={key}><legend className="text-sm mb-2">{key === 'frameColor' ? 'Farba rámu' : 'Farba výplne'}</legend><div className="grid grid-cols-4 gap-1">{catalog.palette.map(color => <button key={color.name} aria-pressed={state.draft![key] === color.hex} onClick={() => update({ [key]: color.hex })} className={`text-[10px] rounded border p-1 ${state.draft![key] === color.hex ? 'border-sky-600 ring-1 ring-sky-600' : 'border-slate-200'}`}><span className="block h-6 rounded mb-1" style={{ background: color.hex }} />{color.name}</button>)}</div></fieldset>)}
       <button className="text-sky-700 text-sm" onClick={() => onState({ ...state, step: 'CATEGORY' })}>Zmeniť typ</button>
-      {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+      {error ? (
+        <div className="space-y-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+          <p role="alert" className="text-xs font-semibold text-red-800 flex items-center gap-1.5">
+            <span className="text-sm">⚠️</span> {error}
+          </p>
+          {onSnapToValid && suggestedPosition && (
+            <button
+              type="button"
+              onClick={onSnapToValid}
+              className="w-full text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 px-3 rounded-lg flex items-center justify-center gap-1 transition shadow-sm cursor-pointer"
+            >
+              ✨ Odporúčaná pozícia bez kolízie ({suggestedPosition.x.toFixed(2)} m, {suggestedPosition.y.toFixed(2)} m)
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 flex items-center gap-1.5 font-medium">
+          <span className="text-emerald-600 font-bold">✓</span> Pozícia je platná (bez kolízie)
+        </div>
+      )}
       <div className="flex justify-between gap-3"><button className="bg-sky-700 text-white rounded px-4 py-2 disabled:opacity-40" disabled={!!error} onClick={onSave}>Uložiť prvok</button><button className="text-red-700 flex items-center gap-1" onClick={onDelete}><Trash2 size={16} />Odstrániť prvok</button></div>
     </div>}
   </div>;

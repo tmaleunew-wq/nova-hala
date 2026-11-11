@@ -6,7 +6,10 @@ import { toast } from "sonner";
  * containing the floor plan (pôdorys), column grid, wall outlines,
  * gate/door/window openings, dimensions, and annotations.
  */
-export function generateGarageDxf(p: GarageParams): string {
+export function generateGarageDxf(
+  p: GarageParams,
+  openings?: Array<{ bayId: string; category: string; width: number; height: number; x: number; y: number }>
+): string {
   const w = p.width ?? 4;
   const l = p.length ?? 6;
   const h = p.clearHeight ?? 2.6;
@@ -207,6 +210,26 @@ export function generateGarageDxf(p: GarageParams): string {
       addLine("OTVORY", -60, winY, -60, winY + winW);
       addText("OTVORY", -450, winY + 200, 110, "OKNO", 90);
     }
+  }
+
+  // 4B. DYNAMICKÉ OTVORY Z EDITORA POLÍ (okná, dvere, bočné brány)
+  if (openings && openings.length > 0) {
+    openings.forEach((op) => {
+      const [prefix, idxStr] = op.bayId.split("-");
+      const bIdx = Math.max(0, (parseInt(idxStr, 10) || 1) - 1);
+      const startMm = Math.round(bIdx * bayMm + op.x * 1000);
+      const lenMm = Math.round(op.width * 1000);
+      const label = `${op.category.toUpperCase()} ${(op.width * 1000).toFixed(0)}x${(op.height * 1000).toFixed(0)}`;
+      if (prefix === "A") {
+        addLine("OTVORY", 0, startMm, 0, startMm + lenMm);
+        addLine("OTVORY", -80, startMm, -80, startMm + lenMm);
+        addText("OTVORY", -250, startMm + 100, 110, label, 90);
+      } else if (prefix === "C") {
+        addLine("OTVORY", W, startMm, W, startMm + lenMm);
+        addLine("OTVORY", W + 80, startMm, W + 80, startMm + lenMm);
+        addText("OTVORY", W + 220, startMm + 100, 110, label, 90);
+      }
+    });
   }
 
   // 5. MODULOVÝ RÁMOVÝ RASTER & STĹPY

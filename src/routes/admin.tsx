@@ -7,12 +7,15 @@ import {
   ArrowLeft, Printer, Link as LinkIcon, DollarSign, RefreshCw, 
   Calculator, FileText, FileSpreadsheet, Search, User, Phone, 
   Mail, Calendar, ShieldCheck, CheckCircle, Trash2, Plus, Eye,
-  Layers, Package, ChevronRight, Sliders, QrCode, MessageCircle
+  Layers, Package, ChevronRight, Sliders, QrCode, MessageCircle,
+  Compass, Download, FolderKanban, FileDown
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateOrderExcelXml } from "@/lib/garage/excelGenerator";
 import { fetchInquiriesFromSupabase, updateInquiryStatusInSupabase, supabase } from "@/lib/supabase";
 import { getDefaultPricingRates } from "@/lib/garage/bomCalculator";
+import { downloadGarageDxf } from "@/lib/garage/dxfGenerator";
+import { downloadMultiPageDrawingsPdf } from "@/lib/garage/technicalDrawingsGenerator";
 
 import { AdminAuthGate } from "@/components/garage/AdminAuthGate";
 import { PriceQuoteModal } from "@/components/garage/PriceQuoteModal";
@@ -20,6 +23,7 @@ import { BuildingQrModal } from "@/components/garage/BuildingQrModal";
 import { AdminPricingAdjustment } from "@/components/garage/AdminPricingAdjustment";
 import { AdminPricingTable } from "@/components/garage/AdminPricingTable";
 import { GarageBomTable } from "@/components/garage/GarageBomTable";
+import { TechnicalDrawingsModal } from "@/components/garage/TechnicalDrawingsModal";
 
 export const Route = createFileRoute("/admin")({
   component: () => (
@@ -59,6 +63,8 @@ function AdminDashboard() {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<"list" | "detail">("list");
+  const [activeAdminModule, setActiveAdminModule] = useState<"crm" | "drawings" | "bom" | "pricing">("crm");
+  const [isTechnicalDrawingsOpen, setIsTechnicalDrawingsOpen] = useState(false);
 
   // Active selected order params & pricing
   const [params, setParams] = useState<GarageParams>(DEFAULT_PARAMS);
@@ -183,6 +189,27 @@ function AdminDashboard() {
         }));
       } catch (e) {}
     }
+
+    // Include saved designs from 3D Configurator CRM storage
+    try {
+      const crmProjects = JSON.parse(localStorage.getItem("vbau_hall_projects_crm_v1") || "[]");
+      for (const p of crmProjects) {
+        if (!loaded.some((o) => o.id === p.id || o.order_id === p.code)) {
+          loaded.push({
+            id: p.id,
+            order_id: p.code || p.id,
+            date: p.createdAt ? new Date(p.createdAt).toLocaleString("sk-SK") : new Date().toLocaleString("sk-SK"),
+            name: p.name || p.customerName || "Konfigurácia haly",
+            email: p.email || "",
+            phone: p.phone || "",
+            message: p.notes || "",
+            params: p.params || DEFAULT_PARAMS,
+            total_price: p.estimatedPriceEur || 0,
+            status: p.status === "new" ? "Nový" : p.status || "Nový",
+          });
+        }
+      }
+    } catch (e) {}
 
     setOrders(loaded);
     setIsLoading(false);
@@ -423,6 +450,24 @@ function AdminDashboard() {
       currentParams.set(key, val);
     }
     window.open(`/?${currentParams.toString()}`, "_blank");
+  };
+
+  const handleDownloadDxf = () => {
+    try {
+      downloadGarageDxf(params, `VBAU-Vykres-${params.width}x${params.length}m`);
+      toast.success("AutoCAD DXF výkres bol vygenerovaný a stiahnutý.");
+    } catch (e) {
+      toast.error("Chyba pri generovaní DXF.");
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    try {
+      downloadMultiPageDrawingsPdf(params, `VBAU-Vykresova-Dokumentacia-${params.width}x${params.length}m.pdf`);
+      toast.success("PDF výkresová dokumentácia (8 listov) bola stiahnutá.");
+    } catch (e) {
+      toast.error("Chyba pri generovaní PDF výkresov.");
+    }
   };
 
   return (
@@ -727,67 +772,307 @@ function AdminDashboard() {
             </div>
           </div>
 
-          {/* Unit Price Adjustment Grid */}
-          <AdminPricingAdjustment
-            steelPricePerKg={steelPricePerKg}
-            setSteelPricePerKg={setSteelPricePerKg}
-            sandwichPricePerSqM={sandwichPricePerSqM}
-            setSandwichPricePerSqM={setSandwichPricePerSqM}
-            trapezoidPricePerSqM={trapezoidPricePerSqM}
-            setTrapezoidPricePerSqM={setTrapezoidPricePerSqM}
-            garageDoorCost={garageDoorCost}
-            setGarageDoorCost={setGarageDoorCost}
-            personalDoorCost={personalDoorCost}
-            setPersonalDoorCost={setPersonalDoorCost}
-            windowCost={windowCost}
-            setWindowCost={setWindowCost}
-            laborCost={laborCost}
-            setLaborCost={setLaborCost}
-            marginPercent={marginPercent}
-            setMarginPercent={setMarginPercent}
-            customItem1Label={customItem1Label}
-            setCustomItem1Label={setCustomItem1Label}
-            customItem1Cost={customItem1Cost}
-            setCustomItem1Cost={setCustomItem1Cost}
-            customItem2Label={customItem2Label}
-            setCustomItem2Label={setCustomItem2Label}
-            customItem2Cost={customItem2Cost}
-            setCustomItem2Cost={setCustomItem2Cost}
-          />
-
-          {/* Pricing Table Summary */}
-          <AdminPricingTable
-            clientName={clientName}
-            params={params}
-            totalSteelLength={totalSteelLength}
-            totalSteelWeight={totalSteelWeight}
-            steelPricePerKg={steelPricePerKg}
-            calculatedSteelCost={calculatedSteelCost}
-            totalCladdingArea={totalCladdingArea}
-            activeCladdingUnitPrice={activeCladdingUnitPrice}
-            calculatedCladdingCost={calculatedCladdingCost}
-            garageDoorCost={garageDoorCost}
-            calculatedGarageDoorCost={calculatedGarageDoorCost}
-            personalDoorCost={personalDoorCost}
-            calculatedPersonalDoorCost={calculatedPersonalDoorCost}
-            windowCost={windowCost}
-            calculatedWindowsCost={calculatedWindowsCost}
-            customItem1Label={customItem1Label}
-            calculatedCustomItem1Cost={calculatedCustomItem1Cost}
-            customItem2Label={customItem2Label}
-            calculatedCustomItem2Cost={calculatedCustomItem2Cost}
-            laborCost={laborCost}
-            transportCost={transportCost}
-            marginPercent={marginPercent}
-            marginAmount={marginAmount}
-            finalSubtotalBeforeVat={finalSubtotalBeforeVat}
-            finalTotalWithVat={finalTotalWithVat}
-          />
-
-          {/* Výkaz materiálu a kusovník (BOM) pre výrobcu */}
-          <div className="pt-2">
-            <GarageBomTable params={params} accentColor="emerald" />
+          {/* 4 Professional Admin Modules Switcher */}
+          <div className="flex flex-wrap gap-1.5 p-1.5 bg-[#0e1218] border border-white/10 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setActiveAdminModule("crm")}
+              className={`flex-1 min-w-[130px] py-2 px-3 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                activeAdminModule === "crm"
+                  ? "bg-emerald-500 text-slate-950 shadow-md font-extrabold"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <FolderKanban className="h-3.5 w-3.5" />
+              <span>A. Projekty & CRM</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveAdminModule("drawings")}
+              className={`flex-1 min-w-[130px] py-2 px-3 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                activeAdminModule === "drawings"
+                  ? "bg-emerald-500 text-slate-950 shadow-md font-extrabold"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Compass className="h-3.5 w-3.5" />
+              <span>B. Technické výkresy</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveAdminModule("bom")}
+              className={`flex-1 min-w-[130px] py-2 px-3 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                activeAdminModule === "bom"
+                  ? "bg-emerald-500 text-slate-950 shadow-md font-extrabold"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Layers className="h-3.5 w-3.5" />
+              <span>C. Kusovníky materiálov</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveAdminModule("pricing")}
+              className={`flex-1 min-w-[130px] py-2 px-3 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                activeAdminModule === "pricing"
+                  ? "bg-emerald-500 text-slate-950 shadow-md font-extrabold"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <DollarSign className="h-3.5 w-3.5" />
+              <span>D. Cenové kalkulácie</span>
+            </button>
           </div>
+
+          {/* MODUL A: PROJEKTY A CRM */}
+          {activeAdminModule === "crm" && (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-white/10 bg-[#0e1218] p-4 sm:p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                    Parametrický profil haly
+                  </span>
+                  <button
+                    onClick={handleOpenIn3D}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-bold hover:bg-sky-500/30 transition cursor-pointer"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    Otvoriť 3D model
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="bg-black/40 p-2.5 rounded border border-white/5">
+                    <span className="text-white/40 block text-[10px]">Rozmery:</span>
+                    <span className="text-white font-bold">{params.width} × {params.length} m</span>
+                  </div>
+                  <div className="bg-black/40 p-2.5 rounded border border-white/5">
+                    <span className="text-white/40 block text-[10px]">Výška v odkvape:</span>
+                    <span className="text-white font-bold">{params.clearHeight.toFixed(2)} m</span>
+                  </div>
+                  <div className="bg-black/40 p-2.5 rounded border border-white/5">
+                    <span className="text-white/40 block text-[10px]">Výška v hrebeni:</span>
+                    <span className="text-white font-bold">{Hridge.toFixed(2)} m</span>
+                  </div>
+                  <div className="bg-black/40 p-2.5 rounded border border-white/5">
+                    <span className="text-white/40 block text-[10px]">Nosné rámy:</span>
+                    <span className="text-white font-bold">{frames} ks (raster {(L / params.bayCount).toFixed(1)}m)</span>
+                  </div>
+                  <div className="bg-black/40 p-2.5 rounded border border-white/5">
+                    <span className="text-white/40 block text-[10px]">Strecha:</span>
+                    <span className="text-white font-bold">{params.roofType === 'gable' ? 'Sedlová' : 'Pultová'} ({params.roofPitchDeg || 10}°)</span>
+                  </div>
+                  <div className="bg-black/40 p-2.5 rounded border border-white/5">
+                    <span className="text-white/40 block text-[10px]">Opláštenie:</span>
+                    <span className="text-white font-bold">{params.panelType} ({params.insulationCore || 'PUR'})</span>
+                  </div>
+                  <div className="bg-black/40 p-2.5 rounded border border-white/5">
+                    <span className="text-white/40 block text-[10px]">Zastavaná plocha:</span>
+                    <span className="text-emerald-400 font-bold">{(W * L).toFixed(0)} m²</span>
+                  </div>
+                  <div className="bg-black/40 p-2.5 rounded border border-white/5">
+                    <span className="text-white/40 block text-[10px]">Odhadovaná oceľ:</span>
+                    <span className="text-cyan-400 font-bold">~{Math.round(totalSteelWeight).toLocaleString()} kg</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setActiveAdminModule("drawings")}
+                    className="flex-1 py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  >
+                    <Compass className="h-3.5 w-3.5 text-sky-400" />
+                    Prejsť na výkresy haly →
+                  </button>
+                  <button
+                    onClick={() => setActiveAdminModule("pricing")}
+                    className="flex-1 py-2 px-3 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  >
+                    <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
+                    Prejsť na cenovú kalkuláciu →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MODUL B: TECHNICKÉ VÝKRESY */}
+          {activeAdminModule === "drawings" && (
+            <div className="rounded-lg border border-white/10 bg-[#0e1218] p-4 sm:p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-3 gap-2">
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Compass className="h-4 w-4 text-emerald-400" />
+                    2D Technická výkresová dokumentácia
+                  </h3>
+                  <p className="text-xs text-white/50 mt-0.5">
+                    Kompletná inžinierska projektová dokumentácia generovaná priamo z 3D dát projektu.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={handleDownloadDxf}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-bold hover:bg-sky-500/30 transition cursor-pointer"
+                    title="Stiahnuť AutoCAD DXF súbor"
+                  >
+                    <FileDown className="h-3.5 w-3.5" />
+                    AutoCAD DXF
+                  </button>
+                  <button
+                    onClick={handleDownloadPdf}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 transition cursor-pointer shadow-md"
+                    title="Stiahnuť viacstránkový PDF výkres"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Stiahnuť PDF (8 listov)
+                  </button>
+                </div>
+              </div>
+
+              {/* Interactive viewer launch button */}
+              <button
+                onClick={() => setIsTechnicalDrawingsOpen(true)}
+                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 text-white font-extrabold flex items-center justify-center gap-2.5 transition shadow-xl cursor-pointer text-sm"
+              >
+                <Compass className="h-5 w-5" />
+                <span>Otvoriť celoobrazovkový 2D prehliadač výkresov (Zoom, Vstvy, CAD)</span>
+              </button>
+
+              {/* Sheets Grid */}
+              <div className="space-y-2 pt-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 block">
+                  Obsah projektovej dokumentácie (8 výkresov v mierke):
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  {[
+                    { num: "01", name: "Pôdorys základovej dosky", scale: "1:100", desc: "Kotevné body pätiek, obvodový prah, raster osí" },
+                    { num: "02", name: "Pôdorys oceľovej konštrukcie", scale: "1:100", desc: "Nosné rámy, stĺpy IPE, nábehy a polia" },
+                    { num: "03", name: "Pôdorys strešnej roviny", scale: "1:100", desc: "Z-väznice, strešné stužidlá X-bracing, hrebeň" },
+                    { num: "04", name: "Priečny rez halou A-A", scale: "1:50", desc: "Nábehy rámov, väznice, základová doska, výškové kóty ±0.000" },
+                    { num: "05", name: "Pohľad predný štítový", scale: "1:100", desc: "Štítové stĺpiky, vráta, atika a sklony strechy" },
+                    { num: "06", name: "Pohľad zadný štítový", scale: "1:100", desc: "Zadná fasáda, dvere a lemovanie štítu" },
+                    { num: "07", name: "Pohľad bočný pozdĺžny ľavý", scale: "1:100", desc: "Opláštenie, odkvapový žľab, stĺpy v module" },
+                    { num: "08", name: "Pohľad bočný pozdĺžny pravý", scale: "1:100", desc: "Pozdĺžna fasáda s presvetlením a lemovaniami" },
+                  ].map((s) => (
+                    <div key={s.num} className="p-2.5 rounded-lg bg-black/40 border border-white/5 flex items-start gap-2.5">
+                      <span className="font-mono text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                        List {s.num}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-bold text-white truncate">{s.name}</span>
+                          <span className="text-[10px] text-white/40 font-mono">{s.scale}</span>
+                        </div>
+                        <p className="text-[11px] text-white/50 truncate mt-0.5">{s.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MODUL C: KUSOVNÍKY MATERIÁLOV */}
+          {activeAdminModule === "bom" && (
+            <div className="rounded-lg border border-white/10 bg-[#0e1218] p-4 sm:p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-3 gap-2">
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Layers className="h-4 w-4 text-cyan-400" />
+                    Kusovník materiálov a výrobná špecifikácia
+                  </h3>
+                  <p className="text-xs text-white/50 mt-0.5">
+                    Presné súpisy oceľových prvkov, opláštenia, spojovacieho materiálu a kovaní.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleExportExcel}
+                    className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 text-xs font-bold hover:bg-emerald-500/30 transition cursor-pointer"
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5" />
+                    <span>Export Excel (.xls)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Garage BOM Table Component */}
+              <GarageBomTable params={params} accentColor="emerald" />
+            </div>
+          )}
+
+          {/* MODUL D: CENOVÉ KALKULÁCIE */}
+          {activeAdminModule === "pricing" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between bg-[#0e1218] border border-white/10 p-3 rounded-lg">
+                <span className="text-xs text-white/60">
+                  Interné sadzby materiálov, práce, dopravy a kalkulácia marže.
+                </span>
+                <button
+                  onClick={() => setIsQuoteModalOpen(true)}
+                  className="flex items-center gap-1.5 rounded-lg bg-emerald-400 font-bold text-black border border-emerald-300 px-3.5 py-1.5 text-xs hover:bg-emerald-300 transition shadow-lg cursor-pointer"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  Vytvoriť Cenovú Ponuku (PDF)
+                </button>
+              </div>
+
+              <AdminPricingAdjustment
+                steelPricePerKg={steelPricePerKg}
+                setSteelPricePerKg={setSteelPricePerKg}
+                sandwichPricePerSqM={sandwichPricePerSqM}
+                setSandwichPricePerSqM={setSandwichPricePerSqM}
+                trapezoidPricePerSqM={trapezoidPricePerSqM}
+                setTrapezoidPricePerSqM={setTrapezoidPricePerSqM}
+                garageDoorCost={garageDoorCost}
+                setGarageDoorCost={setGarageDoorCost}
+                personalDoorCost={personalDoorCost}
+                setPersonalDoorCost={setPersonalDoorCost}
+                windowCost={windowCost}
+                setWindowCost={setWindowCost}
+                laborCost={laborCost}
+                setLaborCost={setLaborCost}
+                marginPercent={marginPercent}
+                setMarginPercent={setMarginPercent}
+                customItem1Label={customItem1Label}
+                setCustomItem1Label={setCustomItem1Label}
+                customItem1Cost={customItem1Cost}
+                setCustomItem1Cost={setCustomItem1Cost}
+                customItem2Label={customItem2Label}
+                setCustomItem2Label={setCustomItem2Label}
+                customItem2Cost={customItem2Cost}
+                setCustomItem2Cost={setCustomItem2Cost}
+              />
+
+              <AdminPricingTable
+                clientName={clientName}
+                params={params}
+                totalSteelLength={totalSteelLength}
+                totalSteelWeight={totalSteelWeight}
+                steelPricePerKg={steelPricePerKg}
+                calculatedSteelCost={calculatedSteelCost}
+                totalCladdingArea={totalCladdingArea}
+                activeCladdingUnitPrice={activeCladdingUnitPrice}
+                calculatedCladdingCost={calculatedCladdingCost}
+                garageDoorCost={garageDoorCost}
+                calculatedGarageDoorCost={calculatedGarageDoorCost}
+                personalDoorCost={personalDoorCost}
+                calculatedPersonalDoorCost={calculatedPersonalDoorCost}
+                windowCost={windowCost}
+                calculatedWindowsCost={calculatedWindowsCost}
+                customItem1Label={customItem1Label}
+                calculatedCustomItem1Cost={calculatedCustomItem1Cost}
+                customItem2Label={customItem2Label}
+                calculatedCustomItem2Cost={calculatedCustomItem2Cost}
+                laborCost={laborCost}
+                transportCost={transportCost}
+                marginPercent={marginPercent}
+                marginAmount={marginAmount}
+                finalSubtotalBeforeVat={finalSubtotalBeforeVat}
+                finalTotalWithVat={finalTotalWithVat}
+              />
+            </div>
+          )}
 
         </div>
       </div>
@@ -831,6 +1116,16 @@ function AdminDashboard() {
         clientEmail={clientEmail}
         clientPhone={clientPhone}
         params={params}
+      />
+
+      {/* Technical Drawings Modal for Admin */}
+      <TechnicalDrawingsModal
+        isOpen={isTechnicalDrawingsOpen}
+        onClose={() => setIsTechnicalDrawingsOpen(false)}
+        params={params}
+        hallName={clientName ? `Projekt: ${clientName}` : `${params.hallType || "Oceľová hala"} (${params.width}×${params.length}m)`}
+        templateId={params.hallType || "blank"}
+        openings={[]}
       />
     </div>
   );

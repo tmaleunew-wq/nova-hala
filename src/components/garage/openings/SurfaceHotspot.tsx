@@ -60,7 +60,7 @@ export function SurfaceHotspot({ position, normal, label = '+', axis = false, la
     onPointerMove={event => { if (onActivate && facing(event)) { event.stopPropagation(); setHovered(true); } }}
     onPointerOut={() => setHovered(false)}
     onPointerDown={event => { if (onActivate && facing(event)) event.stopPropagation(); }}
-    onClick={event => { if (onActivate && facing(event)) { event.stopPropagation(); if (event.delta <= 5) onActivate(); } }}>
+    onClick={event => { if (onActivate && facing(event)) { event.stopPropagation(); if (event.delta <= 10) onActivate(); } }}>
     <mesh raycast={axis ? () => null : undefined}>
       <circleGeometry args={[radius, 32]} />
       <meshBasicMaterial map={texture} transparent alphaTest={.1} toneMapped={false} />

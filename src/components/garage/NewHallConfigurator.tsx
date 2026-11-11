@@ -1,7 +1,7 @@
 import "@react-three/fiber";
-import { useEffect, useRef, useState } from "react";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, GizmoHelper, GizmoViewport, ContactShadows } from "@react-three/drei";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
+import { OrbitControls, GizmoHelper, GizmoViewport, ContactShadows, Environment, Lightformer, Line, Html } from "@react-three/drei";
 import {
   ArrowLeft,
   Share2,
@@ -29,7 +29,7 @@ import { NewHallStandalone3D, type HiStructLayerToggles } from "./NewHallStandal
 import { NewHallSheetingModal } from "./NewHallSheetingModal";
 import { TechnicalDrawingsModal } from "./TechnicalDrawingsModal";
 import { ProjectsCrmModal } from "./ProjectsCrmModal";
-import { Compass, FolderKanban, FileText, CheckCircle2 } from "lucide-react";
+import { Compass, FolderKanban, FileText, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useHallOpenings } from './openings/useHallOpenings';
 import { OpeningHotspots } from './openings/OpeningHotspots';
 import { OpeningPanel } from './openings/OpeningPanel';
@@ -46,6 +46,200 @@ const HISTRUCT_STEPS: { id: HiStructStep; label: string; desc: string; icon: any
   { id: "GetQuote", label: "Odoslať dopyt", desc: "Kusovník, pohľady a cenová ponuka", icon: Send },
 ];
 
+function Label3DSprite({
+  position,
+  text,
+  circle = false,
+  bg = "#0f172a",
+  fg = "#38bdf8",
+  border = "#38bdf8",
+  scale = [2.2, 0.7, 1],
+}: {
+  position: [number, number, number];
+  text: string;
+  circle?: boolean;
+  bg?: string;
+  fg?: string;
+  border?: string;
+  scale?: [number, number, number];
+}) {
+  const texture = useMemo(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = circle ? 128 : 384;
+    canvas.height = 128;
+    const ctx = canvas.getContext("2d")!;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = bg;
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 6;
+    if (circle) {
+      ctx.beginPath();
+      ctx.arc(64, 64, 54, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.roundRect(8, 20, canvas.width - 16, 88, 18);
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.fillStyle = fg;
+    ctx.font = circle ? "bold 54px monospace" : "bold 40px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, canvas.width / 2, 66);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }, [text, circle, bg, fg, border]);
+
+  return (
+    <sprite position={position} scale={circle ? [0.75, 0.75, 1] : scale}>
+      <spriteMaterial map={texture} transparent depthTest={true} />
+    </sprite>
+  );
+}
+
+function Hall3DOverlays({
+  params,
+  showDims,
+  sectionCutPct,
+}: {
+  params: GarageParams;
+  showDims: boolean;
+  sectionCutPct: number;
+}) {
+  const { gl } = useThree();
+  const W = params.width ?? 12;
+  const L = params.length ?? 24;
+  const H = params.clearHeight ?? 4.5;
+  const halfW = W / 2;
+  const halfL = L / 2;
+  const pitchRad = ((params.roofPitchDeg ?? 10) * Math.PI) / 180;
+  const Hridge = H + halfW * Math.tan(pitchRad);
+  const bayCount = Math.max(2, params.bayCount ?? Math.round(L / 6));
+  const bayLen = L / bayCount;
+
+  // Apply real-time 3D section cut plane
+  useEffect(() => {
+    if (sectionCutPct < 100) {
+      const cutZ = -halfL + (sectionCutPct / 100) * L;
+      gl.localClippingEnabled = true;
+      gl.clippingPlanes = [new THREE.Plane(new THREE.Vector3(0, 0, -1), cutZ)];
+    } else {
+      gl.clippingPlanes = [];
+    }
+    return () => {
+      gl.clippingPlanes = [];
+    };
+  }, [gl, sectionCutPct, halfL, L]);
+
+  const yG = 0.02;
+  const zFrontDim = -halfL - 2.4;
+  const xLeftBay = -halfW - 1.8;
+  const xLeftDim = -halfW - 3.4;
+  const cutZ = -halfL + (sectionCutPct / 100) * L;
+
+  return (
+    <group name="hall-3d-overlays">
+      {/* Live 3D Section Cut Plane Indicator */}
+      {sectionCutPct < 100 && (
+        <group position={[0, Hridge / 2, cutZ]}>
+          <mesh>
+            <planeGeometry args={[W + 2.5, Hridge + 1.2]} />
+            <meshBasicMaterial color="#0ea5e9" transparent opacity={0.12} side={THREE.DoubleSide} depthWrite={false} />
+          </mesh>
+          <Line
+            points={[
+              [-halfW - 1.25, -Hridge / 2, 0],
+              [halfW + 1.25, -Hridge / 2, 0],
+              [halfW + 1.25, Hridge / 2 + 0.6, 0],
+              [-halfW - 1.25, Hridge / 2 + 0.6, 0],
+              [-halfW - 1.25, -Hridge / 2, 0],
+            ]}
+            color="#0284c7"
+            lineWidth={1.8}
+            dashed
+            dashScale={4}
+          />
+        </group>
+      )}
+
+      {showDims && (
+        <>
+          {/* 1. Width Dimension Line (W) in front (-Z) */}
+          <Line points={[[-halfW, yG, -halfL - 0.3], [-halfW, yG, zFrontDim - 0.3]]} color="#64748b" lineWidth={1} />
+          <Line points={[[halfW, yG, -halfL - 0.3], [halfW, yG, zFrontDim - 0.3]]} color="#64748b" lineWidth={1} />
+          <Line points={[[-halfW, yG, zFrontDim], [halfW, yG, zFrontDim]]} color="#0f172a" lineWidth={1.8} />
+          <Line points={[[-halfW - 0.25, yG, zFrontDim - 0.25], [-halfW + 0.25, yG, zFrontDim + 0.25]]} color="#0284c7" lineWidth={2.2} />
+          <Line points={[[halfW - 0.25, yG, zFrontDim - 0.25], [halfW + 0.25, yG, zFrontDim + 0.25]]} color="#0284c7" lineWidth={2.2} />
+          <Label3DSprite position={[0, 0.45, zFrontDim]} text={`W = ${W.toFixed(2)} m`} scale={[2.6, 0.85, 1]} />
+
+          {/* 2. Overall Length Dimension Line (L) on foreground left side (-X) */}
+          <Line points={[[-halfW - 0.3, yG, -halfL], [xLeftDim - 0.3, yG, -halfL]]} color="#64748b" lineWidth={1} />
+          <Line points={[[-halfW - 0.3, yG, halfL], [xLeftDim - 0.3, yG, halfL]]} color="#64748b" lineWidth={1} />
+          <Line points={[[xLeftDim, yG, -halfL], [xLeftDim, yG, halfL]]} color="#0f172a" lineWidth={1.8} />
+          <Line points={[[xLeftDim - 0.25, yG, -halfL - 0.25], [xLeftDim + 0.25, yG, -halfL + 0.25]]} color="#0284c7" lineWidth={2.2} />
+          <Line points={[[xLeftDim - 0.25, yG, halfL - 0.25], [xLeftDim + 0.25, yG, halfL + 0.25]]} color="#0284c7" lineWidth={2.2} />
+          <Label3DSprite position={[xLeftDim - 0.4, 0.45, 0]} text={`L = ${L.toFixed(2)} m`} scale={[2.6, 0.85, 1]} />
+
+          {/* 3. Bay Dimension Chain + Grid Axes (1..N) on foreground (-X) */}
+          <Line points={[[xLeftBay, yG, -halfL], [xLeftBay, yG, halfL]]} color="#64748b" lineWidth={1.2} />
+          {Array.from({ length: bayCount + 1 }).map((_, b) => {
+            const z = -halfL + b * bayLen;
+            return (
+              <group key={`axis-3d-${b}`}>
+                <Line points={[[xLeftDim - 0.8, yG, z], [-halfW - 0.25, yG, z]]} color="#64748b" lineWidth={1} dashed dashScale={3} />
+                <Line points={[[xLeftBay - 0.18, yG, z - 0.18], [xLeftBay + 0.18, yG, z + 0.18]]} color="#0284c7" lineWidth={1.8} />
+                <Label3DSprite position={[xLeftDim - 1.25, 0.42, z]} text={`${b + 1}`} circle />
+                {b < bayCount && (
+                  <Label3DSprite
+                    position={[xLeftBay, 0.35, z + bayLen / 2]}
+                    text={`${bayLen.toFixed(1)}m`}
+                    bg="#ffffff"
+                    fg="#0f172a"
+                    border="#64748b"
+                    scale={[1.55, 0.52, 1]}
+                  />
+                )}
+              </group>
+            );
+          })}
+
+          {/* 4. Longitudinal Axes A & B at front (-Z) */}
+          {[-halfW, halfW].map((xPos, idx) => (
+            <group key={`axis-ab-${idx}`}>
+              <Line points={[[xPos, yG, -halfL - 0.25], [xPos, yG, zFrontDim - 0.9]]} color="#64748b" lineWidth={1} dashed dashScale={3} />
+              <Label3DSprite position={[xPos, 0.42, zFrontDim - 1.35]} text={idx === 0 ? "A" : "B"} circle />
+            </group>
+          ))}
+
+          {/* 5. Vertical Eave Height (H) & Ridge Height (H_hr) */}
+          <Line points={[[-halfW - 1.1, 0, -halfL], [-halfW - 1.1, H, -halfL]]} color="#0284c7" lineWidth={1.8} />
+          <Line points={[[-halfW - 1.4, 0, -halfL], [-halfW - 0.3, 0, -halfL]]} color="#64748b" lineWidth={1} />
+          <Line points={[[-halfW - 1.4, H, -halfL], [-halfW - 0.3, H, -halfL]]} color="#64748b" lineWidth={1} />
+          <Label3DSprite
+            position={[-halfW - 1.65, H / 2, -halfL]}
+            text={`H = ${H.toFixed(2)}m`}
+            bg="#064e3b"
+            fg="#6ee7b7"
+            border="#10b981"
+            scale={[2.2, 0.72, 1]}
+          />
+          <Label3DSprite
+            position={[0, Hridge + 0.65, -halfL]}
+            text={`+${Hridge.toFixed(2)}m`}
+            bg="#451a03"
+            fg="#fcd34d"
+            border="#f59e0b"
+            scale={[2.0, 0.68, 1]}
+          />
+        </>
+      )}
+    </group>
+  );
+}
+
 export default function NewHallConfigurator() {
   const exportRef = useRef<THREE.Group | null>(null);
   const [preset, setPreset] = useState<ViewPreset>("iso");
@@ -59,6 +253,8 @@ export default function NewHallConfigurator() {
   const [showDrawingsModal, setShowDrawingsModal] = useState<boolean>(false);
   const [showCrmModal, setShowCrmModal] = useState<boolean>(false);
   const [showLayerMenu, setShowLayerMenu] = useState<boolean>(false);
+  const [show3DDims, setShow3DDims] = useState<boolean>(true);
+  const [sectionCutPct, setSectionCutPct] = useState<number>(100);
   const [activeStep, setActiveStep] = useState<HiStructStep>("Geometry");
   const [viewMode, setViewMode] = useState<"both" | "xray" | "structure">("both");
 
@@ -158,6 +354,51 @@ export default function NewHallConfigurator() {
     }
   };
 
+  const [showRightPanel, setShowRightPanel] = useState(true);
+
+  const handleSaveDesign = () => {
+    try {
+      const code = `HALA-${Date.now().toString().slice(-6)}`;
+      const newProject = {
+        id: crypto.randomUUID(),
+        code,
+        name: `${activeTemplate.title} (${params.width}×${params.length}m)`,
+        customerName: "Zákazník z 3D konfigurátora",
+        email: "",
+        phone: "",
+        city: "",
+        status: "new",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        version: "1.0",
+        params: { ...params },
+        templateId: activeTemplate.id,
+        notes: `Uložený návrh. Rozmery: ${params.width}×${params.length}×${params.clearHeight}m (${params.bayCount} polí).`,
+      };
+
+      const existingStr = localStorage.getItem("vbau_hall_projects_crm_v1");
+      const existing = existingStr ? JSON.parse(existingStr) : [];
+      localStorage.setItem("vbau_hall_projects_crm_v1", JSON.stringify([newProject, ...existing]));
+
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("template", activeTemplate.id);
+        url.searchParams.set("width", String(params.width));
+        url.searchParams.set("length", String(params.length));
+        url.searchParams.set("clearHeight", String(params.clearHeight));
+        navigator.clipboard.writeText(url.toString());
+      }
+
+      toast.success(`Návrh bol úspešne uložený (kód: ${code})! Odkaz na pokračovanie bol skopírovaný do schránky.`);
+    } catch (err) {
+      toast.error("Nepodarilo sa uložiť návrh.");
+    }
+  };
+
+  const handleSendInquiry = () => {
+    setQuoteRequestSignal((s) => s + 1);
+  };
+
   const claddingOpacity = viewMode === "xray" ? 0.35 : 1.0;
   const effectiveParams: GarageParams = {
     ...params,
@@ -169,19 +410,36 @@ export default function NewHallConfigurator() {
     <div className="relative h-screen w-screen bg-[#eef2f6] select-none overflow-hidden font-sans">
       {/* 3D Canvas */}
       <Canvas
-        shadows
+        shadows={{ type: THREE.PCFSoftShadowMap }}
         frameloop="always"
         dpr={[1, isMobile ? 1.5 : 2]}
         camera={{ position: [-22, 12, -26], fov: 35, near: 0.5, far: 600 }}
-        gl={{ antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance", logarithmicDepthBuffer: true }}
+        gl={{
+          antialias: true,
+          preserveDrawingBuffer: true,
+          powerPreference: "high-performance",
+          logarithmicDepthBuffer: true,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.05,
+        }}
       >
         <color attach="background" args={["#eef2f6"]} />
         <fog attach="fog" args={["#eef2f6", 90, 420]} />
 
-        <ambientLight intensity={0.85} />
+        {/* IBL Procedural Environment for realistic metal/cladding reflections */}
+        <Environment resolution={256} environmentIntensity={0.65}>
+          <group rotation={[-Math.PI / 4, -0.6, 0]}>
+            <Lightformer form="ring" color="#ffffff" intensity={2} scale={15} position={[15, 25, -20]} target={[0, 0, 0]} />
+            <Lightformer form="rect" color="#dbeafe" intensity={1.5} scale={[30, 20, 1]} position={[-25, 20, 20]} />
+            <Lightformer form="rect" color="#f8fafc" intensity={0.8} scale={[50, 50, 1]} position={[0, 40, 0]} rotation={[Math.PI / 2, 0, 0]} />
+            <Lightformer form="rect" color="#94a3b8" intensity={0.5} scale={[50, 50, 1]} position={[0, -20, 0]} rotation={[-Math.PI / 2, 0, 0]} />
+          </group>
+        </Environment>
+
+        <ambientLight intensity={0.45} />
         <directionalLight
           position={[25, 35, -20]}
-          intensity={1.35}
+          intensity={1.4}
           castShadow
           shadow-mapSize={[2048, 2048]}
           shadow-camera-left={-40}
@@ -190,10 +448,10 @@ export default function NewHallConfigurator() {
           shadow-camera-bottom={-40}
           shadow-camera-near={0.5}
           shadow-camera-far={150}
-          shadow-bias={-0.0001}
-          shadow-normalBias={0.035}
+          shadow-bias={-0.0003}
+          shadow-normalBias={0.06}
         />
-        <directionalLight position={[-20, 18, 25]} intensity={0.55} />
+        <directionalLight position={[-20, 18, 25]} intensity={0.4} color="#e2e8f0" />
 
         <group ref={exportRef}>
           <NewHallStandalone3D
@@ -219,7 +477,19 @@ export default function NewHallConfigurator() {
           modelRef={exportRef} templateId={activeTemplate.id}
           replacedWindowIds={openingEditor.replacedWindowIds}
           onAdd={bay => { setActiveStep('Openings'); openingEditor.add(bay); }}
-          onEdit={opening => { setActiveStep('Openings'); openingEditor.edit(opening); }} />
+          onEdit={opening => { setActiveStep('Openings'); openingEditor.edit(opening); }}
+          onAddAtCoords={(bay, categoryId, coords) => {
+            setActiveStep('Openings');
+            openingEditor.addAtCoords(bay, categoryId, coords);
+          }}
+          onDuplicate={opening => {
+            openingEditor.duplicateOpening(opening);
+          }}
+          onDelete={opening => {
+            openingEditor.removeOpening(opening);
+          }} />
+
+        <Hall3DOverlays params={params} showDims={show3DDims} sectionCutPct={sectionCutPct} />
 
         <ContactShadows
           position={[0, -0.160, 0]}
@@ -252,6 +522,7 @@ export default function NewHallConfigurator() {
       </Canvas>
       {openingEditor.activeModalState && openingEditor.activeBay && <OpeningPanel
         state={openingEditor.activeModalState} bay={openingEditor.activeBay} error={openingEditor.error}
+        suggestedPosition={openingEditor.suggestedPosition} onSnapToValid={openingEditor.snapToValid}
         onState={openingEditor.setModal} onSave={openingEditor.save} onDelete={openingEditor.remove}
         onClose={() => openingEditor.setModal(null)} />}
 
@@ -386,30 +657,72 @@ export default function NewHallConfigurator() {
           </div>
 
           <button
-            onClick={() => setShowDrawingsModal(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-emerald-400/40 bg-emerald-500/20 px-3 py-1.5 text-xs font-bold text-emerald-200 hover:bg-emerald-500/30 transition cursor-pointer"
-            title="Generovať 2D technické výkresy (PDF, CAD DXF, SVG)"
+            onClick={() => setShow3DDims((v) => !v)}
+            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
+              show3DDims
+                ? "border-sky-400/50 bg-sky-500/20 text-sky-200"
+                : "border-white/15 bg-white/5 text-slate-300 hover:bg-white/10"
+            }`}
+            title="Zobraziť / skryť 3D kóty a modulové osi rastra (1..N, A, B)"
           >
-            <Compass className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="hidden md:inline">Výkresy 2D</span>
+            <Ruler className="h-3.5 w-3.5 text-sky-400" />
+            <span className="hidden lg:inline">Kóty & Osi 3D</span>
           </button>
 
-          <button
-            onClick={() => setShowCrmModal(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-purple-400/40 bg-purple-500/20 px-3 py-1.5 text-xs font-bold text-purple-200 hover:bg-purple-500/30 transition cursor-pointer"
-            title="Správa projektov a zákazníkov (CRM)"
+          <div
+            className="hidden md:flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-slate-200"
+            title="Plynulý 3D rez halou (100% = celá hala)"
           >
-            <FolderKanban className="h-3.5 w-3.5 text-purple-400" />
-            <span className="hidden md:inline">Projekty CRM</span>
+            <span className="text-[10px] font-mono text-sky-400 font-bold">REZ:</span>
+            <input
+              type="range"
+              min={15}
+              max={100}
+              step={1}
+              value={sectionCutPct}
+              onChange={(e) => setSectionCutPct(Number(e.target.value))}
+              className="w-16 accent-sky-400 cursor-pointer h-1.5"
+            />
+            {sectionCutPct < 100 && (
+              <button
+                onClick={() => setSectionCutPct(100)}
+                className="text-[10px] font-mono text-amber-300 hover:text-white cursor-pointer"
+                title="Zrušiť rez"
+              >
+                {sectionCutPct}% ✕
+              </button>
+            )}
+          </div>
+
+          {/* Uložiť návrh Button */}
+          <button
+            onClick={handleSaveDesign}
+            className="flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20 transition cursor-pointer"
+            title="Uložiť aktuálny návrh a vygenerovať odkaz"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="hidden md:inline">Uložiť návrh</span>
           </button>
 
+          {/* Odoslať dopyt Button */}
           <button
-            onClick={() => setShowBOM(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-sky-400/40 bg-sky-500/20 px-3 py-1.5 text-xs font-bold text-sky-200 hover:bg-sky-500/30 transition cursor-pointer"
+            onClick={handleSendInquiry}
+            className="flex items-center gap-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 px-3.5 py-1.5 text-xs font-bold text-slate-950 transition shadow-md shadow-sky-500/20 cursor-pointer"
+            title="Nezáväzne odoslať dopyt na cenovú ponuku"
           >
-            <Layers className="h-3.5 w-3.5 text-sky-400" />
-            <span className="hidden sm:inline">Kusovník</span>
+            <Send className="h-3.5 w-3.5" />
+            <span>Odoslať dopyt</span>
           </button>
+
+          {/* Discreet Admin Link */}
+          <a
+            href="/admin"
+            className="flex items-center gap-1 rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-slate-400 hover:text-white hover:border-white/25 transition"
+            title="Administrácia (VBAU)"
+          >
+            <ShieldCheck className="h-3.5 w-3.5 text-slate-400" />
+            <span className="hidden lg:inline text-[11px] font-mono">Admin</span>
+          </a>
 
           <button
             onClick={handleShare}
@@ -838,23 +1151,25 @@ export default function NewHallConfigurator() {
           </div>
         )}
 
-        {/* STEP 6: GET QUOTE (Odoslať dopyt & Výkresy) */}
+        {/* STEP 6: GET QUOTE (Odoslať dopyt) */}
         {activeStep === "GetQuote" && (
           <div className="space-y-3 text-xs">
+            <p className="text-slate-300 leading-relaxed">
+              Váš 3D návrh je pripravený. Odošlite nezáväzný dopyt a náš tím pre Vás spracuje presnú technickú ponuku a výrobnú dokumentáciu.
+            </p>
             <button
-              onClick={() => setShowBOM(true)}
-              className="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold flex items-center justify-center gap-2 transition cursor-pointer"
-            >
-              <Layers className="h-4 w-4 text-sky-400" />
-              Otvoriť výkaz materiálu (BOM)
-            </button>
-
-            <button
-              onClick={() => setQuoteRequestSignal((s) => s + 1)}
-              className="w-full py-2.5 px-4 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold flex items-center justify-center gap-2 shadow-lg transition cursor-pointer"
+              onClick={handleSendInquiry}
+              className="w-full py-3 px-4 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25 transition cursor-pointer text-sm"
             >
               <Send className="h-4 w-4" />
-              Vyžiadať cenovú ponuku
+              Odoslať nezáväzný dopyt
+            </button>
+            <button
+              onClick={handleSaveDesign}
+              className="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-semibold flex items-center justify-center gap-2 transition cursor-pointer"
+            >
+              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              Uložiť návrh
             </button>
           </div>
         )}
@@ -880,114 +1195,83 @@ export default function NewHallConfigurator() {
         </div>
       </aside>
 
-      {/* Right Engineering & Live Spec Summary Panel (Desktop 3-panel platform) */}
-      <aside className="hidden xl:flex flex-col absolute right-3.5 top-16 z-20 w-[310px] max-h-[calc(100vh-110px)] overflow-y-auto rounded-2xl bg-slate-900/92 text-white border border-white/15 backdrop-blur-md shadow-2xl p-4 space-y-4 font-sans text-xs">
-        <div>
-          <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-sky-400 font-bold">
-              Technický & cenový súhrn
-            </span>
-            <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30">
-              Parametrické dáta
-            </span>
-          </div>
-          <h3 className="text-sm font-bold text-white mt-2 truncate">{activeTemplate.title}</h3>
-          <p className="text-[11px] text-slate-400">{activeTemplate.framework} · {activeTemplate.subtitle}</p>
-        </div>
-
-        {/* Live Geometry Calculations */}
-        <div className="space-y-2 p-3 rounded-xl bg-white/[0.03] border border-white/10 font-mono text-[11px]">
-          <div className="flex justify-between">
-            <span className="text-slate-400">Pôdorysné rozmery:</span>
-            <span className="text-white font-bold">{params.width} × {params.length} m</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Zastavaná plocha:</span>
-            <span className="text-sky-300 font-bold">{(params.width * params.length).toFixed(0)} m²</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Výška v odkvape (H):</span>
-            <span className="text-white font-bold">{params.clearHeight.toFixed(2)} m</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Výška v hrebeni:</span>
-            <span className="text-white font-bold">{(params.clearHeight + (params.width / 2) * Math.tan(((params.roofPitchDeg ?? 10) * Math.PI) / 180)).toFixed(2)} m</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Obostavaný priestor:</span>
-            <span className="text-slate-200">~{Math.round(params.width * params.length * (params.clearHeight + (params.width / 4) * Math.tan(((params.roofPitchDeg ?? 10) * Math.PI) / 180))).toLocaleString()} m³</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Počet nosných rámov:</span>
-            <span className="text-slate-200">{params.bayCount + 1} ks (raster {(params.length / params.bayCount).toFixed(1)}m)</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Odhadovaná oceľ:</span>
-            <span className="text-cyan-400 font-bold">~{Math.round((params.bayCount + 1) * (params.clearHeight * 2 + params.width * 1.1) * 16 + params.length * 40).toLocaleString()} kg</span>
-          </div>
-        </div>
-
-        {/* Pricing Estimation */}
-        <div className="p-3 rounded-xl bg-gradient-to-br from-sky-500/10 to-emerald-500/10 border border-sky-500/20 space-y-1">
-          <span className="text-[10px] font-mono uppercase text-slate-400 block font-semibold">Orientačná cena haly:</span>
-          <div className="text-lg font-bold font-mono text-emerald-400">
-            ~{Math.round(params.width * params.length * 235).toLocaleString()} €
-            <span className="text-xs font-normal text-slate-400 ml-1">bez DPH</span>
-          </div>
-          <p className="text-[10px] text-slate-400 leading-tight">
-            Vrátane nosnej konštrukcie, opláštenia PUR 100mm a sekcionálnej brány.
-          </p>
-        </div>
-
-        {/* Quick Engineering Action Buttons */}
-        <div className="space-y-2 pt-1 border-t border-white/10">
-          <span className="text-[10px] font-mono uppercase text-slate-400 block">Inžinierske výstupy:</span>
-          
-          <button
-            onClick={() => setShowDrawingsModal(true)}
-            className="w-full py-2.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold flex items-center justify-between transition shadow-md cursor-pointer"
-          >
-            <div className="flex items-center gap-2">
-              <Compass className="h-4 w-4 text-sky-200" />
-              <span>2D Technické výkresy</span>
+      {/* Right Spec Summary Panel (Desktop clean building parameters) */}
+      {showRightPanel ? (
+        <aside className="hidden xl:flex flex-col absolute right-3.5 top-16 z-20 w-[300px] max-h-[calc(100vh-110px)] overflow-y-auto rounded-2xl bg-slate-900/92 text-white border border-white/15 backdrop-blur-md shadow-2xl p-4 space-y-4 font-sans text-xs">
+          <div>
+            <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-sky-400 font-bold">
+                Parametre budovy
+              </span>
+              <button
+                onClick={() => setShowRightPanel(false)}
+                className="text-[10px] text-slate-400 hover:text-white font-mono px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/10 cursor-pointer"
+                title="Skryť panel pre maximálny priestor na 3D model"
+              >
+                Skryť ✕
+              </button>
             </div>
-            <span className="text-[10px] font-mono bg-sky-900/60 px-1.5 py-0.5 rounded text-sky-200">CAD & PDF</span>
-          </button>
+            <h3 className="text-sm font-bold text-white mt-2 truncate">{activeTemplate.title}</h3>
+            <p className="text-[11px] text-slate-400">{activeTemplate.framework} · {activeTemplate.subtitle}</p>
+          </div>
 
-          <button
-            onClick={() => setShowBOM(true)}
-            className="w-full py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold flex items-center justify-between transition cursor-pointer"
-          >
-            <div className="flex items-center gap-2">
-              <Layers className="h-4 w-4 text-cyan-400" />
-              <span>Kusovník materiálov</span>
+          {/* Live Geometry Calculations */}
+          <div className="space-y-2 p-3 rounded-xl bg-white/[0.03] border border-white/10 font-mono text-[11px]">
+            <div className="flex justify-between">
+              <span className="text-slate-400">Pôdorysné rozmery:</span>
+              <span className="text-white font-bold">{params.width} × {params.length} m</span>
             </div>
-            <span className="text-[10px] font-mono bg-white/10 px-1.5 py-0.5 rounded text-slate-300">CSV & XLS</span>
-          </button>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Zastavaná plocha:</span>
+              <span className="text-sky-300 font-bold">{(params.width * params.length).toFixed(0)} m²</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Výška v odkvape (H):</span>
+              <span className="text-white font-bold">{params.clearHeight.toFixed(2)} m</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Výška v hrebeni:</span>
+              <span className="text-white font-bold">{(params.clearHeight + (params.width / 2) * Math.tan(((params.roofPitchDeg ?? 10) * Math.PI) / 180)).toFixed(2)} m</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Obostavaný priestor:</span>
+              <span className="text-slate-200">~{Math.round(params.width * params.length * (params.clearHeight + (params.width / 4) * Math.tan(((params.roofPitchDeg ?? 10) * Math.PI) / 180))).toLocaleString()} m³</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Počet nosných rámov:</span>
+              <span className="text-slate-200">{params.bayCount + 1} ks (raster {(params.length / params.bayCount).toFixed(1)}m)</span>
+            </div>
+          </div>
 
-          <button
-            onClick={() => setQuoteRequestSignal((s) => s + 1)}
-            className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center justify-between transition shadow-md cursor-pointer"
-          >
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-emerald-200" />
-              <span>Cenová ponuka</span>
-            </div>
-            <span className="text-[10px] font-mono bg-emerald-900/60 px-1.5 py-0.5 rounded text-emerald-200">PDF</span>
-          </button>
+          {/* Customer Action Buttons */}
+          <div className="space-y-2 pt-2 border-t border-white/10">
+            <button
+              onClick={handleSendInquiry}
+              className="w-full py-3 px-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25 transition cursor-pointer text-sm"
+            >
+              <Send className="h-4 w-4" />
+              <span>Odoslať dopyt</span>
+            </button>
 
-          <button
-            onClick={() => setShowCrmModal(true)}
-            className="w-full py-2.5 px-3 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 border border-purple-500/40 text-purple-200 font-bold flex items-center justify-between transition cursor-pointer"
-          >
-            <div className="flex items-center gap-2">
-              <FolderKanban className="h-4 w-4 text-purple-400" />
-              <span>Správa projektov CRM</span>
-            </div>
-            <span className="text-[10px] font-mono bg-purple-900/60 px-1.5 py-0.5 rounded text-purple-300">Projekty</span>
-          </button>
-        </div>
-      </aside>
+            <button
+              onClick={handleSaveDesign}
+              className="w-full py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-semibold flex items-center justify-center gap-2 transition cursor-pointer"
+            >
+              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              <span>Uložiť návrh</span>
+            </button>
+          </div>
+        </aside>
+      ) : (
+        <button
+          onClick={() => setShowRightPanel(true)}
+          className="hidden xl:flex items-center gap-1.5 absolute right-3.5 top-16 z-20 rounded-xl bg-slate-900/90 text-white border border-white/15 px-3 py-2 text-xs font-mono hover:bg-slate-800 transition shadow-xl cursor-pointer"
+          title="Zobraziť parametre budovy"
+        >
+          <span>Parametre budovy</span>
+          <span className="text-sky-400">◀</span>
+        </button>
+      )}
 
       {/* Bottom Status Bar */}
       <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 max-w-[92vw] truncate rounded-full border border-slate-300 bg-white/90 px-4 py-1.5 font-mono text-[11px] text-slate-800 backdrop-blur-md shadow-lg flex items-center gap-2">
@@ -1035,6 +1319,8 @@ export default function NewHallConfigurator() {
         onClose={() => setShowDrawingsModal(false)}
         params={params}
         hallName={`${activeTemplate.title} (${activeTemplate.subtitle})`}
+        templateId={activeTemplate.id}
+        openings={openingEditor.preview}
       />
 
       {/* Projects & Customer CRM Modal */}

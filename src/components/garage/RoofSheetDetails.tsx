@@ -39,13 +39,13 @@ export function createRoofRibGeometry(width: number, height: number, panels: Rec
   return geometry;
 }
 
-export function RoofSheetDetails({ width, height, panels, offset = 0, color, opacity = 1 }: {
-  width: number; height: number; panels?: Rect[]; offset?: number; color: string; opacity?: number;
+export function RoofSheetDetails({ width, height, panels, offset = 0, color, opacity = 1, receiveShadow = true }: {
+  width: number; height: number; panels?: Rect[]; offset?: number; color: string; opacity?: number; receiveShadow?: boolean;
 }) {
   const geometry = useMemo(() => createRoofRibGeometry(width, height,
     panels ?? [{ x: 0, y: 0, width, height }], offset), [width, height, panels, offset]);
   useEffect(() => () => geometry.dispose(), [geometry]);
-  return <mesh geometry={geometry} receiveShadow>
+  return <mesh geometry={geometry} receiveShadow={receiveShadow}>
     <meshStandardMaterial color={color} metalness={.3} roughness={.62}
       transparent={opacity < 1} opacity={opacity} depthWrite={opacity >= 1} />
   </mesh>;
