@@ -134,6 +134,12 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
   };
 
   const preview = draft && !error ? [...openings.filter(o => o.id !== draft.id), draft] : openings;
+  // A replacement preview occupies the target's place.
+  const previewTargetId = activeModalState?.targetId ?? activeModalState?.editingId;
+  if (draft && !error && previewTargetId && previewTargetId !== draft.id) {
+    const targetIndex = preview.findIndex(o => o.id === previewTargetId);
+    if (targetIndex >= 0) preview.splice(targetIndex, 1);
+  }
   const replacedWindowIds = useMemo(() => {
     const removed = removedByTemplate[templateId] ?? [];
     const modifiedTemplateIds = (byTemplate[templateId] ?? [])
@@ -210,6 +216,19 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
 
   const replaceOpening = (existingId: string, replacement: Opening) => {
     const beforeCount = openings.length;
+    // Updating the same ID must keep that ID visible.
+    if (existingId === replacement.id) {
+      setByTemplate(previous => ({
+        ...previous,
+        [templateId]: (previous[templateId] ?? defaultOpenings).map(o =>
+          o.id === existingId ? replacement : o),
+      }));
+      setRemovedByTemplate(previous => ({
+        ...previous,
+        [templateId]: (previous[templateId] ?? []).filter(id => id !== existingId),
+      }));
+      return;
+    }
     setRemovedByTemplate(previous => ({
       ...previous,
       [templateId]: [...new Set([...(previous[templateId] ?? []), existingId])]
@@ -389,6 +408,10 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
   };
 
   const addAtCoords = (bay: Bay, categoryId: string, coords?: { x: number; y: number }) => {
+    if (draft) {
+      if (error) return;
+      save();
+    }
     const c = catalog.categories.find(item => item.id === categoryId) || catalog.categories[0];
     const initialWidth = c.width;
     const initialHeight = c.height;
@@ -414,12 +437,44 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
     setModal({ bayId: bay.id, step: 'PARAMETERS', mode: 'ADD', draft: newDraft });
   };
 
+  const moveOpening = (id: string, coords: { x: number; y: number }) => {
+    if (draft) return;
+    const opening = openings.find(o => o.id === id);
+    const bay = bays.find(b => b.id === opening?.bayId);
+    if (!opening || !bay) return;
+    const moved = fitOpening({ ...opening, ...coords }, bay);
+    const others = openings.filter(o => o.id !== id && o.bayId === bay.id)
+      .map(o => ({ ...o, surface: bay.surface as CollisionOpening['surface'] }));
+    const surface = bay.surface as CollisionOpening['surface'];
+    const obstacles = [
+      { id: 'left-column', name: 'Ľavý stĺp', surface, x: 0, y: 0, width: .12, height: bay.height, type: 'COLUMN' as const },
+      { id: 'right-column', name: 'Pravý stĺp', surface, x: bay.width - .12, y: 0, width: .12, height: bay.height, type: 'COLUMN' as const },
+    ];
+    if (!validateOpening({ ...moved, surface }, others, obstacles, { width: bay.width, height: bay.height }).valid) return;
+    setByTemplate(previous => ({
+      ...previous,
+      [templateId]: (previous[templateId] ?? defaultOpenings).map(o => o.id === id ? moved : o),
+    }));
+  };
+
+  const startAdd = (bay: Bay, coords?: { x: number; y: number }) => {
+    if (draft) {
+      if (error) return;
+      save();
+    }
+    setModal({ bayId: bay.id, step: 'CATEGORY', mode: 'ADD', coords });
+  };
+
+  const previewReplacedIds = draft && !error
+    ? [...new Set([...replacedWindowIds, ...[previewTargetId, draft.id].filter((id): id is string => !!id)])]
+    : replacedWindowIds;
+
   return {
     bays,
     openings,
     preview,
     surfaces,
-    replacedWindowIds,
+    replacedWindowIds: previewReplacedIds,
     activeBay,
     activeModalState,
     setModal,
@@ -430,7 +485,7 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
     suggestedPosition,
     snapToValid,
     validation,
-    add: (bay: Bay, coords?: { x: number; y: number }) => setModal({ bayId: bay.id, step: 'CATEGORY', mode: 'ADD', coords }),
+    add: startAdd,
     edit: (opening: Opening) => setModal({
       bayId: opening.bayId,
       step: 'PARAMETERS',
@@ -451,6 +506,7 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
     }),
     addAtCoords,
     duplicateOpening,
+    moveOpening,
     removeOpening,
   };
 }

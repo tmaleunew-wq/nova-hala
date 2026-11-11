@@ -1,3 +1,4 @@
+import { useOpeningDrag } from './useOpeningDrag';
 import { useEffect, useMemo, useState, type RefObject } from 'react';
 import { DoubleSide, Group } from 'three';
 import { Html } from '@react-three/drei';
@@ -8,7 +9,7 @@ import { addHotspotPosition, gridBubbles } from '@/lib/garage/surfaceHotspotLayo
 import catalog from '@/config/openingsCatalog.json';
 import { SurfaceHotspot } from './SurfaceHotspot';
 
-export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onReplace, onAddAtCoords, onDuplicate, onDelete, modelRef, templateId, replacedWindowIds = [] }: {
+export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onReplace, onAddAtCoords, onDuplicate, onDelete, modelRef, templateId, replacedWindowIds = [], onMove }: {
   bays: Bay[]; openings: Opening[]; enabled: boolean;
   modelRef?: RefObject<Group | null>; templateId?: string;
   replacedWindowIds?: string[];
@@ -18,6 +19,7 @@ export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onRepl
   onAddAtCoords?: (bay: Bay, categoryId: string, coords: { x: number; y: number }) => void;
   onDuplicate?: (opening: Opening) => void;
   onDelete?: (opening: Opening) => void;
+  onMove?: (id: string, coords: { x: number; y: number }) => void;
 }) {
   const [hoveredBayId, setHoveredBayId] = useState<string | null>(null);
   const [hoveredOpeningId, setHoveredOpeningId] = useState<string | null>(null);
@@ -26,6 +28,8 @@ export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onRepl
   useEffect(() => {
     setSelectedOpeningId(null);
   }, [templateId, enabled]);
+
+  const dragHandlers = useOpeningDrag(onMove);
 
   const bubbles = useMemo(() => gridBubbles(bays), [bays]);
 
@@ -114,6 +118,7 @@ export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onRepl
               <group key={opening.id} position={[opCenterX, opCenterY, 0.12]}>
                 {/* Raycast hitmesh for opening */}
                 <mesh
+                  {...dragHandlers(opening)}
                   onPointerOver={e => {
                     e.stopPropagation();
                     setHoveredOpeningId(opening.id);

@@ -1,7 +1,7 @@
 import "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
-import { OrbitControls, GizmoHelper, GizmoViewport, ContactShadows, Environment, Lightformer, Line, Html } from "@react-three/drei";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
+import { OrbitControls, GizmoHelper, GizmoViewport, ContactShadows, Environment, Lightformer, Line, Html, Text } from "@react-three/drei";
 import {
   ArrowLeft,
   Share2,
@@ -98,6 +98,37 @@ function Label3DSprite({
       <spriteMaterial map={texture} transparent depthTest={true} />
     </sprite>
   );
+}
+
+function OpeningDimensionLabel({ position, text }: {
+  position: [number, number, number];
+  text: string;
+}) {
+  const anchor = useRef<THREE.Group>(null);
+  const cameraPosition = useMemo(() => new THREE.Vector3(), []);
+  const [side, setSide] = useState(1);
+  useFrame(({ camera }) => {
+    if (!anchor.current) return;
+    camera.getWorldPosition(cameraPosition);
+    anchor.current.worldToLocal(cameraPosition);
+    const nextSide = cameraPosition.z >= 0 ? 1 : -1;
+    if (nextSide !== side) setSide(nextSide);
+  });
+  return <group ref={anchor} position={position}>
+    <Suspense fallback={null}>
+      <Text
+        position={[0, 0, side * .18]}
+        rotation={[0, side < 0 ? Math.PI : 0, 0]}
+        fontSize={.32}
+        anchorX="center"
+        anchorY="middle"
+        color="#111827"
+        outlineWidth={.004}
+        outlineColor="#ffffff"
+        raycast={() => null}
+      >{text}</Text>
+    </Suspense>
+  </group>;
 }
 
 function Hall3DOverlays({
@@ -473,7 +504,7 @@ export default function NewHallConfigurator() {
               replacedWindowIds={openingEditor.replacedWindowIds} />
           )}
         </group>
-        <OpeningHotspots bays={openingEditor.bays} openings={openingEditor.openings} enabled={activeStep === 'Openings' && showOpeningButtons && layerToggles.openings && viewMode !== 'structure'}
+        <OpeningHotspots onMove={openingEditor.activeModalState ? undefined : openingEditor.moveOpening} bays={openingEditor.bays} openings={openingEditor.openings} enabled={activeStep === 'Openings' && showOpeningButtons && layerToggles.openings && viewMode !== 'structure'}
           modelRef={exportRef} templateId={activeTemplate.id}
           replacedWindowIds={openingEditor.replacedWindowIds}
           onAdd={(bay, coords) => { setActiveStep('Openings'); openingEditor.add(bay, coords); }}
@@ -489,6 +520,34 @@ export default function NewHallConfigurator() {
           onDelete={opening => {
             openingEditor.removeOpening(opening);
           }} />
+
+        {(viewMode === 'structure' || activeStep === 'Structure') && (
+          <group name="opening-clearance-dimensions">
+            {openingEditor.openings.map(opening => {
+              const bay = openingEditor.bays.find(item => item.id === opening.bayId);
+              if (!bay) return null;
+              const left = opening.x - bay.width / 2;
+              const bottom = opening.y - bay.height / 2;
+              const right = left + opening.width;
+              const top = bottom + opening.height;
+              const dimension = new Intl.NumberFormat('sk-SK', {
+                minimumFractionDigits: 2, maximumFractionDigits: 3,
+              });
+              return (
+                <group key={opening.id} position={bay.position3D} rotation={bay.rotation}>
+                  <Line
+                    points={[[left, bottom, .16], [right, bottom, .16], [right, top, .16], [left, top, .16], [left, bottom, .16]]}
+                    color="#334155" lineWidth={1} raycast={() => null}
+                  />
+                  <OpeningDimensionLabel
+                    position={[(left + right) / 2, (bottom + top) / 2, 0]}
+                    text={dimension.format(opening.width) + ' × ' + dimension.format(opening.height) + ' m'}
+                  />
+                </group>
+              );
+            })}
+          </group>
+        )}
 
         <Hall3DOverlays params={params} showDims={show3DDims} sectionCutPct={sectionCutPct} />
 
