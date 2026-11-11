@@ -534,7 +534,7 @@ export function NewHallStandalone3D({
     const rightSeamX = halfW + colHalf - inset + 0.003;
 
     // Segmented bay spans: panels, plinths and seams strictly fit between steel columns
-    const sideBays = [];
+    const sideBays: Array<{ b: number; z0: number; z1: number; baySpan: number; bayMidZ: number }> = [];
     for (let b = 0; b < bayCount; b++) {
       const z0 = frameZs[b];
       const z1 = frameZs[b + 1];
@@ -786,6 +786,13 @@ export function NewHallStandalone3D({
     actualDoorHeight = 4.25,
     keyStr = "gate"
   ) => {
+    if (
+      replacedWindowIds.includes(keyStr) ||
+      replacedWindowIds.includes(`template-gate-${keyStr}`) ||
+      replacedWindowIds.includes(`template-window-${keyStr}`)
+    ) {
+      return null;
+    }
     const panels = Math.max(4, Math.min(8, Math.round(actualDoorHeight / 0.52)));
     const panelH = actualDoorHeight / panels;
     const R = 0.25;
@@ -865,6 +872,13 @@ export function NewHallStandalone3D({
     doorHeight = 2.1,
     keyStr = "door"
   ) => {
+    if (
+      replacedWindowIds.includes(keyStr) ||
+      replacedWindowIds.includes(`template-door-${keyStr}`) ||
+      replacedWindowIds.includes(`template-window-${keyStr}`)
+    ) {
+      return null;
+    }
     const frameThickness = 0.075;
     const handleX = doorWidth / 2 - 0.08;
     const handleY = 1.0;
@@ -1045,8 +1059,8 @@ export function NewHallStandalone3D({
         key={keyStr}
         position={[x + (sideWall ? outward * .08 : 0), y, z + (sideWall ? 0 : outward * .08)]}
         rotation={[0, windowRotation, 0]}
-        visible={!replacedWindowIds.includes(`template-window-${keyStr}`)}
-        userData={{ hotspotWindow: { id: `template-window-${keyStr}`, width: windowWidth, height: windowHeight, frameColor } }}
+        visible={!replacedWindowIds.includes(`template-window-${keyStr}`) && !replacedWindowIds.includes(keyStr)}
+        userData={{ hotspotWindow: { id: keyStr, width: windowWidth, height: windowHeight, frameColor } }}
       >
         <WindowDetails
           width={windowWidth}

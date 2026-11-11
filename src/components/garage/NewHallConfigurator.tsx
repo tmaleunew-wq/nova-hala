@@ -467,7 +467,8 @@ export default function NewHallConfigurator() {
               selected={openingEditor.activeBay?.id} color={params.claddingColor} roofColor={params.roofColor}
               stemHeight={params.hasStemWall !== false ? (params.stemWallHeight ?? .27) : 0}
               stemColor={params.stemWallColor ?? '#a5a5a5'} stemThickness={(params.stemWallThickness ?? .1) + .04}
-              opacity={claddingOpacity} showOpenings={layerToggles.openings} />
+              opacity={claddingOpacity} showOpenings={layerToggles.openings}
+              replacedWindowIds={openingEditor.replacedWindowIds} />
             {(['front', 'back'] as const).filter(side => openingEditor.surfaces.includes(side)).map(side =>
               <GableCap key={side} width={params.width} height={params.clearHeight} pitch={params.roofPitchDeg}
                 z={(side === 'front' ? -1 : 1) * (params.length / 2 + .05)} color={params.claddingColor} />)}

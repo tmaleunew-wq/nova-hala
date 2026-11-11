@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { BoxGeometry, DoubleSide, Shape } from 'three';
 import { splitBayPanels, type Bay, type Opening, type Rect } from '@/lib/garage/openingSystem';
+import { isTemplateDefaultOpening } from '@/lib/garage/templateDefaults';
 import { RoofSheetDetails } from '../RoofSheetDetails';
 
 /** Metre-based UVs retain the material's physical repeat across every rectangular piece. */
@@ -36,9 +37,9 @@ function OpeningModel({ o }: { o: Opening }) {
   </group>;
 }
 
-export function BayOpeningMeshes({ bays, openings, surfaces, selected, color, roofColor, opacity, showOpenings, stemHeight = 0, stemColor = '#a5a5a5', stemThickness = .14 }: {
+export function BayOpeningMeshes({ bays, openings, surfaces, selected, color, roofColor, opacity, showOpenings, stemHeight = 0, stemColor = '#a5a5a5', stemThickness = .14, replacedWindowIds = [] }: {
   bays: Bay[]; openings: Opening[]; surfaces: string[]; selected?: string; color: string; roofColor: string; opacity: number; showOpenings: boolean;
-  stemHeight?: number; stemColor?: string; stemThickness?: number;
+  stemHeight?: number; stemColor?: string; stemThickness?: number; replacedWindowIds?: string[];
 }) {
   return <group name="editable-bay-openings">{bays.map(bay => {
     const elements = openings.filter(o => o.bayId === bay.id);
@@ -56,7 +57,16 @@ export function BayOpeningMeshes({ bays, openings, surfaces, selected, color, ro
         panels={panels} offset={-bay.position3D[2] - bay.height / 2} color={roofColor} opacity={opacity} />}
       {basePanels.map((rect, i) => <PanelPiece key={`stem-${i}`} rect={rect} bay={bay} color={stemColor} opacity={1} thickness={stemThickness} />)}
       {selected === bay.id && <mesh position={[0, 0, .09]} raycast={() => null}><planeGeometry args={[bay.width, bay.height]} /><meshBasicMaterial color="#38bdf8" transparent opacity={.14} depthWrite={false} side={DoubleSide} /></mesh>}
-      {showOpenings && elements.map(o => <group key={o.id} position={[o.x + o.width / 2 - bay.width / 2, o.y + o.height / 2 - bay.height / 2, .08]}><OpeningModel o={o} /></group>)}
+      {showOpenings && elements.map(o => {
+        if (isTemplateDefaultOpening(o.id) && !replacedWindowIds.includes(o.id)) {
+          return null;
+        }
+        return (
+          <group key={o.id} position={[o.x + o.width / 2 - bay.width / 2, o.y + o.height / 2 - bay.height / 2, .08]}>
+            <OpeningModel o={o} />
+          </group>
+        );
+      })}
     </group>;
   })}</group>;
 }
