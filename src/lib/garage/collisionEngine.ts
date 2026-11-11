@@ -7,7 +7,7 @@
  * and nearest-valid-position solver for all current and future building elements.
  */
 
-import defaultConfig from '../../config/default.json' with { type: 'json' };
+import defaultConfig from '../../config/default.json';
 
 export type CollisionSurface = 'front' | 'back' | 'left' | 'right' | 'roof-left' | 'roof-right';
 

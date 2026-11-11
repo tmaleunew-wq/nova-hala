@@ -10,6 +10,7 @@ export type ActiveModalState = {
   editingId?: string;
   targetId?: string;
   originalOpening?: Opening;
+  coords?: { x: number; y: number };
 } | null;
 export type Rect = { x: number; y: number; width: number; height: number };
 

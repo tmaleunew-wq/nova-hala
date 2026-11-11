@@ -12,7 +12,7 @@ export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onRepl
   bays: Bay[]; openings: Opening[]; enabled: boolean;
   modelRef?: RefObject<Group | null>; templateId?: string;
   replacedWindowIds?: string[];
-  onAdd: (bay: Bay) => void;
+  onAdd: (bay: Bay, coords?: { x: number; y: number }) => void;
   onEdit: (opening: Opening) => void;
   onReplace?: (opening: Opening) => void;
   onAddAtCoords?: (bay: Bay, categoryId: string, coords: { x: number; y: number }) => void;
@@ -20,6 +20,7 @@ export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onRepl
   onDelete?: (opening: Opening) => void;
 }) {
   const [hoveredBayId, setHoveredBayId] = useState<string | null>(null);
+  const [hoveredOpeningId, setHoveredOpeningId] = useState<string | null>(null);
   const [selectedOpeningId, setSelectedOpeningId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,9 +43,12 @@ export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onRepl
     const elements = bayElements.get(bay.id) || [];
     const free = splitBayPanels(bay.width, bay.height, elements);
     const canAdd = catalog.categories.some(c => c.roof === bay.roof && free.some(r => r.width >= c.minWidth + .2 && r.height >= c.minHeight + .1));
+    const validFree = free.filter(r => r.width >= 0.6 && r.height >= 0.6);
+    const largestFree = validFree.length > 0 ? validFree.reduce((a, b) => a.width * a.height >= b.width * b.height ? a : b) : null;
     return {
       bay,
       elements,
+      freeCoords: largestFree ? { x: largestFree.x + largestFree.width / 2, y: largestFree.y + largestFree.height / 2 } : undefined,
       addPosition: canAdd ? addHotspotPosition(bay, elements) : null
     };
   }), [bays, bayElements]);
@@ -53,14 +57,14 @@ export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onRepl
 
   return <group name="surface-opening-hotspots">
     {/* 1. Interactive Plus Hotspots on Free Wall & Roof Areas */}
-    {points.map(({ bay, addPosition }) => (
+    {points.map(({ bay, freeCoords, addPosition }) => (
       addPosition && (
         <SurfaceHotspot
           key={`add-${bay.id}`}
           position={addPosition}
           normal={bay.normal}
           label="+"
-          onActivate={() => onAdd(bay)}
+          onActivate={() => onAdd(bay, freeCoords)}
         />
       )
     ))}
@@ -102,6 +106,7 @@ export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onRepl
           {/* Interactive Hitbox over existing openings */}
           {elements.map(opening => {
             const isSelected = selectedOpeningId === opening.id;
+            const isHoveredOp = hoveredOpeningId === opening.id;
             const opCenterX = opening.x + opening.width / 2 - bay.width / 2;
             const opCenterY = opening.y + opening.height / 2 - bay.height / 2;
 
@@ -109,21 +114,33 @@ export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onRepl
               <group key={opening.id} position={[opCenterX, opCenterY, 0.12]}>
                 {/* Raycast hitmesh for opening */}
                 <mesh
+                  onPointerOver={e => {
+                    e.stopPropagation();
+                    setHoveredOpeningId(opening.id);
+                  }}
+                  onPointerOut={() => {
+                    if (hoveredOpeningId === opening.id) setHoveredOpeningId(null);
+                  }}
                   onClick={e => {
-                    if (e.delta > 10) return;
+                    if (e.delta > 15) return;
                     e.stopPropagation();
                     setSelectedOpeningId(opening.id);
                   }}
                 >
-                  <boxGeometry args={[opening.width, opening.height, 0.12]} />
-                  <meshBasicMaterial transparent opacity={0.001} depthWrite={false} />
+                  <boxGeometry args={[opening.width, opening.height, 0.14]} />
+                  <meshBasicMaterial
+                    color="#38bdf8"
+                    transparent
+                    opacity={isSelected ? 0.2 : isHoveredOp ? 0.12 : 0.001}
+                    depthWrite={false}
+                  />
                 </mesh>
 
                 {/* 3D selection outline */}
-                {isSelected && (
+                {(isSelected || isHoveredOp) && (
                   <mesh position={[0, 0, 0.02]}>
                     <planeGeometry args={[opening.width + 0.08, opening.height + 0.08]} />
-                    <meshBasicMaterial color="#38bdf8" wireframe side={DoubleSide} />
+                    <meshBasicMaterial color={isSelected ? "#38bdf8" : "#f59e0b"} wireframe side={DoubleSide} />
                   </mesh>
                 )}
 
@@ -155,10 +172,10 @@ export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onRepl
                           else onEdit(opening);
                         }}
                         className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow transition cursor-pointer"
-                        title="Nahradiť iným typom prvku (brána, okno, dvere...)"
+                        title="Nahradiť typ z katalógu (brána, okno, dvere...)"
                       >
                         <RefreshCw size={13} />
-                        <span>Nahradiť</span>
+                        <span>Nahradiť typ</span>
                       </button>
                       <button
                         type="button"
@@ -184,7 +201,7 @@ export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onRepl
                         title="Odstrániť otvor"
                       >
                         <Trash2 size={13} />
-                        <span>Zmazať</span>
+                        <span>Odstrániť</span>
                       </button>
                       <button
                         type="button"

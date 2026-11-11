@@ -137,10 +137,49 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
   const replacedWindowIds = useMemo(() => {
     const removed = removedByTemplate[templateId] ?? [];
     const modifiedTemplateIds = (byTemplate[templateId] ?? [])
-      .filter(o => isTemplateDefaultOpening(o.id))
+      .filter(o => {
+        if (!isTemplateDefaultOpening(o.id)) return false;
+        const orig = defaultOpenings.find(d => d.id === o.id);
+        if (!orig) return true;
+        return (
+          Math.abs(orig.x - o.x) > 0.001 ||
+          Math.abs(orig.y - o.y) > 0.001 ||
+          Math.abs(orig.width - o.width) > 0.001 ||
+          Math.abs(orig.height - o.height) > 0.001 ||
+          orig.category !== o.category ||
+          orig.subtype !== o.subtype
+        );
+      })
       .map(o => o.id);
     return [...new Set([...removed, ...modifiedTemplateIds])];
-  }, [removedByTemplate, byTemplate, templateId]);
+  }, [removedByTemplate, byTemplate, templateId, defaultOpenings]);
+
+  const logOperation = (actionType: 'ADD' | 'UPDATE' | 'REPLACE' | 'DELETE', payload: {
+    elementId?: string;
+    targetId?: string;
+    bayId?: string;
+    countBefore: number;
+    countAfter: number;
+    valid: boolean;
+    confirmed: boolean;
+    saved: boolean;
+    issues?: any[];
+  }) => {
+    console.log(`[DIAGNOSTIKA-OTVORY] ${actionType}:`, {
+      actionType,
+      projectId: templateId,
+      wallId: payload.bayId,
+      elementId: payload.elementId,
+      targetId: payload.targetId,
+      countBefore: payload.countBefore,
+      countAfter: payload.countAfter,
+      validationResult: payload.valid ? 'VALID' : 'INVALID',
+      confirmed: payload.confirmed,
+      saved: payload.saved,
+      issues: payload.issues || [],
+      timestamp: new Date().toISOString(),
+    });
+  };
 
   const surfaces = useMemo(() => {
     const currentList = byTemplate[templateId];
@@ -150,7 +189,8 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
     if (currentList) {
       for (const o of currentList) {
         const bay = bays.find(b => b.id === o.bayId);
-        if (bay && (!isTemplateDefaultOpening(o.id) || replacedWindowIds.includes(o.id))) {
+        if (!bay) continue;
+        if (!isTemplateDefaultOpening(o.id) || replacedWindowIds.includes(o.id)) {
           modified.add(bay.surface);
         }
       }
@@ -169,6 +209,7 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
   }, [byTemplate, defaultOpenings, removedByTemplate, replacedWindowIds, bays, draft, activeBay, templateId]);
 
   const replaceOpening = (existingId: string, replacement: Opening) => {
+    const beforeCount = openings.length;
     setRemovedByTemplate(previous => ({
       ...previous,
       [templateId]: [...new Set([...(previous[templateId] ?? []), existingId])]
@@ -176,26 +217,61 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
     setByTemplate(previous => {
       const currentList = previous[templateId] ?? defaultOpenings;
       const filtered = currentList.filter(o => o.id !== existingId && o.id !== replacement.id);
+      const nextList = [...filtered, replacement];
+      logOperation('REPLACE', {
+        elementId: replacement.id,
+        targetId: existingId,
+        bayId: replacement.bayId,
+        countBefore: beforeCount,
+        countAfter: nextList.length,
+        valid: true,
+        confirmed: true,
+        saved: true,
+      });
       return {
         ...previous,
-        [templateId]: [...filtered, replacement]
+        [templateId]: nextList
       };
     });
   };
 
   const save = () => {
-    if (!draft || error) return;
+    if (!draft || error) {
+      logOperation(activeModalState?.mode ?? 'ADD', {
+        elementId: draft?.id,
+        targetId: activeModalState?.targetId,
+        bayId: draft?.bayId,
+        countBefore: openings.length,
+        countAfter: openings.length,
+        valid: false,
+        confirmed: false,
+        saved: false,
+        issues: validation.issues,
+      });
+      return;
+    }
     const targetId = activeModalState?.targetId ?? activeModalState?.editingId;
     const mode = activeModalState?.mode ?? 'ADD';
+    const beforeCount = openings.length;
 
     if (targetId && (mode === 'REPLACE' || mode === 'UPDATE' || targetId !== draft.id)) {
       replaceOpening(targetId, draft);
     } else {
       setByTemplate(previous => {
         const currentList = previous[templateId] ?? defaultOpenings;
+        const nextList = [...currentList.filter(o => o.id !== draft.id), draft];
+        logOperation('ADD', {
+          elementId: draft.id,
+          bayId: draft.bayId,
+          countBefore: beforeCount,
+          countAfter: nextList.length,
+          valid: true,
+          confirmed: true,
+          saved: true,
+        });
         return {
           ...previous,
-          [templateId]: [...currentList.filter(o => o.id !== draft.id), draft]
+          [templateId]: nextList
         };
       });
       if (isTemplateDefaultOpening(draft.id)) {
@@ -211,15 +287,26 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
   const remove = () => {
     const targetId = activeModalState?.targetId ?? activeModalState?.editingId;
     if (targetId) {
+      const beforeCount = openings.length;
       setRemovedByTemplate(previous => ({
         ...previous,
         [templateId]: [...new Set([...(previous[templateId] ?? []), targetId])]
       }));
       setByTemplate(previous => {
         const currentList = previous[templateId] ?? defaultOpenings;
+        const nextList = currentList.filter(o => o.id !== targetId);
+        logOperation('DELETE', {
+          elementId: targetId,
+          bayId: activeModalState?.bayId,
+          countBefore: beforeCount,
+          countAfter: nextList.length,
+          valid: true,
+          confirmed: true,
+          saved: true,
+        });
         return {
           ...previous,
-          [templateId]: currentList.filter(o => o.id !== targetId)
+          [templateId]: nextList
         };
       });
     }
@@ -227,15 +314,26 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
   };
 
   const removeOpening = (opening: Opening) => {
+    const beforeCount = openings.length;
     setRemovedByTemplate(previous => ({
       ...previous,
       [templateId]: [...new Set([...(previous[templateId] ?? []), opening.id])]
     }));
     setByTemplate(previous => {
       const currentList = previous[templateId] ?? defaultOpenings;
+      const nextList = currentList.filter(o => o.id !== opening.id);
+      logOperation('DELETE', {
+        elementId: opening.id,
+        bayId: opening.bayId,
+        countBefore: beforeCount,
+        countAfter: nextList.length,
+        valid: true,
+        confirmed: true,
+        saved: true,
+      });
       return {
         ...previous,
-        [templateId]: currentList.filter(o => o.id !== opening.id)
+        [templateId]: nextList
       };
     });
     if (activeModalState?.targetId === opening.id || activeModalState?.editingId === opening.id) {
@@ -332,7 +430,7 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
     suggestedPosition,
     snapToValid,
     validation,
-    add: (bay: Bay) => setModal({ bayId: bay.id, step: 'CATEGORY', mode: 'ADD' }),
+    add: (bay: Bay, coords?: { x: number; y: number }) => setModal({ bayId: bay.id, step: 'CATEGORY', mode: 'ADD', coords }),
     edit: (opening: Opening) => setModal({
       bayId: opening.bayId,
       step: 'PARAMETERS',

@@ -33,15 +33,18 @@ export function OpeningPanel({ state, bay, error, onState, onSave, onDelete, onC
     const targetId = state.targetId ?? state.editingId;
     const initialWidth = Math.min(c.width, bay.width - 0.2);
     const initialHeight = Math.min(c.height, bay.height - 0.2);
-    let initialX = (bay.width - initialWidth) / 2;
+    let initialX = state.coords
+      ? Math.max(0.15, Math.min(bay.width - initialWidth - 0.15, state.coords.x - initialWidth / 2))
+      : (bay.width - initialWidth) / 2;
     if (isReplacing && state.draft) {
-      initialX = Math.max(0.15, Math.min(bay.width - initialWidth - 0.15, state.draft.x));
+      const origCenterX = state.draft.x + state.draft.width / 2;
+      initialX = Math.max(0.15, Math.min(bay.width - initialWidth - 0.15, origCenterX - initialWidth / 2));
     }
     const initialY = bay.roof
-      ? c.sill
+      ? (state.coords ? Math.max(0.1, Math.min(bay.height - initialHeight - 0.1, state.coords.y - initialHeight / 2)) : c.sill)
       : ['door', 'sectional', 'roller', 'dock'].includes(c.id)
       ? 0
-      : c.sill;
+      : (state.coords ? Math.max(0.1, Math.min(bay.height - initialHeight - 0.1, state.coords.y - initialHeight / 2)) : c.sill);
 
     const draft = fitOpening({
       id: crypto.randomUUID(),
@@ -113,6 +116,27 @@ export function OpeningPanel({ state, bay, error, onState, onSave, onDelete, onC
           <p role="alert" className="text-xs font-semibold text-red-800 flex items-center gap-1.5">
             <span className="text-sm">⚠️</span> {error}
           </p>
+          {(() => {
+            const match = error.match(/\(ID:\s*([^\)]+)\)/);
+            const collidingId = match ? match[1] : null;
+            if (!collidingId || state.mode === 'REPLACE') return null;
+            return (
+              <button
+                type="button"
+                onClick={() => {
+                  onState({
+                    ...state,
+                    mode: 'REPLACE',
+                    targetId: collidingId,
+                    editingId: collidingId,
+                  });
+                }}
+                className="w-full text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer"
+              >
+                🔄 Nahradiť kolidujúci prvok ({collidingId})
+              </button>
+            );
+          })()}
           {onSnapToValid && suggestedPosition && (
             <button
               type="button"

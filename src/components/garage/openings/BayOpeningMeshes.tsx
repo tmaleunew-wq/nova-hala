@@ -5,7 +5,7 @@ import { isTemplateDefaultOpening } from '@/lib/garage/templateDefaults';
 import { RoofSheetDetails } from '../RoofSheetDetails';
 
 /** Metre-based UVs retain the material's physical repeat across every rectangular piece. */
-export function createBayPanelGeometry(rect: Rect, bay: Bay, thickness = .1) {
+function createBayPanelGeometry(rect: Rect, bay: Bay, thickness = .1) {
   const geometry = new BoxGeometry(rect.width, rect.height, thickness);
   geometry.translate(rect.x + rect.width / 2 - bay.width / 2, rect.y + rect.height / 2 - bay.height / 2, 0);
   const position = geometry.getAttribute('position'), uv = geometry.getAttribute('uv');
@@ -41,17 +41,25 @@ function OpeningModel({ o }: { o: Opening }) {
 
       {/* Main fill panel */}
       {o.category !== 'frame' && (
-        <mesh position={[0, isFloorBased ? 0.02 : 0, 0.01]} castShadow={!glass}>
-          <boxGeometry args={[Math.max(.01, w - .14), Math.max(.01, h - (isFloorBased ? .07 : .14)), .04]} />
-          <meshStandardMaterial
-            color={glass ? '#b9dce6' : o.fillColor}
-            transparent={glass}
-            opacity={glass ? .42 : 1}
-            roughness={glass ? .15 : .5}
-            metalness={glass ? .1 : .25}
-            side={DoubleSide}
-          />
-        </mesh>
+        <group>
+          {glass && (
+            <mesh position={[0, 0, -0.01]}>
+              <boxGeometry args={[Math.max(.01, w - .14), Math.max(.01, h - .14), .03]} />
+              <meshStandardMaterial color="#1e293b" roughness={0.7} metalness={0.2} />
+            </mesh>
+          )}
+          <mesh position={[0, isFloorBased ? 0.02 : 0, 0.01]} castShadow={!glass}>
+            <boxGeometry args={[Math.max(.01, w - .14), Math.max(.01, h - (isFloorBased ? .07 : .14)), .04]} />
+            <meshStandardMaterial
+              color={glass ? '#9bb7c7' : o.fillColor}
+              transparent={glass}
+              opacity={glass ? .85 : 1}
+              roughness={glass ? .15 : .5}
+              metalness={glass ? .1 : .25}
+              side={DoubleSide}
+            />
+          </mesh>
+        </group>
       )}
 
       {/* Sectional gate panels & seams */}
@@ -123,10 +131,10 @@ export function BayOpeningMeshes({ bays, openings, surfaces, selected, color, ro
     const basePanels = panels.map(rect => ({ ...rect, height: Math.min(rect.y + rect.height, baseHeight) - rect.y }))
       .filter(rect => rect.height > 1e-6);
     return <group key={bay.id} position={bay.position3D} rotation={bay.rotation}>
-      {cladding.map((rect, i) => <PanelPiece key={i} rect={rect} bay={bay} color={bay.roof ? roofColor : color} opacity={opacity} />)}
+      {bay.roof && cladding.map((rect, i) => <PanelPiece key={i} rect={rect} bay={bay} color={roofColor} opacity={opacity} />)}
       {bay.roof && panels.length > 0 && <RoofSheetDetails width={bay.width} height={bay.height}
         panels={panels} offset={-bay.position3D[2] - bay.height / 2} color={roofColor} opacity={opacity} />}
-      {basePanels.map((rect, i) => <PanelPiece key={`stem-${i}`} rect={rect} bay={bay} color={stemColor} opacity={1} thickness={stemThickness} />)}
+      {bay.roof && basePanels.map((rect, i) => <PanelPiece key={`stem-${i}`} rect={rect} bay={bay} color={stemColor} opacity={1} thickness={stemThickness} />)}
       {selected === bay.id && <mesh position={[0, 0, .09]} raycast={() => null}><planeGeometry args={[bay.width, bay.height]} /><meshBasicMaterial color="#38bdf8" transparent opacity={.14} depthWrite={false} side={DoubleSide} /></mesh>}
       {showOpenings && elements.map(o => {
         if (isTemplateDefaultOpening(o.id) && !replacedWindowIds.includes(o.id)) {

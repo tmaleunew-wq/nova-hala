@@ -549,11 +549,11 @@ export function NewHallStandalone3D({
         {/* Left & Right Side Walls (segmented per bay between steel columns, eliminating Z-fighting) */}
         {sideBays.map(({ b, baySpan, bayMidZ }) => (
           <group key={`side-wall-bay-${b}`}>
-            <mesh visible={!editedSurfaces.includes('left')} position={[leftWallX, wallMidY, bayMidZ]}>
+            <mesh position={[leftWallX, wallMidY, bayMidZ]}>
               <boxGeometry args={[wallThick, wallH, baySpan]} />
               <primitive object={wallMat} attach="material" />
             </mesh>
-            <mesh visible={!editedSurfaces.includes('right')} position={[rightWallX, wallMidY, bayMidZ]}>
+            <mesh position={[rightWallX, wallMidY, bayMidZ]}>
               <boxGeometry args={[wallThick, wallH, baySpan]} />
               <primitive object={wallMat} attach="material" />
             </mesh>
@@ -565,11 +565,11 @@ export function NewHallStandalone3D({
           <group name="concrete-stem-walls">
             {sideBays.map(({ b, baySpan, bayMidZ }) => (
               <group key={`stem-bay-${b}`}>
-                <mesh visible={!editedSurfaces.includes('left')} position={[leftSokelX, stemH / 2, bayMidZ]}>
+                <mesh position={[leftSokelX, stemH / 2, bayMidZ]}>
                   <boxGeometry args={[sokelThick, stemH, baySpan]} />
                   <primitive object={stemMat} attach="material" />
                 </mesh>
-                <mesh visible={!editedSurfaces.includes('right')} position={[rightSokelX, stemH / 2, bayMidZ]}>
+                <mesh position={[rightSokelX, stemH / 2, bayMidZ]}>
                   <boxGeometry args={[sokelThick, stemH, baySpan]} />
                   <primitive object={stemMat} attach="material" />
                 </mesh>
@@ -579,14 +579,12 @@ export function NewHallStandalone3D({
             {hasFrontGate && frontGateW > 0 ? (
               <>
                 <mesh
-                  visible={!editedSurfaces.includes('front')}
                   position={[(-halfW + colHalf - frontGateW / 2) / 2, stemH / 2, -halfL - colHalf + 0.004 + sokelThick / 2]}
                 >
                   <boxGeometry args={[(halfW - colHalf) - frontGateW / 2, stemH, sokelThick]} />
                   <primitive object={stemMat} attach="material" />
                 </mesh>
                 <mesh
-                  visible={!editedSurfaces.includes('front')}
                   position={[(frontGateW / 2 + halfW - colHalf) / 2, stemH / 2, -halfL - colHalf + 0.004 + sokelThick / 2]}
                 >
                   <boxGeometry args={[(halfW - colHalf) - frontGateW / 2, stemH, sokelThick]} />
@@ -595,7 +593,6 @@ export function NewHallStandalone3D({
               </>
             ) : (
               <mesh
-                visible={!editedSurfaces.includes('front')}
                 position={[0, stemH / 2, -halfL - colHalf + 0.004 + sokelThick / 2]}
               >
                 <boxGeometry args={[W - colSize, stemH, sokelThick]} />
@@ -603,7 +600,6 @@ export function NewHallStandalone3D({
               </mesh>
             )}
             <mesh
-              visible={!editedSurfaces.includes('back')}
               position={[0, stemH / 2, halfL + colHalf - 0.004 - sokelThick / 2]}
             >
               <boxGeometry args={[W - colSize, stemH, sokelThick]} />
@@ -622,11 +618,11 @@ export function NewHallStandalone3D({
                 <group key={`p-joint-${i}`}>
                   {sideBays.map(({ b, baySpan, bayMidZ }) => (
                     <group key={`p-joint-bay-${b}-${i}`}>
-                      <mesh visible={!editedSurfaces.includes('left')} position={[leftSeamX, y, bayMidZ]}>
+                      <mesh position={[leftSeamX, y, bayMidZ]}>
                         <boxGeometry args={[0.008, 0.016, baySpan]} />
                         <primitive object={seamMat} attach="material" />
                       </mesh>
-                      <mesh visible={!editedSurfaces.includes('right')} position={[rightSeamX, y, bayMidZ]}>
+                      <mesh position={[rightSeamX, y, bayMidZ]}>
                         <boxGeometry args={[0.008, 0.016, baySpan]} />
                         <primitive object={seamMat} attach="material" />
                       </mesh>
@@ -636,14 +632,12 @@ export function NewHallStandalone3D({
                   {hasFrontGate && frontGateW > 0 && y < frontGateH ? (
                     <>
                       <mesh
-                        visible={!editedSurfaces.includes('front')}
                         position={[(-halfW + colHalf - frontGateW / 2) / 2, y, -halfL - colHalf + inset - 0.003]}
                       >
                         <boxGeometry args={[(halfW - colHalf) - frontGateW / 2, 0.016, 0.008]} />
                         <primitive object={seamMat} attach="material" />
                       </mesh>
                       <mesh
-                        visible={!editedSurfaces.includes('front')}
                         position={[(frontGateW / 2 + halfW - colHalf) / 2, y, -halfL - colHalf + inset - 0.003]}
                       >
                         <boxGeometry args={[(halfW - colHalf) - frontGateW / 2, 0.016, 0.008]} />
@@ -652,7 +646,6 @@ export function NewHallStandalone3D({
                     </>
                   ) : (
                     <mesh
-                      visible={!editedSurfaces.includes('front')}
                       position={[0, y, -halfL - colHalf + inset - 0.003]}
                     >
                       <boxGeometry args={[W - colSize, 0.016, 0.008]} />
@@ -660,7 +653,6 @@ export function NewHallStandalone3D({
                     </mesh>
                   )}
                   <mesh
-                    visible={!editedSurfaces.includes('back')}
                     position={[0, y, halfL + colHalf - inset + 0.003]}
                   >
                     <boxGeometry args={[W - colSize, 0.016, 0.008]} />
@@ -691,11 +683,11 @@ export function NewHallStandalone3D({
         )}
 
         {/* Front & Back Gable Walls (recessed by 8mm from column faces, avoiding coplanar Z-fighting) */}
-        <mesh visible={!editedSurfaces.includes('front')} position={[0, 0, -halfL - colHalf + inset]}>
+        <mesh position={[0, 0, -halfL - colHalf + inset]}>
           <extrudeGeometry args={[frontGableShape, gableExtrudeSettings]} />
           <primitive object={wallMat} attach="material" />
         </mesh>
-        <mesh visible={!editedSurfaces.includes('back')} position={[0, 0, halfL + colHalf - inset - 0.10]}>
+        <mesh position={[0, 0, halfL + colHalf - inset - 0.10]}>
           <extrudeGeometry args={[gableShape, gableExtrudeSettings]} />
           <primitive object={wallMat} attach="material" />
         </mesh>
@@ -703,7 +695,6 @@ export function NewHallStandalone3D({
         {/* Left & Right Roof Slopes */}
         <mesh
           position={[-halfW / 2, (H + Hridge) / 2 + 0.08, 0]}
-          visible={!editedSurfaces.includes('roof-left')}
           rotation={[0, 0, pitchRad]}
           castShadow
         >
@@ -712,7 +703,6 @@ export function NewHallStandalone3D({
         </mesh>
         <mesh
           position={[halfW / 2, (H + Hridge) / 2 + 0.08, 0]}
-          visible={!editedSurfaces.includes('roof-right')}
           rotation={[0, 0, -pitchRad]}
           castShadow
         >

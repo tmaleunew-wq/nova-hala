@@ -33,7 +33,7 @@ import { Compass, FolderKanban, FileText, CheckCircle2, ShieldCheck } from "luci
 import { useHallOpenings } from './openings/useHallOpenings';
 import { OpeningHotspots } from './openings/OpeningHotspots';
 import { OpeningPanel } from './openings/OpeningPanel';
-import { BayOpeningMeshes, GableCap } from './openings/BayOpeningMeshes';
+import { BayOpeningMeshes } from './openings/BayOpeningMeshes';
 
 type HiStructStep = "Geometry" | "Bays" | "Sheeting" | "Openings" | "Structure" | "GetQuote";
 
@@ -464,22 +464,19 @@ export default function NewHallConfigurator() {
             editedSurfaces={openingEditor.surfaces}
             replacedWindowIds={openingEditor.replacedWindowIds}
           />
-          {effectiveParams.showCladding && layerToggles.panels && <>
+          {effectiveParams.showCladding && layerToggles.panels && (
             <BayOpeningMeshes bays={openingEditor.bays} openings={openingEditor.preview} surfaces={openingEditor.surfaces}
               selected={openingEditor.activeBay?.id} color={params.claddingColor} roofColor={params.roofColor}
               stemHeight={params.hasStemWall !== false ? (params.stemWallHeight ?? .27) : 0}
               stemColor={params.stemWallColor ?? '#a5a5a5'} stemThickness={(params.stemWallThickness ?? .1) + .04}
               opacity={claddingOpacity} showOpenings={layerToggles.openings}
               replacedWindowIds={openingEditor.replacedWindowIds} />
-            {(['front', 'back'] as const).filter(side => openingEditor.surfaces.includes(side)).map(side =>
-              <GableCap key={side} width={params.width} height={params.clearHeight} pitch={params.roofPitchDeg}
-                z={(side === 'front' ? -1 : 1) * (params.length / 2 + .05)} color={params.claddingColor} />)}
-          </>}
+          )}
         </group>
         <OpeningHotspots bays={openingEditor.bays} openings={openingEditor.openings} enabled={activeStep === 'Openings' && showOpeningButtons && layerToggles.openings && viewMode !== 'structure'}
           modelRef={exportRef} templateId={activeTemplate.id}
           replacedWindowIds={openingEditor.replacedWindowIds}
-          onAdd={bay => { setActiveStep('Openings'); openingEditor.add(bay); }}
+          onAdd={(bay, coords) => { setActiveStep('Openings'); openingEditor.add(bay, coords); }}
           onEdit={opening => { setActiveStep('Openings'); openingEditor.edit(opening); }}
           onReplace={opening => { setActiveStep('Openings'); openingEditor.replace(opening); }}
           onAddAtCoords={(bay, categoryId, coords) => {
@@ -549,6 +546,9 @@ export default function NewHallConfigurator() {
             <LayoutTemplate className="h-4 w-4" />
             <span>Šablóny hál ({activeTemplate.title})</span>
           </button>
+          <span className="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] font-bold tracking-wider" title="Vývojový identifikátor verzie">
+            VERZIA: 2026-11-11-HOTFIX-v3
+          </span>
         </div>
 
         {/* HiStruct 6 Main Configurator Steps */}
@@ -1080,6 +1080,54 @@ export default function NewHallConfigurator() {
               >
                 {params.hasRidgeSkylight ? "Zapnutý" : "Vypnutý"}
               </button>
+            </div>
+
+            {/* Zoznam stavebných otvorov v hale s možnosťou priamej výmeny a úpravy */}
+            <div className="pt-2 border-t border-white/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300 font-semibold">Otvory v hale ({openingEditor.openings.length} ks):</span>
+              </div>
+              <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+                {openingEditor.openings.map((op) => {
+                  const bay = openingEditor.bays.find(b => b.id === op.bayId);
+                  const wallName = bay?.surface === 'front' ? 'Predný štít' : bay?.surface === 'back' ? 'Zadný štít' : bay?.surface === 'left' ? 'Ľavá stena' : bay?.surface === 'right' ? 'Pravá stena' : 'Strecha';
+                  const label = op.category === 'door' ? '🚪 Vstupné dvere' : op.category === 'sectional' ? '🏭 Sekčná brána' : op.category === 'sliding' ? '↔️ Posuvná brána' : op.category === 'roller' ? '🔄 Rolovacia brána' : op.category === 'skylight' ? '☀️ Svetlík' : op.category === 'dock' ? '🚛 Rampa' : '🪟 Okno';
+                  return (
+                    <div key={op.id} className="p-2 rounded-lg bg-slate-800/80 border border-white/10 flex items-center justify-between gap-1.5">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-white truncate text-[11px]">{label}</div>
+                        <div className="text-[10px] text-slate-400 font-mono">{wallName} ({op.bayId}) · {op.width.toFixed(2)}×{op.height.toFixed(2)}m</div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => openingEditor.replace(op)}
+                          className="px-2 py-0.5 rounded bg-amber-600 hover:bg-amber-500 text-white font-semibold text-[10px] cursor-pointer"
+                          title="Nahradiť typ z katalógu"
+                        >
+                          Nahradiť typ
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openingEditor.edit(op)}
+                          className="px-1.5 py-0.5 rounded bg-sky-600 hover:bg-sky-500 text-white font-semibold text-[10px] cursor-pointer"
+                          title="Upraviť rozmery"
+                        >
+                          Upraviť
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openingEditor.removeOpening(op)}
+                          className="px-1.5 py-0.5 rounded bg-red-600/70 hover:bg-red-600 text-white text-[10px] cursor-pointer"
+                          title="Odstrániť"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             {activeTemplate.id === "prazdna_hala" && (
