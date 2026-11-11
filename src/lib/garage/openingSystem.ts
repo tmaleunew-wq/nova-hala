@@ -1,7 +1,16 @@
 export type V3 = [number, number, number];
 export type Bay = { id: string; surface: string; width: number; height: number; position3D: V3; normal: V3; rotation: V3; roof: boolean };
 export type Opening = { id: string; bayId: string; category: string; subtype: string; width: number; height: number; x: number; y: number; frameColor: string; fillColor: string };
-export type ActiveModalState = { bayId: string; step: 'CATEGORY' | 'SUBTYPE' | 'PARAMETERS'; draft?: Opening; editingId?: string } | null;
+export type ModalMode = 'ADD' | 'UPDATE' | 'REPLACE';
+export type ActiveModalState = {
+  bayId: string;
+  step: 'CATEGORY' | 'SUBTYPE' | 'PARAMETERS';
+  mode?: ModalMode;
+  draft?: Opening;
+  editingId?: string;
+  targetId?: string;
+  originalOpening?: Opening;
+} | null;
 export type Rect = { x: number; y: number; width: number; height: number };
 
 export function buildBays(p: { width: number; length: number; clearHeight: number; bayCount: number; roofPitchDeg: number }): Bay[] {

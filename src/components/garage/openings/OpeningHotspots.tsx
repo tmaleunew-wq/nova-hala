@@ -1,24 +1,24 @@
 import { useEffect, useMemo, useState, type RefObject } from 'react';
-import { DoubleSide, Euler, Group, Quaternion, Vector3 } from 'three';
+import { DoubleSide, Group } from 'three';
 import { Html } from '@react-three/drei';
-import { Edit3, Copy, Trash2, X } from 'lucide-react';
+import { Edit3, RefreshCw, Copy, Trash2, X } from 'lucide-react';
 import type { Bay, Opening } from '@/lib/garage/openingSystem';
 import { splitBayPanels } from '@/lib/garage/openingSystem';
 import { addHotspotPosition, gridBubbles } from '@/lib/garage/surfaceHotspotLayout';
 import catalog from '@/config/openingsCatalog.json';
 import { SurfaceHotspot } from './SurfaceHotspot';
 
-export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onAddAtCoords, onDuplicate, onDelete, modelRef, templateId, replacedWindowIds = [] }: {
+export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onReplace, onAddAtCoords, onDuplicate, onDelete, modelRef, templateId, replacedWindowIds = [] }: {
   bays: Bay[]; openings: Opening[]; enabled: boolean;
   modelRef?: RefObject<Group | null>; templateId?: string;
   replacedWindowIds?: string[];
   onAdd: (bay: Bay) => void;
   onEdit: (opening: Opening) => void;
+  onReplace?: (opening: Opening) => void;
   onAddAtCoords?: (bay: Bay, categoryId: string, coords: { x: number; y: number }) => void;
   onDuplicate?: (opening: Opening) => void;
   onDelete?: (opening: Opening) => void;
 }) {
-  const [templateWindows, setTemplateWindows] = useState<Opening[]>([]);
   const [hoveredBayId, setHoveredBayId] = useState<string | null>(null);
   const [selectedOpeningId, setSelectedOpeningId] = useState<string | null>(null);
 
@@ -26,42 +26,16 @@ export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onAddA
     setSelectedOpeningId(null);
   }, [templateId, enabled]);
 
-  useEffect(() => {
-    const model = modelRef?.current;
-    if (!model) return;
-    model.updateWorldMatrix(true, true);
-    const windows: Opening[] = [];
-    model.traverse(object => {
-      const window = object.userData.hotspotWindow;
-      if (!window) return;
-      const centre = object.getWorldPosition(new Vector3());
-      for (const bay of bays.filter(b => !b.roof)) {
-        const local = centre.clone().sub(new Vector3(...bay.position3D))
-          .applyQuaternion(new Quaternion().setFromEuler(new Euler(...bay.rotation)).invert());
-        if (Math.abs(local.z) > .2 || Math.abs(local.x) >= bay.width / 2) continue;
-        windows.push({ id: window.id, bayId: bay.id, category: 'window', subtype: 'fixed',
-          width: window.width, height: window.height,
-          x: local.x + bay.width / 2 - window.width / 2,
-          y: local.y + bay.height / 2 - window.height / 2, frameColor: window.frameColor || '#2b2f36', fillColor: '#9bb7c7' });
-        break;
-      }
-    });
-    setTemplateWindows(windows);
-  }, [bays, modelRef, templateId, enabled]);
-
   const bubbles = useMemo(() => gridBubbles(bays), [bays]);
-  const existingWindows = templateWindows.filter(o => !replacedWindowIds.includes(o.id));
 
-  // Compute all openings present on each bay
+  // Single authoritative source of truth: bay elements directly from openings state
   const bayElements = useMemo(() => {
     const map = new Map<string, Opening[]>();
     for (const bay of bays) {
-      const userOps = openings.filter(o => o.bayId === bay.id);
-      const tmplOps = existingWindows.filter(o => o.bayId === bay.id && !userOps.some(u => u.id === o.id));
-      map.set(bay.id, [...userOps, ...tmplOps]);
+      map.set(bay.id, openings.filter(o => o.bayId === bay.id));
     }
     return map;
-  }, [bays, openings, existingWindows]);
+  }, [bays, openings]);
 
   // Compute free area for "+" hotspots on each bay
   const points = useMemo(() => bays.map(bay => {
@@ -172,6 +146,19 @@ export function OpeningHotspots({ bays, openings, enabled, onAdd, onEdit, onAddA
                       >
                         <Edit3 size={13} />
                         <span>Upraviť</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (onReplace) onReplace(opening);
+                          else onEdit(opening);
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow transition cursor-pointer"
+                        title="Nahradiť iným typom prvku (brána, okno, dvere...)"
+                      >
+                        <RefreshCw size={13} />
+                        <span>Nahradiť</span>
                       </button>
                       <button
                         type="button"

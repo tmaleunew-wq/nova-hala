@@ -21,20 +21,91 @@ function PanelPiece({ rect, bay, color, opacity, thickness = .1 }: { rect: Rect;
 function OpeningModel({ o }: { o: Opening }) {
   const w = o.width, h = o.height;
   const glass = ['window', 'skylight'].includes(o.category);
-  const frame = (x: number, y: number, width: number, height: number, key: string) => <mesh key={key} position={[x, y, .04]} castShadow><boxGeometry args={[width, height, .16]} /><meshStandardMaterial color={o.frameColor} metalness={.5} roughness={.4} /></mesh>;
-  return <group>
-    {frame(-w / 2 + .035, 0, .07, h, 'left')}{frame(w / 2 - .035, 0, .07, h, 'right')}
-    {frame(0, h / 2 - .035, w, .07, 'top')}{frame(0, -h / 2 + .035, w, .07, 'bottom')}
-    {o.category !== 'frame' && <mesh castShadow={!glass}><boxGeometry args={[Math.max(.01, w - .14), Math.max(.01, h - .14), .04]} />
-      <meshStandardMaterial color={glass ? '#b9dce6' : o.fillColor} transparent={glass} opacity={glass ? .42 : 1} roughness={glass ? .15 : .5} metalness={glass ? .1 : .25} side={DoubleSide} />
-    </mesh>}
-    {['sectional', 'roller', 'dock'].includes(o.category) && Array.from({ length: Math.floor(h / (o.category === 'roller' ? .15 : .5)) }, (_, i) => frame(0, -h / 2 + (i + 1) * (o.category === 'roller' ? .15 : .5), w - .14, .015, `rib-${i}`))}
-    {['window', 'skylight', 'sliding'].includes(o.category) && frame(0, 0, .045, h - .14, 'mullion')}
-    {o.subtype === 'glazed' && <mesh position={[0, h * .15, .1]}><boxGeometry args={[w * .75, h * .18, .025]} /><meshStandardMaterial color="#9fc7d8" metalness={.3} roughness={.1} /></mesh>}
-    {(o.category === 'door' || o.subtype === 'wicket') && frame(w * .3, -h * .1, .12, .035, 'handle')}
-    {o.subtype === 'wicket' && frame(w * .15, -h * .2, .035, Math.min(2, h * .6), 'wicket')}
-    {o.category === 'dock' && <mesh position={[0, -h / 2 + .08, .5]}><boxGeometry args={[w, .15, 1]} /><meshStandardMaterial color="#41474b" metalness={.7} roughness={.7} /></mesh>}
-  </group>;
+  const isFloorBased = ['door', 'sectional', 'roller', 'dock'].includes(o.category);
+  const frame = (x: number, y: number, width: number, height: number, key: string) => (
+    <mesh key={key} position={[x, y, .04]} castShadow>
+      <boxGeometry args={[width, height, .16]} />
+      <meshStandardMaterial color={o.frameColor} metalness={.5} roughness={.4} />
+    </mesh>
+  );
+
+  return (
+    <group>
+      {/* Side jambs */}
+      {frame(-w / 2 + .035, 0, .07, h, 'left')}
+      {frame(w / 2 - .035, 0, .07, h, 'right')}
+      {/* Header frame */}
+      {frame(0, h / 2 - .035, w, .07, 'top')}
+      {/* Bottom threshold frame ONLY for elevated openings (windows/skylights), NOT for floor-based doors/gates */}
+      {!isFloorBased && frame(0, -h / 2 + .035, w, .07, 'bottom')}
+
+      {/* Main fill panel */}
+      {o.category !== 'frame' && (
+        <mesh position={[0, isFloorBased ? 0.02 : 0, 0.01]} castShadow={!glass}>
+          <boxGeometry args={[Math.max(.01, w - .14), Math.max(.01, h - (isFloorBased ? .07 : .14)), .04]} />
+          <meshStandardMaterial
+            color={glass ? '#b9dce6' : o.fillColor}
+            transparent={glass}
+            opacity={glass ? .42 : 1}
+            roughness={glass ? .15 : .5}
+            metalness={glass ? .1 : .25}
+            side={DoubleSide}
+          />
+        </mesh>
+      )}
+
+      {/* Sectional gate panels & seams */}
+      {o.category === 'sectional' && (
+        <group position={[0, 0, 0.02]}>
+          {Array.from({ length: Math.max(3, Math.round(h / 0.55)) }, (_, i) => {
+            const panelCount = Math.max(3, Math.round(h / 0.55));
+            const panelHeight = (h - 0.07) / panelCount;
+            const py = -h / 2 + 0.035 + (i + 0.5) * panelHeight;
+            return (
+              <group key={`sec-panel-${i}`} position={[0, py, 0.01]}>
+                {/* Horizontal panel joint seam */}
+                <mesh position={[0, panelHeight / 2, 0.015]}>
+                  <boxGeometry args={[w - 0.14, 0.012, 0.01]} />
+                  <meshStandardMaterial color="#1e2229" metalness={0.7} roughness={0.3} />
+                </mesh>
+              </group>
+            );
+          })}
+          {/* Sectional gate handle */}
+          <mesh position={[0, -h / 2 + 0.35, 0.035]}>
+            <boxGeometry args={[0.2, 0.04, 0.03]} />
+            <meshStandardMaterial color="#111827" metalness={0.8} roughness={0.2} />
+          </mesh>
+        </group>
+      )}
+
+      {/* Roller shutter slats */}
+      {o.category === 'roller' && (
+        Array.from({ length: Math.floor(h / 0.15) }, (_, i) =>
+          frame(0, -h / 2 + (i + 1) * 0.15, w - .14, .015, `rib-${i}`)
+        )
+      )}
+
+      {/* Window mullion */}
+      {['window', 'skylight', 'sliding'].includes(o.category) && frame(0, 0, .045, h - .14, 'mullion')}
+
+      {/* Door handle & glazing */}
+      {(o.category === 'door' || o.subtype === 'wicket') && frame(w * .3, -h * .1, .12, .035, 'handle')}
+      {o.subtype === 'glazed' && (
+        <mesh position={[0, h * .15, .08]}>
+          <boxGeometry args={[w * .75, h * .25, .025]} />
+          <meshStandardMaterial color="#9fc7d8" metalness={.3} roughness={.1} />
+        </mesh>
+      )}
+      {o.subtype === 'wicket' && frame(w * .15, -h * .2, .035, Math.min(2, h * .6), 'wicket')}
+      {o.category === 'dock' && (
+        <mesh position={[0, -h / 2 + .08, .5]}>
+          <boxGeometry args={[w, .15, 1]} />
+          <meshStandardMaterial color="#41474b" metalness={.7} roughness={.7} />
+        </mesh>
+      )}
+    </group>
+  );
 }
 
 export function BayOpeningMeshes({ bays, openings, surfaces, selected, color, roofColor, opacity, showOpenings, stemHeight = 0, stemColor = '#a5a5a5', stemThickness = .14, replacedWindowIds = [] }: {

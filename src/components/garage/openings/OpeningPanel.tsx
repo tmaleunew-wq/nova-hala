@@ -29,8 +29,41 @@ export function OpeningPanel({ state, bay, error, onState, onSave, onDelete, onC
   const category = catalog.categories.find(c => c.id === state.draft?.category);
   const validCategory = (c: typeof catalog.categories[number]) => c.roof === bay.roof && c.minWidth <= bay.width - .2 && c.minHeight <= bay.height - .2;
   const selectCategory = (c: typeof catalog.categories[number]) => {
-    const draft = fitOpening({ id: state.editingId ?? crypto.randomUUID(), bayId: bay.id, category: c.id, subtype: c.subtypes[0].id, width: c.width, height: c.height, x: (bay.width - Math.min(c.width, bay.width - .2)) / 2, y: c.sill, frameColor: '#d7d7d7', fillColor: '#9da3a6' }, bay);
-    onState({ ...state, step: 'SUBTYPE', draft });
+    const isReplacing = state.mode === 'REPLACE' || !!state.targetId || !!state.editingId;
+    const targetId = state.targetId ?? state.editingId;
+    const initialWidth = Math.min(c.width, bay.width - 0.2);
+    const initialHeight = Math.min(c.height, bay.height - 0.2);
+    let initialX = (bay.width - initialWidth) / 2;
+    if (isReplacing && state.draft) {
+      initialX = Math.max(0.15, Math.min(bay.width - initialWidth - 0.15, state.draft.x));
+    }
+    const initialY = bay.roof
+      ? c.sill
+      : ['door', 'sectional', 'roller', 'dock'].includes(c.id)
+      ? 0
+      : c.sill;
+
+    const draft = fitOpening({
+      id: crypto.randomUUID(),
+      bayId: bay.id,
+      category: c.id,
+      subtype: c.subtypes[0].id,
+      width: initialWidth,
+      height: initialHeight,
+      x: initialX,
+      y: initialY,
+      frameColor: '#2b2f36',
+      fillColor: ['window', 'skylight'].includes(c.id) ? '#9bb7c7' : '#374151'
+    }, bay);
+
+    onState({
+      ...state,
+      step: 'SUBTYPE',
+      mode: isReplacing ? 'REPLACE' : 'ADD',
+      draft,
+      targetId,
+      editingId: targetId
+    });
   };
   const update = (partial: Partial<Opening>) => state.draft && onState({ ...state, draft: fitOpening({ ...state.draft, ...partial }, bay) });
   const fields = state.draft && category ? [
@@ -62,7 +95,19 @@ export function OpeningPanel({ state, bay, error, onState, onSave, onDelete, onC
         <input aria-label={f.label} type="number" className="w-24 border rounded p-1" min={f.min} max={f.max} step={.01} value={Number(state.draft![f.key].toFixed(2))} onChange={e => { const value = e.target.valueAsNumber; if (Number.isFinite(value)) update({ [f.key]: Math.max(f.min, Math.min(f.max, value)) }); }} />
       </div></label>)}
       {(['frameColor', 'fillColor'] as const).map(key => <fieldset key={key}><legend className="text-sm mb-2">{key === 'frameColor' ? 'Farba rámu' : 'Farba výplne'}</legend><div className="grid grid-cols-4 gap-1">{catalog.palette.map(color => <button key={color.name} aria-pressed={state.draft![key] === color.hex} onClick={() => update({ [key]: color.hex })} className={`text-[10px] rounded border p-1 ${state.draft![key] === color.hex ? 'border-sky-600 ring-1 ring-sky-600' : 'border-slate-200'}`}><span className="block h-6 rounded mb-1" style={{ background: color.hex }} />{color.name}</button>)}</div></fieldset>)}
-      <button className="text-sky-700 text-sm" onClick={() => onState({ ...state, step: 'CATEGORY' })}>Zmeniť typ</button>
+      <button
+        type="button"
+        className="text-sky-700 hover:text-sky-600 text-sm font-medium flex items-center gap-1 cursor-pointer"
+        onClick={() => onState({
+          ...state,
+          step: 'CATEGORY',
+          mode: 'REPLACE',
+          targetId: state.targetId ?? state.editingId,
+          editingId: state.targetId ?? state.editingId
+        })}
+      >
+        <span>🔄 Zmeniť kategóriu / typ prvku</span>
+      </button>
       {error ? (
         <div className="space-y-2 p-3 bg-red-50 border border-red-200 rounded-xl">
           <p role="alert" className="text-xs font-semibold text-red-800 flex items-center gap-1.5">
@@ -83,7 +128,22 @@ export function OpeningPanel({ state, bay, error, onState, onSave, onDelete, onC
           <span className="text-emerald-600 font-bold">✓</span> Pozícia je platná (bez kolízie)
         </div>
       )}
-      <div className="flex justify-between gap-3"><button className="bg-sky-700 text-white rounded px-4 py-2 disabled:opacity-40" disabled={!!error} onClick={onSave}>Uložiť prvok</button><button className="text-red-700 flex items-center gap-1" onClick={onDelete}><Trash2 size={16} />Odstrániť prvok</button></div>
+      <div className="flex justify-between gap-3">
+        <button
+          className="bg-sky-700 hover:bg-sky-600 text-white font-semibold rounded-lg px-4 py-2 disabled:opacity-40 transition cursor-pointer"
+          disabled={!!error}
+          onClick={onSave}
+        >
+          {state.mode === 'REPLACE' ? 'Nahradiť prvok' : 'Uložiť prvok'}
+        </button>
+        <button
+          className="text-red-700 hover:text-red-600 flex items-center gap-1 font-medium transition cursor-pointer"
+          onClick={onDelete}
+        >
+          <Trash2 size={16} />
+          Odstrániť prvok
+        </button>
+      </div>
     </div>}
   </div>;
 }

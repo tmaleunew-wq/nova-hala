@@ -373,6 +373,8 @@ export default function NewHallConfigurator() {
         version: "1.0",
         params: { ...params },
         templateId: activeTemplate.id,
+        openings: openingEditor.openings,
+        replacedWindowIds: openingEditor.replacedWindowIds,
         notes: `Uložený návrh. Rozmery: ${params.width}×${params.length}×${params.clearHeight}m (${params.bayCount} polí).`,
       };
 
@@ -479,6 +481,7 @@ export default function NewHallConfigurator() {
           replacedWindowIds={openingEditor.replacedWindowIds}
           onAdd={bay => { setActiveStep('Openings'); openingEditor.add(bay); }}
           onEdit={opening => { setActiveStep('Openings'); openingEditor.edit(opening); }}
+          onReplace={opening => { setActiveStep('Openings'); openingEditor.replace(opening); }}
           onAddAtCoords={(bay, categoryId, coords) => {
             setActiveStep('Openings');
             openingEditor.addAtCoords(bay, categoryId, coords);

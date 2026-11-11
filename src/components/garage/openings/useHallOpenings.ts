@@ -8,10 +8,40 @@ import catalog from '@/config/openingsCatalog.json';
 export function useHallOpenings(params: GarageParams, templateId: string) {
   const bays = useMemo(() => buildBays(params), [params.width, params.length, params.clearHeight, params.bayCount, params.roofPitchDeg]);
   const defaultOpenings = useMemo(() => getTemplateDefaultOpenings(templateId, params, bays), [templateId, params, bays]);
-  const [byTemplate, setByTemplate] = useState<Record<string, Opening[]>>({});
-  const [removedByTemplate, setRemovedByTemplate] = useState<Record<string, string[]>>({});
+  const [byTemplate, setByTemplate] = useState<Record<string, Opening[]>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const saved = localStorage.getItem('vbau_hall_openings_state_v1');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [removedByTemplate, setRemovedByTemplate] = useState<Record<string, string[]>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const saved = localStorage.getItem('vbau_hall_removed_openings_v1');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
   const [activeModalState, setModal] = useState<ActiveModalState>(null);
   useEffect(() => setModal(null), [templateId, bays]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('vbau_hall_openings_state_v1', JSON.stringify(byTemplate));
+    } catch {}
+  }, [byTemplate]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('vbau_hall_removed_openings_v1', JSON.stringify(removedByTemplate));
+    } catch {}
+  }, [removedByTemplate]);
   const openings = useMemo(() => {
     const userOpenings = byTemplate[templateId];
     const currentList = userOpenings !== undefined ? userOpenings : defaultOpenings;
@@ -31,9 +61,11 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
   const validation = useMemo(() => {
     if (!draft || !activeBay) return { valid: true, issues: [], nearestValidPosition: undefined };
 
-    // Map other openings in same surface/bay to CollisionOpening
+    const targetId = activeModalState?.targetId ?? activeModalState?.editingId;
+    // Map other openings in same surface/bay to CollisionOpening.
+    // When UPDATE or REPLACE, the element being updated or replaced (targetId) is NOT an obstacle!
     const sameBayOpenings: CollisionOpening[] = openings
-      .filter(o => o.id !== draft.id && o.bayId === draft.bayId)
+      .filter(o => o.id !== draft.id && o.id !== targetId && o.bayId === draft.bayId)
       .map(o => ({
         id: o.id,
         category: o.category,
@@ -84,7 +116,7 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
 
     const res = validateOpening(candidateCollision, sameBayOpenings, obstacles, surfaceBounds);
     return res;
-  }, [draft, activeBay, openings]);
+  }, [draft, activeBay, openings, activeModalState?.targetId, activeModalState?.editingId]);
 
   const error = draft && activeBay ? (
     category && (draft.width < category.minWidth || draft.height < category.minHeight)
@@ -136,53 +168,77 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
     return [...modified];
   }, [byTemplate, defaultOpenings, removedByTemplate, replacedWindowIds, bays, draft, activeBay, templateId]);
 
+  const replaceOpening = (existingId: string, replacement: Opening) => {
+    setRemovedByTemplate(previous => ({
+      ...previous,
+      [templateId]: [...new Set([...(previous[templateId] ?? []), existingId])]
+    }));
+    setByTemplate(previous => {
+      const currentList = previous[templateId] ?? defaultOpenings;
+      const filtered = currentList.filter(o => o.id !== existingId && o.id !== replacement.id);
+      return {
+        ...previous,
+        [templateId]: [...filtered, replacement]
+      };
+    });
+  };
+
   const save = () => {
     if (!draft || error) return;
-    const currentList = byTemplate[templateId] ?? defaultOpenings;
-    setByTemplate(previous => ({
-      ...previous,
-      [templateId]: [...currentList.filter(o => o.id !== draft.id), draft]
-    }));
-    if (isTemplateDefaultOpening(draft.id)) {
-      setRemovedByTemplate(previous => ({
-        ...previous,
-        [templateId]: [...new Set([...(previous[templateId] ?? []), draft.id])]
-      }));
+    const targetId = activeModalState?.targetId ?? activeModalState?.editingId;
+    const mode = activeModalState?.mode ?? 'ADD';
+
+    if (targetId && (mode === 'REPLACE' || mode === 'UPDATE' || targetId !== draft.id)) {
+      replaceOpening(targetId, draft);
+    } else {
+      setByTemplate(previous => {
+        const currentList = previous[templateId] ?? defaultOpenings;
+        return {
+          ...previous,
+          [templateId]: [...currentList.filter(o => o.id !== draft.id), draft]
+        };
+      });
+      if (isTemplateDefaultOpening(draft.id)) {
+        setRemovedByTemplate(previous => ({
+          ...previous,
+          [templateId]: [...new Set([...(previous[templateId] ?? []), draft.id])]
+        }));
+      }
     }
     setModal(null);
   };
 
   const remove = () => {
-    const editingId = activeModalState?.editingId;
-    if (editingId) {
-      if (isTemplateDefaultOpening(editingId)) {
-        setRemovedByTemplate(previous => ({
-          ...previous,
-          [templateId]: [...new Set([...(previous[templateId] ?? []), editingId])]
-        }));
-      }
-      const currentList = byTemplate[templateId] ?? defaultOpenings;
-      setByTemplate(previous => ({
+    const targetId = activeModalState?.targetId ?? activeModalState?.editingId;
+    if (targetId) {
+      setRemovedByTemplate(previous => ({
         ...previous,
-        [templateId]: currentList.filter(o => o.id !== editingId)
+        [templateId]: [...new Set([...(previous[templateId] ?? []), targetId])]
       }));
+      setByTemplate(previous => {
+        const currentList = previous[templateId] ?? defaultOpenings;
+        return {
+          ...previous,
+          [templateId]: currentList.filter(o => o.id !== targetId)
+        };
+      });
     }
     setModal(null);
   };
 
   const removeOpening = (opening: Opening) => {
-    if (isTemplateDefaultOpening(opening.id)) {
-      setRemovedByTemplate(previous => ({
-        ...previous,
-        [templateId]: [...new Set([...(previous[templateId] ?? []), opening.id])]
-      }));
-    }
-    const currentList = byTemplate[templateId] ?? defaultOpenings;
-    setByTemplate(previous => ({
+    setRemovedByTemplate(previous => ({
       ...previous,
-      [templateId]: currentList.filter(o => o.id !== opening.id)
+      [templateId]: [...new Set([...(previous[templateId] ?? []), opening.id])]
     }));
-    if (activeModalState?.editingId === opening.id) {
+    setByTemplate(previous => {
+      const currentList = previous[templateId] ?? defaultOpenings;
+      return {
+        ...previous,
+        [templateId]: currentList.filter(o => o.id !== opening.id)
+      };
+    });
+    if (activeModalState?.targetId === opening.id || activeModalState?.editingId === opening.id) {
       setModal(null);
     }
   };
@@ -257,13 +313,46 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
       frameColor: '#2b2f36',
       fillColor: ['window', 'skylight'].includes(c.id) ? '#9bb7c7' : '#9da3a6'
     }, bay);
-    setModal({ bayId: bay.id, step: 'PARAMETERS', draft: newDraft });
+    setModal({ bayId: bay.id, step: 'PARAMETERS', mode: 'ADD', draft: newDraft });
   };
 
-  return { bays, openings, preview, surfaces, replacedWindowIds, activeBay, activeModalState, setModal, error, save, remove,
-    suggestedPosition, snapToValid, validation,
-    add: (bay: Bay) => setModal({ bayId: bay.id, step: 'CATEGORY' }),
-    edit: (opening: Opening) => setModal({ bayId: opening.bayId, step: 'PARAMETERS', draft: { ...opening }, editingId: opening.id }),
-    addAtCoords, duplicateOpening, removeOpening,
+  return {
+    bays,
+    openings,
+    preview,
+    surfaces,
+    replacedWindowIds,
+    activeBay,
+    activeModalState,
+    setModal,
+    error,
+    save,
+    remove,
+    replaceOpening,
+    suggestedPosition,
+    snapToValid,
+    validation,
+    add: (bay: Bay) => setModal({ bayId: bay.id, step: 'CATEGORY', mode: 'ADD' }),
+    edit: (opening: Opening) => setModal({
+      bayId: opening.bayId,
+      step: 'PARAMETERS',
+      mode: 'UPDATE',
+      draft: { ...opening },
+      editingId: opening.id,
+      targetId: opening.id,
+      originalOpening: { ...opening }
+    }),
+    replace: (opening: Opening) => setModal({
+      bayId: opening.bayId,
+      step: 'CATEGORY',
+      mode: 'REPLACE',
+      draft: { ...opening },
+      editingId: opening.id,
+      targetId: opening.id,
+      originalOpening: { ...opening }
+    }),
+    addAtCoords,
+    duplicateOpening,
+    removeOpening,
   };
 }
