@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import { build } from 'esbuild';
+
+const result = await build({ entryPoints: ['src/lib/materials/project.ts'], bundle: true, platform: 'node', format: 'esm', write: false });
+const api = await import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString('base64')}`);
+const params = { width: 18, length: 36, clearHeight: 7, bayCount: 6, roofPitchDeg: 10 };
+const legacy = { params, templateId: 'kancelarska_budova' };
+const defaults = api.resolveProjectOpenings(legacy);
+assert.ok(defaults.length > 0, 'legacy projects derive template openings');
+assert.deepEqual(api.resolveProjectOpenings({ ...legacy, openings: [] }), [], 'explicit empty is preserved');
+const custom = { ...defaults[0], id: 'confirmed-custom', width: 1.2, height: 1.1 };
+const project = api.createMaterialProject({ ...legacy, id: 'saved-1', openings: [custom], replacedWindowIds: [defaults[0].id], materialSettings: { profileAssignments: { columns: 'IPE200' } }, preview: [defaults[1]] });
+assert.equal(project.openings.length, 1);
+assert.equal(project.openings[0].id, custom.id);
+assert.equal(project.preview, undefined, 'draft preview is never included');
+custom.width = 5;
+assert.equal(project.openings[0].width, 1.2, 'snapshot does not alias editor data');
+const removed = api.getProjectRemovedOpeningIds(project);
+assert.ok(defaults.every(o => removed.includes(o.id)), 'all missing defaults remain suppressed');
+assert.ok(!removed.includes('confirmed-custom'), 'confirmed entries are never hidden');
+const storage = new Map();
+const adapter = { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) };
+api.writeMaterialProject(project, adapter);
+const loaded = api.readMaterialProject(adapter);
+assert.deepEqual(loaded, project, 'round trip preserves geometry and profile assignment');
+storage.set(api.MATERIAL_PROJECT_STORAGE_KEY, '{broken');
+assert.equal(api.readMaterialProject(adapter), null);
+console.log('PASS: material project persistence, legacy defaults, explicit empty openings, snapshot isolation, and draft exclusion');

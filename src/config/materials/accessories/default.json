@@ -1,0 +1,14 @@
+{
+  "version": "accessories-v1",
+  "source": "Orientačné objednávacie predpoklady; rozmery a hmotnosti overiť podľa dodávateľa.",
+  "validFrom": null,
+  "products": {
+    "ridge": { "stockLengthM": 3, "overlapM": 0.1, "kgPerM": null },
+    "eave": { "stockLengthM": 3, "overlapM": 0.1, "kgPerM": null },
+    "verge": { "stockLengthM": 3, "overlapM": 0.1, "kgPerM": null },
+    "corner": { "stockLengthM": 3, "overlapM": 0.1, "kgPerM": null },
+    "base": { "stockLengthM": 3, "overlapM": 0.1, "kgPerM": null },
+    "opening": { "stockLengthM": 3, "overlapM": 0.1, "kgPerM": null }
+  },
+  "ladder": { "count": 0, "heightM": null, "kgPerUnit": null, "product": "Neurčený", "includesAccessories": false }
+}

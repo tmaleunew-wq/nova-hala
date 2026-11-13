@@ -4,15 +4,21 @@ import { validateOpening, findNearestValidPosition, calculateStructuralObstacles
 import { getTemplateDefaultOpenings, isTemplateDefaultOpening } from '@/lib/garage/templateDefaults';
 import type { GarageParams } from '@/lib/garage/types';
 import catalog from '@/config/openingsCatalog.json';
+import { getProjectRemovedOpeningIds, type MaterialProjectInput } from '@/lib/materials/project';
 
-export function useHallOpenings(params: GarageParams, templateId: string) {
+export function useHallOpenings(params: GarageParams, templateId: string, initialProject?: MaterialProjectInput | null) {
   const bays = useMemo(() => buildBays(params), [params.width, params.length, params.clearHeight, params.bayCount, params.roofPitchDeg]);
   const defaultOpenings = useMemo(() => getTemplateDefaultOpenings(templateId, params, bays), [templateId, params, bays]);
   const [byTemplate, setByTemplate] = useState<Record<string, Opening[]>>(() => {
     if (typeof window === 'undefined') return {};
     try {
       const saved = localStorage.getItem('vbau_hall_openings_state_v1');
-      return saved ? JSON.parse(saved) : {};
+      const state = saved ? JSON.parse(saved) : {};
+      if (initialProject) {
+        if (initialProject.openings !== undefined) state[initialProject.templateId] = initialProject.openings.map(opening => ({ ...opening }));
+        else delete state[initialProject.templateId];
+      }
+      return state;
     } catch {
       return {};
     }
@@ -21,12 +27,24 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
     if (typeof window === 'undefined') return {};
     try {
       const saved = localStorage.getItem('vbau_hall_removed_openings_v1');
-      return saved ? JSON.parse(saved) : {};
+      const state = saved ? JSON.parse(saved) : {};
+      if (initialProject) state[initialProject.templateId] = getProjectRemovedOpeningIds(initialProject);
+      return state;
     } catch {
       return {};
     }
   });
   const [activeModalState, setModal] = useState<ActiveModalState>(null);
+  const restoreProject = (project: MaterialProjectInput) => {
+    setModal(null);
+    setByTemplate(previous => {
+      const next = { ...previous };
+      if (project.openings !== undefined) next[project.templateId] = project.openings.map(opening => ({ ...opening }));
+      else delete next[project.templateId];
+      return next;
+    });
+    setRemovedByTemplate(previous => ({ ...previous, [project.templateId]: getProjectRemovedOpeningIds(project) }));
+  };
   useEffect(() => setModal(null), [templateId, bays]);
 
   useEffect(() => {
@@ -475,6 +493,8 @@ export function useHallOpenings(params: GarageParams, templateId: string) {
     preview,
     surfaces,
     replacedWindowIds: previewReplacedIds,
+    confirmedReplacedWindowIds: replacedWindowIds,
+    restoreProject,
     activeBay,
     activeModalState,
     setModal,

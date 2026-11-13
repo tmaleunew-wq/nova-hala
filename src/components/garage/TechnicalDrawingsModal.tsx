@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import type { HallMaterialProject } from "@/lib/materials/project";
+import { calculateWallDrawings, type WallId } from "@/lib/garage/wall-drawings";
+import { createWallDrawingPdf, renderWallDrawingSvg } from "@/lib/garage/wall-drawing-sheets";
 import type { GarageParams } from "@/lib/garage/types";
 import {
   X,
@@ -25,6 +28,7 @@ interface TechnicalDrawingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   params: GarageParams;
+  materialProject?: HallMaterialProject;
   hallName?: string;
   templateId?: string;
   openings?: Array<{
@@ -43,6 +47,7 @@ export function TechnicalDrawingsModal({
   isOpen,
   onClose,
   params,
+  materialProject,
   hallName = "VBAU Priemyselná hala",
   templateId,
   openings,
@@ -52,10 +57,23 @@ export function TechnicalDrawingsModal({
   const [zoom, setZoom] = useState<number>(1);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
+  const [wallView, setWallView] = useState<WallId | null>(null);
+  const wallDrawings = useMemo(() => isOpen && materialProject ? calculateWallDrawings(materialProject) : undefined, [isOpen, materialProject]);
+  const wall = wallDrawings?.walls.find(item => item.id === wallView);
+
   if (!isOpen) return null;
 
   const currentDef = DRAWING_DEFINITIONS.find((d) => d.id === activeView) || DRAWING_DEFINITIONS[0];
-  const svgContent = generateDrawingSvg(activeView, params, { openings, templateId, theme });
+  const svgContent = wall ? renderWallDrawingSvg(wall) : generateDrawingSvg(activeView, params, { openings, templateId, theme });
+
+  const handleDownloadWallPdf = () => {
+    if (!wallDrawings?.walls.length) return;
+    try {
+      createWallDrawingPdf(wallDrawings.walls).save(`VBAU_Kotovane_steny_${params.width}x${params.length}.pdf`);
+    } catch (error) {
+      toast.error(`Chyba pri generovaní PDF: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
 
   const handleDownloadPdf = () => {
     try {
@@ -93,12 +111,12 @@ export function TechnicalDrawingsModal({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `VBAU_${activeView}_${params.width}x${params.length}.svg`;
+    a.download = `VBAU_${wall ? `stena_${wall.id}` : activeView}_${params.width}x${params.length}.svg`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success(`Vektorový výkres SVG (${currentDef.title}) bol stiahnutý!`);
+    toast.success(`Vektorový výkres SVG (${wall?.name ?? currentDef.title}) bol stiahnutý!`);
   };
 
   return (
@@ -151,7 +169,7 @@ export function TechnicalDrawingsModal({
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shadow-lg shadow-sky-600/30 transition cursor-pointer"
             >
               <FileText className="h-4 w-4" />
-              <span>{isExporting ? "Generujem..." : "Stiahnuť PDF súpravu (8 listov)"}</span>
+              <span>{isExporting ? "Generujem..." : "Koncepčné PDF (8 listov)"}</span>
             </button>
 
             <button
@@ -171,12 +189,23 @@ export function TechnicalDrawingsModal({
               Zoznam výkresov dokumentácie
             </div>
 
+            {wallDrawings && <div className="space-y-1 border-b border-white/10 pb-3">
+              <p className="px-2 py-1 text-xs font-semibold">Kótované steny · mm</p>
+              {wallDrawings.reason && <p className="px-2 text-xs text-slate-400">{wallDrawings.reason}</p>}
+              {wallDrawings.walls.map(item => <button type="button" key={item.id} aria-pressed={wall?.id === item.id}
+                onClick={() => { setWallView(item.id); setZoom(1); }}
+                className={`block w-full rounded px-2 py-1.5 text-left text-xs ${wall?.id === item.id ? "bg-sky-600" : "hover:bg-white/10"}`}>
+                {item.name}
+              </button>)}
+              {wallDrawings.walls.length > 0 && <button type="button" onClick={handleDownloadWallPdf}
+                className="w-full rounded bg-sky-600 px-2 py-2 text-xs font-semibold hover:bg-sky-500">Stiahnuť kótované steny PDF</button>}
+            </div>}
             {DRAWING_DEFINITIONS.map((def) => {
-              const active = activeView === def.id;
+              const active = !wall && activeView === def.id;
               return (
                 <button
                   key={def.id}
-                  onClick={() => setActiveView(def.id)}
+                  onClick={() => { setWallView(null); setActiveView(def.id); }}
                   className={`w-full text-left p-2.5 rounded-xl transition flex items-start gap-2.5 cursor-pointer ${
                     active
                       ? "bg-sky-500/20 border border-sky-400/40 text-white shadow-sm"
@@ -203,10 +232,10 @@ export function TechnicalDrawingsModal({
             <div className="mt-4 p-3 rounded-xl bg-white/[0.03] border border-white/10 text-[11px] text-slate-400 space-y-1.5">
               <div className="flex items-center gap-1.5 text-sky-300 font-bold">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>Priame 1:1 parametrické dáta</span>
+                <span>Projektové rozmery</span>
               </div>
               <p className="leading-relaxed">
-                Všetky kóty, osi a výšky sú počítané v reálnom čase z aktuálneho 3D modelu haly.
+                Kótované steny vychádzajú z potvrdených rozmerov a otvorov projektu.
               </p>
             </div>
           </div>
@@ -217,13 +246,14 @@ export function TechnicalDrawingsModal({
             <div className="flex flex-wrap items-center justify-between gap-2 pb-2 mb-2 border-b border-white/10 text-xs text-slate-300">
               <div>
                 <span className="font-semibold text-white">
-                  {currentDef.title} ({currentDef.scale})
+                  {wall ? `${wall.name} · kóty v mm` : `${currentDef.title} (${currentDef.scale})`}
                 </span>
-                <span className="text-slate-400 hidden lg:inline ml-2">· {currentDef.description}</span>
+                <span className="text-slate-400 hidden lg:inline ml-2">· {wall ? "Pohľad zvonka" : currentDef.description}</span>
               </div>
 
               <div className="flex items-center gap-1.5">
                 <button
+                  disabled={!!wall}
                   onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
                   className="px-2.5 py-1 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-[11px] font-semibold text-slate-200 transition cursor-pointer"
                   title="Prepnúť farebný režim výkresu (Tmavý CAD / Biely papier)"
@@ -258,12 +288,12 @@ export function TechnicalDrawingsModal({
 
             {/* SVG Canvas wrapper */}
             <div
-              className="flex-1 w-full rounded-xl border border-white/10 overflow-auto flex items-center justify-center p-2 shadow-inner"
+              className={`flex-1 w-full rounded-xl border border-white/10 overflow-auto p-2 shadow-inner ${wall ? "" : "flex items-center justify-center"}`}
               style={{ backgroundColor: theme === "light" ? "#f8fafc" : "#0b1120" }}
             >
               <div
-                className="w-full h-full flex items-center justify-center transition-transform duration-150 origin-center"
-                style={{ transform: `scale(${zoom})` }}
+                className={wall ? "w-full origin-top-left" : "w-full h-full flex items-center justify-center transition-transform duration-150 origin-center"}
+                style={wall ? { width: `${zoom * 100}%`, minWidth: 540 } : { transform: `scale(${zoom})` }}
                 dangerouslySetInnerHTML={{ __html: svgContent }}
               />
             </div>

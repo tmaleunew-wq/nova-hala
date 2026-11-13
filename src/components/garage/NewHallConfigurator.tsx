@@ -28,7 +28,8 @@ import { NewHallBOMModal } from "./NewHallBOMModal";
 import { NewHallStandalone3D, type HiStructLayerToggles } from "./NewHallStandalone3D";
 import { NewHallSheetingModal } from "./NewHallSheetingModal";
 import { TechnicalDrawingsModal } from "./TechnicalDrawingsModal";
-import { ProjectsCrmModal } from "./ProjectsCrmModal";
+import { ProjectsCrmModal, type HallProjectRecord } from "./ProjectsCrmModal";
+import { createMaterialProject, MATERIAL_PROJECT_STORAGE_KEY, readMaterialProject, writeMaterialProject, type HallMaterialProject } from "@/lib/materials/project";
 import { Compass, FolderKanban, FileText, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useHallOpenings } from './openings/useHallOpenings';
 import { OpeningHotspots } from './openings/OpeningHotspots';
@@ -300,10 +301,15 @@ export default function NewHallConfigurator() {
     basePlate: true,
   });
 
+  const [restoredMaterialProject] = useState(() => readMaterialProject());
   const allTemplates = templatesData as HallTemplateItem[];
   const queryTplId = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("template") : null;
-  const initialTpl = allTemplates.find((t) => t.id === (queryTplId || "vyrobna_hala")) || allTemplates[0];
+  const initialTpl = allTemplates.find((t) => t.id === (queryTplId || restoredMaterialProject?.templateId || "vyrobna_hala")) || allTemplates[0];
+  const initialMaterialProject = restoredMaterialProject?.templateId === initialTpl.id ? restoredMaterialProject : null;
   const [activeTemplate, setActiveTemplate] = useState<HallTemplateItem>(initialTpl);
+  const [projectMetadata, setProjectMetadata] = useState<Pick<HallMaterialProject, "id" | "name" | "materialSettings">>(() => ({
+    id: initialMaterialProject?.id, name: initialMaterialProject?.name, materialSettings: initialMaterialProject?.materialSettings,
+  }));
 
   const [params, setParams] = useState<GarageParams>(() => ({
     ...DEFAULT_PARAMS,
@@ -329,6 +335,7 @@ export default function NewHallConfigurator() {
     hasRidgeSkylight: !!initialTpl.hasRidgeSkylight,
     hasCenterColumns: !!initialTpl.hasCenterColumns,
     canopyWidth: initialTpl.canopyWidth ?? 4.5,
+    ...initialMaterialProject?.params,
   }));
 
   useEffect(() => {
@@ -342,11 +349,39 @@ export default function NewHallConfigurator() {
     setParams((prev) => ({ ...prev, ...partial }));
   };
 
-  const openingEditor = useHallOpenings(params, activeTemplate.id);
+  const openingEditor = useHallOpenings(params, activeTemplate.id, initialMaterialProject);
+  const materialProject = useMemo(() => createMaterialProject({
+    ...projectMetadata,
+    name: projectMetadata.name ?? `${activeTemplate.title} (${params.width}×${params.length}m)`,
+    templateId: activeTemplate.id,
+    params,
+    openings: openingEditor.openings,
+    replacedWindowIds: openingEditor.confirmedReplacedWindowIds,
+  }), [projectMetadata, activeTemplate.id, activeTemplate.title, params, openingEditor.openings, openingEditor.confirmedReplacedWindowIds]);
+  useEffect(() => { writeMaterialProject(materialProject); }, [materialProject]);
+  useEffect(() => {
+    function receiveMaterialSettings(event: StorageEvent) {
+      if (event.key !== MATERIAL_PROJECT_STORAGE_KEY) return;
+      const latest = readMaterialProject();
+      if (latest && latest.id === projectMetadata.id && latest.templateId === activeTemplate.id) {
+        setProjectMetadata(previous => {
+          if (JSON.stringify(previous.materialSettings) === JSON.stringify(latest.materialSettings)) return previous;
+          return { ...previous, materialSettings: latest.materialSettings };
+        });
+      }
+    }
+    window.addEventListener('storage', receiveMaterialSettings);
+    return () => window.removeEventListener('storage', receiveMaterialSettings);
+  }, [projectMetadata.id, activeTemplate.id]);
   const [showOpeningButtons, setShowOpeningButtons] = useState(true);
   useEffect(() => { if (activeStep !== 'Openings') openingEditor.setModal(null); }, [activeStep]);
 
-  const handleLoadProject = (newParams: GarageParams, templateId?: string) => {
+  const handleLoadProject = (newParams: GarageParams, templateId?: string, project?: HallProjectRecord) => {
+    const resolvedTemplateId = allTemplates.some(t => t.id === templateId) ? templateId! : activeTemplate.id;
+    openingEditor.restoreProject({
+      templateId: resolvedTemplateId, params: newParams, openings: project?.openings, replacedWindowIds: project?.replacedWindowIds,
+    });
+    setProjectMetadata({ id: project?.id, name: project?.name, materialSettings: project?.materialSettings });
     if (templateId) {
       const found = allTemplates.find((t) => t.id === templateId);
       if (found) setActiveTemplate(found);
@@ -355,6 +390,7 @@ export default function NewHallConfigurator() {
   };
 
   const handleSelectTemplate = (tpl: HallTemplateItem) => {
+    setProjectMetadata({});
     setActiveTemplate(tpl);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
@@ -405,13 +441,15 @@ export default function NewHallConfigurator() {
         params: { ...params },
         templateId: activeTemplate.id,
         openings: openingEditor.openings,
-        replacedWindowIds: openingEditor.replacedWindowIds,
+        replacedWindowIds: openingEditor.confirmedReplacedWindowIds,
+        materialSettings: materialProject.materialSettings,
         notes: `Uložený návrh. Rozmery: ${params.width}×${params.length}×${params.clearHeight}m (${params.bayCount} polí).`,
       };
 
       const existingStr = localStorage.getItem("vbau_hall_projects_crm_v1");
       const existing = existingStr ? JSON.parse(existingStr) : [];
       localStorage.setItem("vbau_hall_projects_crm_v1", JSON.stringify([newProject, ...existing]));
+      setProjectMetadata({ id: newProject.id, name: newProject.name, materialSettings: materialProject.materialSettings });
 
       if (typeof window !== "undefined") {
         const url = new URL(window.location.href);
@@ -779,7 +817,7 @@ export default function NewHallConfigurator() {
 
           {/* Discreet Admin Link */}
           <a
-            href="/admin"
+            href="/admin#material-report"
             className="flex items-center gap-1 rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-slate-400 hover:text-white hover:border-white/25 transition"
             title="Administrácia (VBAU)"
           >
@@ -1431,7 +1469,8 @@ export default function NewHallConfigurator() {
         params={params}
         hallName={`${activeTemplate.title} (${activeTemplate.subtitle})`}
         templateId={activeTemplate.id}
-        openings={openingEditor.preview}
+        materialProject={materialProject}
+        openings={openingEditor.openings}
       />
 
       {/* Projects & Customer CRM Modal */}
@@ -1439,6 +1478,7 @@ export default function NewHallConfigurator() {
         isOpen={showCrmModal}
         onClose={() => setShowCrmModal(false)}
         currentParams={params}
+        currentProject={materialProject}
         activeTemplateId={activeTemplate.id}
         onLoadProject={handleLoadProject}
       />

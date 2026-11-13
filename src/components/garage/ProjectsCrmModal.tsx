@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import type { GarageParams } from "@/lib/garage/types";
+import type { Opening } from "@/lib/garage/openingSystem";
+import type { HallMaterialProject, ProjectMaterialSettings } from "@/lib/materials/project";
 import {
   FolderKanban,
   X,
@@ -49,6 +51,9 @@ export interface HallProjectRecord {
   templateId?: string;
   notes?: string;
   estimatedPriceEur?: number;
+  openings?: Opening[];
+  replacedWindowIds?: string[];
+  materialSettings?: ProjectMaterialSettings;
 }
 
 const STATUS_CONFIG: Record<
@@ -71,7 +76,8 @@ interface ProjectsCrmModalProps {
   onClose: () => void;
   currentParams: GarageParams;
   activeTemplateId: string;
-  onLoadProject: (params: GarageParams, templateId?: string) => void;
+  currentProject?: HallMaterialProject;
+  onLoadProject: (params: GarageParams, templateId?: string, project?: HallProjectRecord) => void;
 }
 
 export function ProjectsCrmModal({
@@ -79,6 +85,7 @@ export function ProjectsCrmModal({
   onClose,
   currentParams,
   activeTemplateId,
+  currentProject,
   onLoadProject,
 }: ProjectsCrmModalProps) {
   const [projects, setProjects] = useState<HallProjectRecord[]>([]);
@@ -159,7 +166,7 @@ export function ProjectsCrmModal({
     } catch (e) {
       console.error("Failed to load projects from storage", e);
     }
-  }, []);
+  }, [isOpen]);
 
   const saveProjectsToStorage = (updated: HallProjectRecord[]) => {
     setProjects(updated);
@@ -195,6 +202,9 @@ export function ProjectsCrmModal({
       version: "v1.0",
       templateId: activeTemplateId,
       params: { ...currentParams },
+      openings: currentProject?.openings?.map(opening => ({ ...opening })),
+      replacedWindowIds: currentProject?.replacedWindowIds ? [...currentProject.replacedWindowIds] : undefined,
+      materialSettings: currentProject?.materialSettings,
       notes: notes.trim() || undefined,
       estimatedPriceEur: Math.round(currentParams.width * currentParams.length * 240),
     };
@@ -233,7 +243,7 @@ export function ProjectsCrmModal({
   };
 
   const handleLoadToConfigurator = (proj: HallProjectRecord) => {
-    onLoadProject(proj.params, proj.templateId);
+    onLoadProject(proj.params, proj.templateId, proj);
     onClose();
     toast.success(`Projekt ${proj.code} bol načítaný do 3D konfigurátora!`);
   };

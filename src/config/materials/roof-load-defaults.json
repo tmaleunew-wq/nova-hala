@@ -1,0 +1,9 @@
+{
+  "roofKNPerM2": 0.25,
+  "snowKNPerM2": 1,
+  "skylightAreaM2": 20,
+  "skylightNetKNPerM2": 0.15,
+  "pvCoveragePercent": 50,
+  "pvKNPerM2": 0.14,
+  "ballastKNPerM2": 0
+}

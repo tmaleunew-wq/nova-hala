@@ -1,0 +1,706 @@
+{
+  "schemaVersion": 1,
+  "version": "1.0.0",
+  "validFrom": "2026-11-12",
+  "checkedAt": "2026-11-12",
+  "sources": [
+    {
+      "id": "arcelormittal-sections-2023",
+      "title": "ArcelorMittal — Sections and Merchant Bars, tables pp. 40, 42",
+      "url": "https://sections.arcelormittal.com/repository2/Sections/Sections_MB_ArcelorMittal_FR_EN_DE_V2023-5.pdf",
+      "version": "2023-4 (file V2023-5)",
+      "notes": [
+        "Nominálne katalógové hmotnosti; nejde o statický návrh ani potvrdenie dostupnosti."
+      ],
+      "validFrom": null,
+      "checkedAt": "2026-11-12",
+      "status": "verified"
+    },
+    {
+      "id": "tata-celsius-420",
+      "title": "Tata Steel — Celsius 420 NH, pp. 18, 20–21",
+      "url": "https://www.tatasteeluk.com/sites/default/files/Celsius%20420%20Technische%20Informationen.pdf",
+      "version": null,
+      "notes": [
+        "Len teplom dokončené profily Celsius 420 NH, EN 10210 S420NH. Hmotnosti neprenášať na iné výrobné rady."
+      ],
+      "validFrom": null,
+      "checkedAt": "2026-11-12",
+      "status": "verified"
+    },
+    {
+      "id": "balex-pir-plus",
+      "title": "Balex Metal — PIR PLUS",
+      "url": "https://balex.eu/en/products/sandwich-panels/pu-w-plus-wall-sandwich-panel-polyurethane-core-with-concealed-fasteners",
+      "version": null,
+      "notes": [
+        "Maximálnu výrobnú dĺžku musí potvrdiť obchodné oddelenie."
+      ],
+      "validFrom": null,
+      "checkedAt": "2026-11-12",
+      "status": "verified"
+    },
+    {
+      "id": "balex-pir-roof",
+      "title": "Balex Metal — PIR ROOF, product catalogue 2026, p. 45",
+      "url": "https://balex.eu/lt/produktai?fid=729&format=raw&option=com_djcatalog2&task=download",
+      "version": "EN-2026-05-07",
+      "notes": [
+        "Maximálna dĺžka závisí od hrúbky: 40 mm → 16 m; 60 mm → 17 m; 80–180 mm → 18 m."
+      ],
+      "validFrom": null,
+      "checkedAt": "2026-11-12",
+      "status": "verified"
+    },
+    {
+      "id": "balex-mw-wall",
+      "title": "Balex Metal — MW STANDARD",
+      "url": "https://balex.eu/en/products/sandwich-panels/mw-w-st-wall-sandwich-panel-mineral-wool-core",
+      "version": null,
+      "notes": [
+        "Požiarna odolnosť závisí od hrúbky, orientácie a rozpätia; treba skontrolovať konkrétnu zostavu."
+      ],
+      "validFrom": null,
+      "checkedAt": "2026-11-12",
+      "status": "verified"
+    },
+    {
+      "id": "balex-mw-roof",
+      "title": "Balex Metal — MW ROOF",
+      "url": "https://balex.eu/en/products/sandwich-panels/mw-r-roofing-sandwich-panel-mineral-wool-core",
+      "version": null,
+      "notes": [
+        "Požiarne a zaťažovacie parametre nie sú automaticky overené týmto výkazom."
+      ],
+      "validFrom": null,
+      "checkedAt": "2026-11-12",
+      "status": "verified"
+    },
+    {
+      "id": "bp2-pur-roof",
+      "title": "BP2 — SPR CORE PUR",
+      "url": "https://bp2.eu/en/product/spr-core-pur/",
+      "version": null,
+      "notes": [
+        "Web uvádza hmotnosti a rozsah plechov 0,3–0,7 mm; presnú skladbu pre objednávku potvrdiť u výrobcu."
+      ],
+      "validFrom": null,
+      "checkedAt": "2026-11-12",
+      "status": "verified"
+    },
+    {
+      "id": "bp2-pur-wall",
+      "title": "BP2 — SPW-C CORE PUR",
+      "url": "https://bp2.eu/en/product/spw-c-core-pur/",
+      "version": null,
+      "notes": [
+        "Chladiarenský stenový panel; presnú skladbu plechov a hmotnosť objednávky potvrdiť u výrobcu."
+      ],
+      "validFrom": null,
+      "checkedAt": "2026-11-12",
+      "status": "verified"
+    }
+  ],
+  "steelProfiles": [
+    {
+      "id": "ipe-160",
+      "family": "IPE",
+      "designation": "IPE 160",
+      "kgPerM": 15.8,
+      "sourceId": "arcelormittal-sections-2023",
+      "status": "verified",
+      "limitations": [
+        "Nominálna hmotnosť profilu; profil pre konkrétny prvok určuje statický návrh."
+      ]
+    },
+    {
+      "id": "ipe-200",
+      "family": "IPE",
+      "designation": "IPE 200",
+      "kgPerM": 22.4,
+      "sourceId": "arcelormittal-sections-2023",
+      "status": "verified",
+      "limitations": [
+        "Nominálna hmotnosť profilu; profil pre konkrétny prvok určuje statický návrh."
+      ]
+    },
+    {
+      "id": "ipe-240",
+      "family": "IPE",
+      "designation": "IPE 240",
+      "kgPerM": 30.7,
+      "sourceId": "arcelormittal-sections-2023",
+      "status": "verified",
+      "limitations": [
+        "Nominálna hmotnosť profilu; profil pre konkrétny prvok určuje statický návrh."
+      ]
+    },
+    {
+      "id": "ipe-300",
+      "family": "IPE",
+      "designation": "IPE 300",
+      "kgPerM": 42.2,
+      "sourceId": "arcelormittal-sections-2023",
+      "status": "verified",
+      "limitations": [
+        "Nominálna hmotnosť profilu; profil pre konkrétny prvok určuje statický návrh."
+      ]
+    },
+    {
+      "id": "hea-160",
+      "family": "HEA",
+      "designation": "HEA 160",
+      "kgPerM": 30.4,
+      "sourceId": "arcelormittal-sections-2023",
+      "status": "verified",
+      "limitations": [
+        "Nominálna hmotnosť profilu; profil pre konkrétny prvok určuje statický návrh."
+      ]
+    },
+    {
+      "id": "hea-200",
+      "family": "HEA",
+      "designation": "HEA 200",
+      "kgPerM": 42.3,
+      "sourceId": "arcelormittal-sections-2023",
+      "status": "verified",
+      "limitations": [
+        "Nominálna hmotnosť profilu; profil pre konkrétny prvok určuje statický návrh."
+      ]
+    },
+    {
+      "id": "hea-240",
+      "family": "HEA",
+      "designation": "HEA 240",
+      "kgPerM": 60.3,
+      "sourceId": "arcelormittal-sections-2023",
+      "status": "verified",
+      "limitations": [
+        "Nominálna hmotnosť profilu; profil pre konkrétny prvok určuje statický návrh."
+      ]
+    },
+    {
+      "id": "hea-300",
+      "family": "HEA",
+      "designation": "HEA 300",
+      "kgPerM": 88.3,
+      "sourceId": "arcelormittal-sections-2023",
+      "status": "verified",
+      "limitations": [
+        "Nominálna hmotnosť profilu; profil pre konkrétny prvok určuje statický návrh."
+      ]
+    },
+    {
+      "id": "heb-160",
+      "family": "HEB",
+      "designation": "HEB 160",
+      "kgPerM": 42.6,
+      "sourceId": "arcelormittal-sections-2023",
+      "status": "verified",
+      "limitations": [
+        "Nominálna hmotnosť profilu; profil pre konkrétny prvok určuje statický návrh."
+      ]
+    },
+    {
+      "id": "heb-200",
+      "family": "HEB",
+      "designation": "HEB 200",
+      "kgPerM": 61.3,
+      "sourceId": "arcelormittal-sections-2023",
+      "status": "verified",
+      "limitations": [
+        "Nominálna hmotnosť profilu; profil pre konkrétny prvok určuje statický návrh."
+      ]
+    },
+    {
+      "id": "heb-300",
+      "family": "HEB",
+      "designation": "HEB 300",
+      "kgPerM": 117,
+      "sourceId": "arcelormittal-sections-2023",
+      "status": "verified",
+      "limitations": [
+        "Nominálna hmotnosť profilu; profil pre konkrétny prvok určuje statický návrh."
+      ]
+    },
+    {
+      "id": "upn-100",
+      "family": "UPN",
+      "designation": "UPN 100",
+      "kgPerM": 10.6,
+      "sourceId": "arcelormittal-sections-2023",
+      "status": "verified",
+      "limitations": [
+        "Nominálna hmotnosť profilu; profil pre konkrétny prvok určuje statický návrh."
+      ]
+    },
+    {
+      "id": "upn-160",
+      "family": "UPN",
+      "designation": "UPN 160",
+      "kgPerM": 18.8,
+      "sourceId": "arcelormittal-sections-2023",
+      "status": "verified",
+      "limitations": [
+        "Nominálna hmotnosť profilu; profil pre konkrétny prvok určuje statický návrh."
+      ]
+    },
+    {
+      "id": "upn-200",
+      "family": "UPN",
+      "designation": "UPN 200",
+      "kgPerM": 25.3,
+      "sourceId": "arcelormittal-sections-2023",
+      "status": "verified",
+      "limitations": [
+        "Nominálna hmotnosť profilu; profil pre konkrétny prvok určuje statický návrh."
+      ]
+    },
+    {
+      "id": "shs-60x60x4-celsius420",
+      "family": "SHS",
+      "designation": "SHS 60x60x4 · Celsius 420 NH",
+      "kgPerM": 6.9,
+      "sourceId": "tata-celsius-420",
+      "status": "verified",
+      "limitations": [
+        "Teplom dokončený Celsius 420 NH (EN 10210 S420NH); nejde o všeobecnú hmotnosť všetkých SHS/RHS."
+      ]
+    },
+    {
+      "id": "shs-80x80x4-celsius420",
+      "family": "SHS",
+      "designation": "SHS 80x80x4 · Celsius 420 NH",
+      "kgPerM": 9.41,
+      "sourceId": "tata-celsius-420",
+      "status": "verified",
+      "limitations": [
+        "Teplom dokončený Celsius 420 NH (EN 10210 S420NH); nejde o všeobecnú hmotnosť všetkých SHS/RHS."
+      ]
+    },
+    {
+      "id": "shs-100x100x5-celsius420",
+      "family": "SHS",
+      "designation": "SHS 100x100x5 · Celsius 420 NH",
+      "kgPerM": 14.7,
+      "sourceId": "tata-celsius-420",
+      "status": "verified",
+      "limitations": [
+        "Teplom dokončený Celsius 420 NH (EN 10210 S420NH); nejde o všeobecnú hmotnosť všetkých SHS/RHS."
+      ]
+    },
+    {
+      "id": "rhs-100x50x4-celsius420",
+      "family": "RHS",
+      "designation": "RHS 100x50x4 · Celsius 420 NH",
+      "kgPerM": 8.78,
+      "sourceId": "tata-celsius-420",
+      "status": "verified",
+      "limitations": [
+        "Teplom dokončený Celsius 420 NH (EN 10210 S420NH); nejde o všeobecnú hmotnosť všetkých SHS/RHS."
+      ]
+    },
+    {
+      "id": "rhs-120x80x4-celsius420",
+      "family": "RHS",
+      "designation": "RHS 120x80x4 · Celsius 420 NH",
+      "kgPerM": 11.9,
+      "sourceId": "tata-celsius-420",
+      "status": "verified",
+      "limitations": [
+        "Teplom dokončený Celsius 420 NH (EN 10210 S420NH); nejde o všeobecnú hmotnosť všetkých SHS/RHS."
+      ]
+    },
+    {
+      "id": "rhs-150x100x5-celsius420",
+      "family": "RHS",
+      "designation": "RHS 150x100x5 · Celsius 420 NH",
+      "kgPerM": 18.6,
+      "sourceId": "tata-celsius-420",
+      "status": "verified",
+      "limitations": [
+        "Teplom dokončený Celsius 420 NH (EN 10210 S420NH); nejde o všeobecnú hmotnosť všetkých SHS/RHS."
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "id": "balex-pir-plus-60",
+      "name": "PIR PLUS 60 mm (1000 mm)",
+      "manufacturer": "Balex Metal",
+      "core": "PIR",
+      "usage": "wall",
+      "thicknessMm": 60,
+      "coverWidthMm": 1000,
+      "overallWidthMm": 1050,
+      "minLengthMm": 2000,
+      "maxLengthMm": 18000,
+      "kgPerM2": 11.41,
+      "minRoofSlopePercent": null,
+      "joinedRoofSlopePercent": null,
+      "sourceId": "balex-pir-plus",
+      "status": "verified",
+      "limitations": [
+        "Skryté kotvenie. Maximálnu dĺžku musí potvrdiť výrobca.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "balex-pir-plus-80",
+      "name": "PIR PLUS 80 mm (1000 mm)",
+      "manufacturer": "Balex Metal",
+      "core": "PIR",
+      "usage": "wall",
+      "thicknessMm": 80,
+      "coverWidthMm": 1000,
+      "overallWidthMm": 1050,
+      "minLengthMm": 2000,
+      "maxLengthMm": 18000,
+      "kgPerM2": 12.11,
+      "minRoofSlopePercent": null,
+      "joinedRoofSlopePercent": null,
+      "sourceId": "balex-pir-plus",
+      "status": "verified",
+      "limitations": [
+        "Skryté kotvenie. Maximálnu dĺžku musí potvrdiť výrobca.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "balex-pir-plus-100",
+      "name": "PIR PLUS 100 mm (1000 mm)",
+      "manufacturer": "Balex Metal",
+      "core": "PIR",
+      "usage": "wall",
+      "thicknessMm": 100,
+      "coverWidthMm": 1000,
+      "overallWidthMm": 1050,
+      "minLengthMm": 2000,
+      "maxLengthMm": 18000,
+      "kgPerM2": 12.91,
+      "minRoofSlopePercent": null,
+      "joinedRoofSlopePercent": null,
+      "sourceId": "balex-pir-plus",
+      "status": "verified",
+      "limitations": [
+        "Skryté kotvenie. Maximálnu dĺžku musí potvrdiť výrobca.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "balex-pir-plus-120",
+      "name": "PIR PLUS 120 mm (1000 mm)",
+      "manufacturer": "Balex Metal",
+      "core": "PIR",
+      "usage": "wall",
+      "thicknessMm": 120,
+      "coverWidthMm": 1000,
+      "overallWidthMm": 1050,
+      "minLengthMm": 2000,
+      "maxLengthMm": 18000,
+      "kgPerM2": 13.81,
+      "minRoofSlopePercent": null,
+      "joinedRoofSlopePercent": null,
+      "sourceId": "balex-pir-plus",
+      "status": "verified",
+      "limitations": [
+        "Skryté kotvenie. Maximálnu dĺžku musí potvrdiť výrobca.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "balex-pir-roof-40",
+      "name": "PIR ROOF 40 mm (1000 mm)",
+      "manufacturer": "Balex Metal",
+      "core": "PIR",
+      "usage": "roof",
+      "thicknessMm": 40,
+      "coverWidthMm": 1000,
+      "overallWidthMm": 1081,
+      "minLengthMm": 2500,
+      "maxLengthMm": 16000,
+      "kgPerM2": 10.84,
+      "minRoofSlopePercent": 5,
+      "joinedRoofSlopePercent": 7,
+      "sourceId": "balex-pir-roof",
+      "status": "verified",
+      "limitations": [
+        "Minimálny sklon je striktne väčší než 5 % pri súvislom paneli bez svetlíkov a väčší než 7 % pri spojoch po dĺžke alebo svetlíkoch.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "balex-pir-roof-80",
+      "name": "PIR ROOF 80 mm (1000 mm)",
+      "manufacturer": "Balex Metal",
+      "core": "PIR",
+      "usage": "roof",
+      "thicknessMm": 80,
+      "coverWidthMm": 1000,
+      "overallWidthMm": 1091,
+      "minLengthMm": 2500,
+      "maxLengthMm": 18000,
+      "kgPerM2": 12.45,
+      "minRoofSlopePercent": 5,
+      "joinedRoofSlopePercent": 7,
+      "sourceId": "balex-pir-roof",
+      "status": "verified",
+      "limitations": [
+        "Minimálny sklon je striktne väčší než 5 % pri súvislom paneli bez svetlíkov a väčší než 7 % pri spojoch po dĺžke alebo svetlíkoch.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "balex-pir-roof-120",
+      "name": "PIR ROOF 120 mm (1000 mm)",
+      "manufacturer": "Balex Metal",
+      "core": "PIR",
+      "usage": "roof",
+      "thicknessMm": 120,
+      "coverWidthMm": 1000,
+      "overallWidthMm": 1102,
+      "minLengthMm": 2500,
+      "maxLengthMm": 18000,
+      "kgPerM2": 14.07,
+      "minRoofSlopePercent": 5,
+      "joinedRoofSlopePercent": 7,
+      "sourceId": "balex-pir-roof",
+      "status": "verified",
+      "limitations": [
+        "Minimálny sklon je striktne väčší než 5 % pri súvislom paneli bez svetlíkov a väčší než 7 % pri spojoch po dĺžke alebo svetlíkoch.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "balex-mw-standard-100",
+      "name": "MW STANDARD 100 mm (1100 mm)",
+      "manufacturer": "Balex Metal",
+      "core": "MW",
+      "usage": "wall",
+      "thicknessMm": 100,
+      "coverWidthMm": 1100,
+      "overallWidthMm": 1120,
+      "minLengthMm": 2500,
+      "maxLengthMm": 15000,
+      "kgPerM2": 19.8,
+      "minRoofSlopePercent": null,
+      "joinedRoofSlopePercent": null,
+      "sourceId": "balex-mw-wall",
+      "status": "verified",
+      "limitations": [
+        "Vybraný modul 1100 mm; výrobca ponúka aj samostatný modul 1000 mm.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "balex-mw-standard-150",
+      "name": "MW STANDARD 150 mm (1100 mm)",
+      "manufacturer": "Balex Metal",
+      "core": "MW",
+      "usage": "wall",
+      "thicknessMm": 150,
+      "coverWidthMm": 1100,
+      "overallWidthMm": 1120,
+      "minLengthMm": 2500,
+      "maxLengthMm": 15000,
+      "kgPerM2": 25.3,
+      "minRoofSlopePercent": null,
+      "joinedRoofSlopePercent": null,
+      "sourceId": "balex-mw-wall",
+      "status": "verified",
+      "limitations": [
+        "Vybraný modul 1100 mm; výrobca ponúka aj samostatný modul 1000 mm.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "balex-mw-standard-200",
+      "name": "MW STANDARD 200 mm (1100 mm)",
+      "manufacturer": "Balex Metal",
+      "core": "MW",
+      "usage": "wall",
+      "thicknessMm": 200,
+      "coverWidthMm": 1100,
+      "overallWidthMm": 1120,
+      "minLengthMm": 2500,
+      "maxLengthMm": 15000,
+      "kgPerM2": 30.8,
+      "minRoofSlopePercent": null,
+      "joinedRoofSlopePercent": null,
+      "sourceId": "balex-mw-wall",
+      "status": "verified",
+      "limitations": [
+        "Vybraný modul 1100 mm; výrobca ponúka aj samostatný modul 1000 mm.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "balex-mw-roof-100",
+      "name": "MW ROOF 100 mm (1000 mm)",
+      "manufacturer": "Balex Metal",
+      "core": "MW",
+      "usage": "roof",
+      "thicknessMm": 100,
+      "coverWidthMm": 1000,
+      "overallWidthMm": 1063.5,
+      "minLengthMm": 2500,
+      "maxLengthMm": 15000,
+      "kgPerM2": 20.3,
+      "minRoofSlopePercent": 5,
+      "joinedRoofSlopePercent": 7,
+      "sourceId": "balex-mw-roof",
+      "status": "verified",
+      "limitations": [
+        "Minimálny sklon je striktne väčší než 5 % pri súvislom paneli bez svetlíkov a väčší než 7 % pri spojoch po dĺžke alebo svetlíkoch.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "balex-mw-roof-150",
+      "name": "MW ROOF 150 mm (1000 mm)",
+      "manufacturer": "Balex Metal",
+      "core": "MW",
+      "usage": "roof",
+      "thicknessMm": 150,
+      "coverWidthMm": 1000,
+      "overallWidthMm": 1063.5,
+      "minLengthMm": 2500,
+      "maxLengthMm": 15000,
+      "kgPerM2": 25.6,
+      "minRoofSlopePercent": 5,
+      "joinedRoofSlopePercent": 7,
+      "sourceId": "balex-mw-roof",
+      "status": "verified",
+      "limitations": [
+        "Minimálny sklon je striktne väčší než 5 % pri súvislom paneli bez svetlíkov a väčší než 7 % pri spojoch po dĺžke alebo svetlíkoch.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "balex-mw-roof-200",
+      "name": "MW ROOF 200 mm (1000 mm)",
+      "manufacturer": "Balex Metal",
+      "core": "MW",
+      "usage": "roof",
+      "thicknessMm": 200,
+      "coverWidthMm": 1000,
+      "overallWidthMm": 1063.5,
+      "minLengthMm": 2500,
+      "maxLengthMm": 15000,
+      "kgPerM2": 30.9,
+      "minRoofSlopePercent": 5,
+      "joinedRoofSlopePercent": 7,
+      "sourceId": "balex-mw-roof",
+      "status": "verified",
+      "limitations": [
+        "Minimálny sklon je striktne väčší než 5 % pri súvislom paneli bez svetlíkov a väčší než 7 % pri spojoch po dĺžke alebo svetlíkoch.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "bp2-spw-c-pur-120",
+      "name": "SPW-C CORE PUR 120 mm (1150 mm)",
+      "manufacturer": "BP2",
+      "core": "PUR",
+      "usage": "wall",
+      "thicknessMm": 120,
+      "coverWidthMm": 1150,
+      "overallWidthMm": 1171,
+      "minLengthMm": 2500,
+      "maxLengthMm": 13500,
+      "kgPerM2": 11.9,
+      "minRoofSlopePercent": null,
+      "joinedRoofSlopePercent": null,
+      "sourceId": "bp2-pur-wall",
+      "status": "verified",
+      "limitations": [
+        "Chladiarenský stenový panel. Vybraný modul 1150 mm; existuje aj samostatný modul 1000 mm.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "bp2-spw-c-pur-160",
+      "name": "SPW-C CORE PUR 160 mm (1150 mm)",
+      "manufacturer": "BP2",
+      "core": "PUR",
+      "usage": "wall",
+      "thicknessMm": 160,
+      "coverWidthMm": 1150,
+      "overallWidthMm": 1171,
+      "minLengthMm": 2500,
+      "maxLengthMm": 13500,
+      "kgPerM2": 13.5,
+      "minRoofSlopePercent": null,
+      "joinedRoofSlopePercent": null,
+      "sourceId": "bp2-pur-wall",
+      "status": "verified",
+      "limitations": [
+        "Chladiarenský stenový panel. Vybraný modul 1150 mm; existuje aj samostatný modul 1000 mm.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "bp2-spr-pur-60",
+      "name": "SPR CORE PUR 60 mm (1050 mm)",
+      "manufacturer": "BP2",
+      "core": "PUR",
+      "usage": "roof",
+      "thicknessMm": 60,
+      "coverWidthMm": 1050,
+      "overallWidthMm": 1127,
+      "minLengthMm": 2000,
+      "maxLengthMm": 15000,
+      "kgPerM2": 10.4,
+      "minRoofSlopePercent": null,
+      "joinedRoofSlopePercent": null,
+      "sourceId": "bp2-pur-roof",
+      "status": "verified",
+      "limitations": [
+        "Minimálny sklon nebol v použitom zdroji overený; musí ho potvrdiť výrobca.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "bp2-spr-pur-100",
+      "name": "SPR CORE PUR 100 mm (1050 mm)",
+      "manufacturer": "BP2",
+      "core": "PUR",
+      "usage": "roof",
+      "thicknessMm": 100,
+      "coverWidthMm": 1050,
+      "overallWidthMm": 1127,
+      "minLengthMm": 2000,
+      "maxLengthMm": 15000,
+      "kgPerM2": 12,
+      "minRoofSlopePercent": null,
+      "joinedRoofSlopePercent": null,
+      "sourceId": "bp2-pur-roof",
+      "status": "verified",
+      "limitations": [
+        "Minimálny sklon nebol v použitom zdroji overený; musí ho potvrdiť výrobca.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    },
+    {
+      "id": "bp2-spr-pur-160",
+      "name": "SPR CORE PUR 160 mm (1050 mm)",
+      "manufacturer": "BP2",
+      "core": "PUR",
+      "usage": "roof",
+      "thicknessMm": 160,
+      "coverWidthMm": 1050,
+      "overallWidthMm": 1127,
+      "minLengthMm": 2000,
+      "maxLengthMm": 15000,
+      "kgPerM2": 14.8,
+      "minRoofSlopePercent": null,
+      "joinedRoofSlopePercent": null,
+      "sourceId": "bp2-pur-roof",
+      "status": "verified",
+      "limitations": [
+        "Minimálny sklon nebol v použitom zdroji overený; musí ho potvrdiť výrobca.",
+        "Katalógová hmotnosť; konkrétnu skladbu plechov, únosnosť a použitie potvrdiť s výrobcom."
+      ]
+    }
+  ]
+}

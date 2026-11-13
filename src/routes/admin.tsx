@@ -1,3 +1,4 @@
+import { AdminMaterialReport } from '@/components/garage/AdminMaterialReport';
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { DEFAULT_PARAMS, type GarageParams } from "@/lib/garage/types";
@@ -513,6 +514,8 @@ function AdminDashboard() {
       {/* Main Container - Dual Pane Layout */}
       <div className="max-w-[1600px] mx-auto p-3 sm:p-6">
         
+        <AdminMaterialReport />
+
         {/* Mobile View Tab Switcher (Visible only on mobile/tablet) */}
         <div className="lg:hidden flex rounded-lg border border-white/10 bg-[#0e1218] p-1 mb-4 gap-1">
           <button
