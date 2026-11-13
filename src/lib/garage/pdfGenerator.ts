@@ -65,6 +65,7 @@ function drawBox(
   const boxHeight = Math.max(h || 0, contentHeight);
 
   pdf.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
+  pdf.setLineWidth(hasBg ? 0.35 : 0.15);
   if (hasBg) {
     pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
     pdf.roundedRect(x, y, w, boxHeight, 3, 3, "FD");
@@ -80,7 +81,7 @@ function drawBox(
 
   const vy = ty + titleLines.length * lineHeightTitle + 1.5;
   pdf.setFont("Roboto", "bold");
-  pdf.setFontSize(9.5);
+  pdf.setFontSize(hasBg ? 11 : 9.5);
   pdf.setTextColor(valueColor[0], valueColor[1], valueColor[2]);
   pdf.text(valueLines, x + 4, vy + 3);
 
@@ -105,29 +106,30 @@ function drawPricingRow(
   }
 ) {
   const theme = opts || {};
-  const borderColor = theme.borderColor || [229, 231, 235];
-  const fillColor = theme.fillColor || [255, 255, 255];
-  const labelColor = theme.textColor || theme.labelColor || [16, 24, 40];
-  const priceColor = theme.textColor || theme.priceColor || [16, 24, 40];
   const emphasize = !!theme.emphasize;
+  const borderColor = theme.borderColor || (emphasize ? [16, 185, 129] : [229, 231, 235]);
+  const fillColor = theme.fillColor || (emphasize ? [236, 253, 245] : [255, 255, 255]);
+  const labelColor = theme.textColor || theme.labelColor || (emphasize ? [6, 95, 70] : [16, 24, 40]);
+  const priceColor = theme.textColor || theme.priceColor || (emphasize ? [5, 150, 105] : [16, 24, 40]);
   const priceWidth = theme.priceWidth || 42;
   const gap = 4;
   const labelWidth = w - priceWidth - gap - 8;
   const labelLines = pdf.splitTextToSize(label || "-", labelWidth);
-  const rowHeight = Math.max(9, 4 + labelLines.length * 4);
+  const rowHeight = Math.max(emphasize ? 11 : 9, 4 + labelLines.length * 4);
 
   pdf.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
   pdf.setFillColor(fillColor[0], fillColor[1], fillColor[2]);
+  pdf.setLineWidth(emphasize ? 0.35 : 0.15);
   pdf.roundedRect(x, y, w, rowHeight, 2, 2, "FD");
 
-  const ty = y + 4.5;
+  const ty = y + (emphasize ? 5.2 : 4.5);
   pdf.setFont("Roboto", emphasize ? "bold" : "normal");
-  pdf.setFontSize(emphasize ? 9.5 : 8.5);
+  pdf.setFontSize(emphasize ? 10 : 8.5);
   pdf.setTextColor(labelColor[0], labelColor[1], labelColor[2]);
   pdf.text(labelLines, x + 4, ty);
 
   pdf.setFont("Roboto", "bold");
-  pdf.setFontSize(emphasize ? 10 : 8.5);
+  pdf.setFontSize(emphasize ? 11 : 8.5);
   pdf.setTextColor(priceColor[0], priceColor[1], priceColor[2]);
   pdf.text(price, x + w - 4, ty, { align: "right" });
 

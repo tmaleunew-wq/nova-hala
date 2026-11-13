@@ -88,24 +88,59 @@ export function GarageBomTable({ params, accentColor = "cyan" }: GarageBomTableP
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5 text-[11px]">
-              {bom.items.map((item) => (
-                <tr key={item.id} className="hover:bg-white/[0.02]">
-                  <td className="py-2 pr-2 font-medium text-white">
-                    {item.name}
-                    <span className="block text-[10px] text-white/40">{item.category}</span>
-                  </td>
-                  <td className="py-2 pr-2 text-white/70 font-mono text-[10px]">
-                    {item.spec}
-                  </td>
-                  <td className="py-2 pr-2 text-right font-mono font-bold text-white whitespace-nowrap">
-                    {item.quantity} {item.unit}
-                  </td>
-                  <td className="py-2 text-right font-mono text-white/60 whitespace-nowrap">
-                    {item.weightKg ? `${item.weightKg} kg` : "—"}
-                  </td>
-                </tr>
-              ))}
+              {Array.from(new Set(bom.items.map((i) => i.category))).map((category) => {
+                const catItems = bom.items.filter((i) => i.category === category);
+                const catWeight = catItems.reduce((sum, i) => sum + (i.weightKg || 0), 0);
+                const sameUnit = catItems.every((i) => i.unit === catItems[0].unit);
+                const catQty = sameUnit ? Math.round(catItems.reduce((sum, i) => sum + i.quantity, 0) * 10) / 10 : null;
+
+                return (
+                  <React.Fragment key={category}>
+                    <tr className="bg-white/[0.05] border-t border-b border-white/10">
+                      <td colSpan={2} className="py-2 px-2 text-xs font-bold text-emerald-400">
+                        {category}
+                        <span className="ml-2 text-[10px] font-normal text-white/50">({catItems.length} {catItems.length === 1 ? 'položka' : catItems.length < 5 ? 'položky' : 'položiek'})</span>
+                      </td>
+                      <td className="py-2 pr-2 text-right font-mono font-bold text-emerald-300 whitespace-nowrap">
+                        {catQty !== null ? `${catQty} ${catItems[0].unit}` : "—"}
+                      </td>
+                      <td className="py-2 pl-2 text-right font-mono font-bold text-emerald-300 whitespace-nowrap">
+                        {catWeight > 0 ? `${catWeight} kg` : "—"}
+                      </td>
+                    </tr>
+                    {catItems.map((item) => (
+                      <tr key={item.id} className="hover:bg-white/[0.02]">
+                        <td className="py-2 pl-4 pr-2 font-medium text-white">
+                          {item.name}
+                        </td>
+                        <td className="py-2 pr-2 text-white/70 font-mono text-[10px]">
+                          {item.spec}
+                        </td>
+                        <td className="py-2 pr-2 text-right font-mono font-bold text-white whitespace-nowrap">
+                          {item.quantity} {item.unit}
+                        </td>
+                        <td className="py-2 pl-2 text-right font-mono text-white/60 whitespace-nowrap">
+                          {item.weightKg ? `${item.weightKg} kg` : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-emerald-500/40 bg-emerald-950/30 text-xs font-bold text-white">
+                <td colSpan={2} className="py-2.5 px-3 uppercase tracking-wider text-emerald-300">
+                  Celkový súčet evidovanej ocele
+                </td>
+                <td className="py-2.5 pr-2 text-right font-mono text-emerald-300">
+                  {bom.totalSteelLengthBm} bm
+                </td>
+                <td className="py-2.5 pl-2 text-right font-mono text-emerald-300">
+                  {bom.totalSteelWeightKg} kg
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}

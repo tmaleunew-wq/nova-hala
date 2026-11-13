@@ -35,7 +35,14 @@ function panelSpec(panel: PanelProduct | undefined, slopePercent?: number): Pane
 function ReportTable({ columns, rows }: { columns: string[]; rows: ExportRows }) {
   return <div className="overflow-x-auto"><table className="w-full text-left text-xs">
     <thead className="bg-white/5 text-slate-300"><tr>{columns.map(column => <th key={column} scope="col" className="px-3 py-2">{column}</th>)}</tr></thead>
-    <tbody>{rows.map((row, index) => <tr className="border-t border-white/10" key={index}>{row.map((cell, col) => <td key={col} className="px-3 py-2">{typeof cell === 'number' ? number.format(cell) : cell ?? '—'}</td>)}</tr>)}</tbody>
+    <tbody>{rows.map((row, index) => {
+      const isTotal = row[0] === 'SPOLU';
+      return (
+        <tr className={isTotal ? "border-t-2 border-emerald-500/40 bg-emerald-950/30 font-bold text-emerald-300" : "border-t border-white/10"} key={index}>
+          {row.map((cell, col) => <td key={col} className="px-3 py-2">{typeof cell === 'number' ? number.format(cell) : cell ?? '—'}</td>)}
+        </tr>
+      );
+    })}</tbody>
   </table></div>;
 }
 
@@ -50,8 +57,10 @@ export function MaterialReport({ project, onChange, orderOpenings }: { project: 
       const [{ buildSteelReport }, { createSteelPdf }] = await Promise.all([
         import('@/lib/materials/steel-report'), import('@/lib/materials/steel-pdf'),
       ]);
-      const name = kind === 'primary' ? 'primarna-konstrukcia' : 'sekundarna-konstrukcia';
-      createSteelPdf(buildSteelReport(project, kind, openings)).save(name + '.pdf');
+      const pdf = createSteelPdf(buildSteelReport(project, kind, openings));
+      const blob = pdf.output('blob');
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'PDF výkaz sa nepodarilo vytvoriť.');
     }
@@ -81,6 +90,7 @@ export function MaterialReport({ project, onChange, orderOpenings }: { project: 
     catch (error) { return { rows: [], notes: [`Výpočet doplnkov nie je dostupný: ${error instanceof Error ? error.message : 'neplatné nastavenie'}`] }; }
   })();
   const member = model.structure.find(item => item.id === memberId) ?? model.structure[0];
+  const totals = model.totals;
   const assumptions = [...model.limitations,
     'Objednávacie množstvo vychádza z krycej šírky a výrobných dĺžok. Odrezky sa medzi pásmi nepoužívajú opakovane.',
     'Pozdĺžne spoje panelov, uloženie, kotvenie a výber nosných profilov vyžadujú technický návrh.',
@@ -94,8 +104,14 @@ export function MaterialReport({ project, onChange, orderOpenings }: { project: 
       return [surfaceName(face.id), face.grossAreaM2, face.openingAreaM2, face.netAreaM2, (face.kind === 'wall' ? wall : roof)?.name ?? 'Neurčený', hasLayout ? face.strips.length : null, hasLayout ? sum('orderedAreaM2') : null, hasLayout ? sum('wasteAreaM2') : null, hasLayout ? sum('orderLengthM') : null, hasLayout && face.strips.every(strip => strip.massKg != null) ? sum('massKg') : null, `${geometric}${hasLayout ? ` / ${estimated}` : ''}`];
     }) },
     { title: 'Rozpis panelových pásov', columns: ['ID', 'Plocha', 'Výrobok', 'Smer', 'Krycia šírka m', 'Šírka rezu m', 'Dĺžka rezu m', 'Objednávacia dĺžka m', 'Čistá m²', 'Objednávka m²', 'Odrezky m²', 'kg', 'Rez'], rows: model.surfaces.flatMap(face => face.strips.map(strip => [strip.id, surfaceName(face.id), strip.productId, strip.orientation === 'vertical' ? 'Zvislo' : face.kind === 'roof' ? 'Po spáde' : 'Vodorovne', (face.kind === 'wall' ? wallSpec : roofSpec)?.coverWidthM ?? null, strip.widthM, strip.lengthM, strip.orderLengthM, strip.netAreaM2, strip.orderedAreaM2, strip.wasteAreaM2, strip.massKg, [strip.edgeCut ? 'Okraj' : '', strip.hasCutouts ? 'Výrez' : ''].filter(Boolean).join(', ')])) },
-    { title: 'Oceľová konštrukcia', columns: ['ID', 'Prvok', 'Profil', 'ks', 'bm', 'kg/m', 'kg', 'Stav hmotnosti'], rows: model.structure.map(item => [item.id, roles[item.role], catalog.steelProfiles.find(profile => profile.id === item.profileId)?.designation ?? 'Neurčený', 1, item.lengthM, item.kgPerM, item.massKg, item.massKg == null ? design : estimated]) },
-    { title: 'Otvory', columns: ['ID', 'Pole', 'Typ', 'Podtyp', 'ks', 'Šírka m', 'Výška m', 'Plocha m²'], rows: openings.map(item => [item.id, item.bayId, item.category, item.subtype, 1, item.width, item.height, item.width * item.height]) },
+    { title: 'Oceľová konštrukcia', columns: ['ID', 'Prvok', 'Profil', 'ks', 'bm', 'kg/m', 'kg', 'Stav hmotnosti'], rows: [
+      ...model.structure.map(item => [item.id, roles[item.role], catalog.steelProfiles.find(profile => profile.id === item.profileId)?.designation ?? 'Neurčený', 1, item.lengthM, item.kgPerM, item.massKg, item.massKg == null ? design : estimated]),
+      ...(model.structure.length ? [['SPOLU', 'Celkový súčet ocele', null, model.structure.length, Math.round(model.structure.reduce((s, i) => s + i.lengthM, 0) * 10) / 10, null, totals.knownSteelMassKg, 'Celkom']] : []),
+    ] },
+    { title: 'Otvory', columns: ['ID', 'Pole', 'Typ', 'Podtyp', 'ks', 'Šírka m', 'Výška m', 'Plocha m²'], rows: [
+      ...openings.map(item => [item.id, item.bayId, item.category, item.subtype, 1, item.width, item.height, item.width * item.height]),
+      ...(openings.length ? [['SPOLU', 'Celkový súčet otvorov', null, null, openings.length, null, null, Math.round(openings.reduce((s, i) => s + i.width * i.height, 0) * 100) / 100]] : []),
+    ] },
     { title: 'Doplnky a kotvenie', columns: ['Položka', 'ks', 'bm', 'kg', 'Stav'], rows: [
       ['Pätové dosky hlavných stĺpov', model.structure.filter(item => item.role === 'column' || item.role === 'centerColumn').length, null, null, design],
       ['Hrebeňové lemovanie hlavnej lode', null, params.length, null, design],
@@ -108,10 +124,19 @@ export function MaterialReport({ project, onChange, orderOpenings }: { project: 
     `Nastavenie doplnkov projektu (JSON override): ${JSON.stringify(settings?.accessories ?? {})}`);
   groups.push({ title: 'Lišty a rebrík · podrobný rozpis',
     columns: ['ID', 'Položka', 'Geometria / výška výstupu bm', 'Objednávka ks', 'Objednávka líšt bm', 'Presahy bm', 'Odrezky bm', 'Hmotnosť kg', 'Stav'],
-    rows: accessories.rows.map(row => [row.id, row.label, row.netM, row.pieces, row.kind === 'ladder' ? null : row.orderedM, row.overlapM, row.offcutM, row.massKg,
-      row.kind === 'ladder' ? estimated : `${geometric} / objednávka ${estimated}`]),
+    rows: [
+      ...accessories.rows.map(row => [row.id, row.label, row.netM, row.pieces, row.kind === 'ladder' ? null : row.orderedM, row.overlapM, row.offcutM, row.massKg,
+        row.kind === 'ladder' ? estimated : `${geometric} / objednávka ${estimated}`]),
+      ...(accessories.rows.length ? [['SPOLU', 'Celkový súčet líšt a doplnkov',
+        Math.round(accessories.rows.reduce((s, r) => s + r.netM, 0) * 100) / 100,
+        accessories.rows.reduce((s, r) => s + r.pieces, 0),
+        Math.round(accessories.rows.reduce((s, r) => s + (r.kind === 'ladder' ? 0 : r.orderedM), 0) * 100) / 100,
+        Math.round(accessories.rows.reduce((s, r) => s + r.overlapM, 0) * 100) / 100,
+        Math.round(accessories.rows.reduce((s, r) => s + r.offcutM, 0) * 100) / 100,
+        accessories.rows.some(r => r.massKg != null) ? Math.round(accessories.rows.reduce((s, r) => s + (r.massKg ?? 0), 0) * 10) / 10 : null,
+        'Celkom']] : []),
+    ],
   });
-  const totals = model.totals;
   const summary: ExportRows = [
     ['Steny · hrubá plocha vrátane štítov (m²)', totals.wallGrossM2], ['Steny · čistá plocha (m²)', totals.wallNetM2],
     ['Strecha · bez presahov (m²)', totals.nominalRoofGrossM2], ['Strecha · hrubá plocha s presahmi (m²)', totals.roofGrossM2], ['Strecha · čistá plocha (m²)', totals.roofNetM2],
@@ -140,7 +165,10 @@ export function MaterialReport({ project, onChange, orderOpenings }: { project: 
           const reportModel = calculateMaterialGeometry(reportParams, openings, {
             templateId: project.templateId, wallPanel: wallSpec, roofPanel: roofSpec, claddingReportEnvelope: true,
           });
-          createCladdingPdf(buildCladdingReport({ ...project, params: reportParams }, reportModel, openings, catalog)).save('vykaz-oplastenia.pdf');
+          const pdf = createCladdingPdf(buildCladdingReport({ ...project, params: reportParams }, reportModel, openings, catalog));
+          const blob = pdf.output('blob');
+          const url = URL.createObjectURL(blob);
+          window.open(url, '_blank');
         } catch (error) {
           toast.error(error instanceof Error ? error.message : 'PDF výkaz sa nepodarilo vytvoriť.');
         }

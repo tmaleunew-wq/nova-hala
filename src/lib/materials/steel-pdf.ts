@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { ROBOTO_REGULAR_B64 } from '../garage/pdfFonts';
+import { ROBOTO_REGULAR_B64, ROBOTO_BOLD_B64 } from '../garage/pdfFonts';
 import type { SteelReport, SteelRow } from './steel-report';
 import { steelRoleNames } from './steel-report';
 
@@ -18,6 +18,8 @@ export function createSteelPdf(report: SteelReport) {
   const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
   pdf.addFileToVFS('Roboto-Regular.ttf', ROBOTO_REGULAR_B64);
   pdf.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+  pdf.addFileToVFS('Roboto-Bold.ttf', ROBOTO_BOLD_B64);
+  pdf.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
   pdf.setFont('Roboto');
   pdf.setTextColor('#203446');
   pdf.setProperties({ title, subject: report.title });
@@ -107,9 +109,19 @@ export function createSteelPdf(report: SteelReport) {
         pdf.setFontSize(7.2);
         row(columns, 'head');
       }
-      if (style !== 'body' && !primary) {
-        pdf.setFillColor(style === 'head' ? '#e5edf4' : '#f0f4f7');
+      if (style === 'total') {
+        pdf.setFont('Roboto', 'bold');
+        pdf.setFillColor('#ecfdf5');
         pdf.rect(margin, y, width, height, 'F');
+        pdf.setTextColor('#065f46');
+      } else if (style === 'head') {
+        pdf.setFont('Roboto', 'bold');
+        pdf.setFillColor('#e5edf4');
+        pdf.rect(margin, y, width, height, 'F');
+        pdf.setTextColor('#203446');
+      } else {
+        pdf.setFont('Roboto', 'normal');
+        pdf.setTextColor('#203446');
       }
       let x = margin;
       lines.forEach((line, index) => {
@@ -117,9 +129,16 @@ export function createSteelPdf(report: SteelReport) {
         x += widths[index];
       });
       y += height;
-      pdf.setLineWidth(.15);
-      pdf.setDrawColor('#c6d2dc');
+      if (style === 'total') {
+        pdf.setLineWidth(.35);
+        pdf.setDrawColor('#10b981');
+      } else {
+        pdf.setLineWidth(.15);
+        pdf.setDrawColor('#c6d2dc');
+      }
       pdf.line(margin, y, margin + width, y);
+      pdf.setFont('Roboto', 'normal');
+      pdf.setTextColor('#203446');
     }
     if (y > 245) newPage();
     heading(name, 11);

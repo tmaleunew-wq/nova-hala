@@ -1,6 +1,6 @@
 import { drawCladdingWallDetail } from './cladding-wall-detail';
 import { jsPDF } from 'jspdf';
-import { ROBOTO_REGULAR_B64 } from '../garage/pdfFonts';
+import { ROBOTO_REGULAR_B64, ROBOTO_BOLD_B64 } from '../garage/pdfFonts';
 import type { Point2 } from './geometry';
 import type { CladdingPanel, CladdingReport } from './cladding-report';
 
@@ -26,6 +26,8 @@ export function createCladdingPdf(report: CladdingReport) {
   const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
   pdf.addFileToVFS('Roboto-Regular.ttf', ROBOTO_REGULAR_B64);
   pdf.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+  pdf.addFileToVFS('Roboto-Bold.ttf', ROBOTO_BOLD_B64);
+  pdf.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
   pdf.setFont('Roboto');
   pdf.setTextColor(ink);
   pdf.setProperties({ title: 'Súhrnný dokument opláštenia', subject: report.title });
@@ -56,16 +58,33 @@ export function createCladdingPdf(report: CladdingReport) {
         pdf.setFontSize(7.5);
         row(columns, true);
       }
-      if (header || foot) {
-        pdf.setFillColor('#ffffff');
+      if (header) {
+        pdf.setFont('Roboto', 'bold');
+        pdf.setFillColor('#f8fafc');
         pdf.rect(margin, y, width, height, 'F');
+        pdf.setTextColor('#0f172a');
+      } else if (foot) {
+        pdf.setFont('Roboto', 'bold');
+        pdf.setFillColor('#ecfdf5');
+        pdf.rect(margin, y, width, height, 'F');
+        pdf.setTextColor('#065f46');
+      } else {
+        pdf.setFont('Roboto', 'normal');
+        pdf.setTextColor(ink);
       }
       let x = margin;
       lines.forEach((line, i) => { pdf.text(line, x + 1.5, y + 3.5); x += widths[i]; });
       y += height;
-      pdf.setDrawColor(rule);
-      pdf.setLineWidth(.15);
+      if (foot) {
+        pdf.setDrawColor('#10b981');
+        pdf.setLineWidth(.35);
+      } else {
+        pdf.setDrawColor(rule);
+        pdf.setLineWidth(.15);
+      }
       pdf.line(margin, y, margin + width, y);
+      pdf.setFont('Roboto', 'normal');
+      pdf.setTextColor(ink);
     }
     if (y > 253) page(title);
     else heading(title, 10);
@@ -234,8 +253,8 @@ export function createCladdingPdf(report: CladdingReport) {
     all.map(face => [face.name, ...sumAreas([face])]),
     all.length ? ['Celková plocha', ...sumAreas(all)] : undefined);
   table('Steny a strecha spolu', ['Čistá plocha m²', 'Neorezané panely m²', 'Otvory m²', 'Pevné steny m²'],
-    [46, 46, 46, 46], [[total(all, face => face.net), knownTotal(all, face => face.ordered),
-      total(all, face => face.holes), total(all, face => face.stem?.area ?? 0)]]);
+    [46, 46, 46, 46], [], [total(all, face => face.net), knownTotal(all, face => face.ordered),
+      total(all, face => face.holes), total(all, face => face.stem?.area ?? 0)]);
   panels('Zoznam použitých panelov', report.panels, all.length > 0 && all.every(face => face.ordered != null));
   stems('Súhrn pevných stien a sokla', all);
 

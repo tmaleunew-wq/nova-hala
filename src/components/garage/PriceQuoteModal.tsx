@@ -473,7 +473,7 @@ export function PriceQuoteModal({
           </div>
 
           {/* Price Totals Summary */}
-          <div className="rounded-lg border border-emerald-500/30 bg-emerald-950/20 p-4 font-mono text-xs print:border-slate-400 print:bg-slate-100 print:text-black">
+          <div className="rounded-lg border border-emerald-500/30 bg-emerald-950/20 p-4 font-mono text-xs print:border-2 print:border-emerald-600 print:bg-emerald-50/50 print:text-black">
             <div className="flex justify-between py-1 text-white/70 print:text-slate-600">
               <span>Spolu za materiál a montáž bez DPH:</span>
               <span className="font-bold font-mono">{fmt(rawTotalWithExtras)}</span>
@@ -492,7 +492,7 @@ export function PriceQuoteModal({
               <span>DPH (20%):</span>
               <span className="font-bold font-mono">{fmt(vatAmount)}</span>
             </div>
-            <div className="flex justify-between py-2 text-base font-extrabold text-emerald-400 print:text-emerald-700 border-t border-emerald-500/40 print:border-slate-400 mt-2">
+            <div className="flex justify-between py-2 text-base font-extrabold text-emerald-400 print:text-emerald-800 print:bg-emerald-100 print:px-2 print:rounded border-t border-emerald-500/40 print:border-emerald-500 mt-2">
               <span>KONEČNÁ CENA S DPH:</span>
               <span className="font-mono text-lg">{fmt(totalWithVat)}</span>
             </div>
