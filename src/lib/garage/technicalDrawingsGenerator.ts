@@ -1,3 +1,6 @@
+import { calculateWallDrawings } from './wall-drawings';
+import { createWallDrawingPdf, renderWallDrawingSvg } from './wall-drawing-sheets';
+
 import { jsPDF } from "jspdf";
 import type { GarageParams } from "./types";
 import { ROBOTO_REGULAR_B64, ROBOTO_BOLD_B64 } from "./pdfFonts";
@@ -98,7 +101,16 @@ export interface DrawingOptions {
 /**
  * Generates an SVG string representation of a specific technical drawing view.
  */
+function projectWallViews(p: GarageParams, options?: DrawingOptions) {
+  if (options?.openings === undefined) return undefined;
+  return calculateWallDrawings({ schemaVersion: 1, templateId: options.templateId ?? 'prazdna_hala', params: p,
+    openings: options.openings.map(opening => ({ ...opening, subtype: opening.subtype ?? '', frameColor: '', fillColor: '' })) });
+}
+const elevationIds: Partial<Record<DrawingViewType, string>> = { front: 'front', rear: 'back', side_left: 'left', side_right: 'right' };
+
 export function generateDrawingSvg(view: DrawingViewType, p: GarageParams, options?: DrawingOptions): string {
+  const wall = projectWallViews(p, options)?.walls.find(item => item.id === elevationIds[view]);
+  if (wall) return renderWallDrawingSvg(wall);
   const W = p.width ?? 16;
   const L = p.length ?? 30;
   const H = p.clearHeight ?? 6;
@@ -580,7 +592,7 @@ export function generateDrawingSvg(view: DrawingViewType, p: GarageParams, optio
 /**
  * Downloads a complete multi-sheet PDF drawing set (all 8 technical views) with title blocks.
  */
-export function downloadMultiPageDrawingsPdf(p: GarageParams, filename = "Technicke_Vykresy_Haly.pdf"): void {
+export function downloadMultiPageDrawingsPdf(p: GarageParams, filename = "Technicke_Vykresy_Haly.pdf", options?: DrawingOptions): void {
   const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
   try {
@@ -606,9 +618,16 @@ export function downloadMultiPageDrawingsPdf(p: GarageParams, filename = "Techni
   const modelName = p.hallType || "VBAU OCEĽOVÁ HALA";
   const dateStr = new Date().toLocaleDateString("sk-SK");
 
+  const projectWalls = projectWallViews(p, options);
   DRAWING_DEFINITIONS.forEach((def, index) => {
     if (index > 0) {
       pdf.addPage("a4", "landscape");
+    }
+
+    const wall = projectWalls?.walls.find(item => item.id === elevationIds[def.id]);
+    if (wall) {
+      createWallDrawingPdf([wall], pdf);
+      return;
     }
 
     // Outer border

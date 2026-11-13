@@ -290,9 +290,9 @@ export function generateGarageDxf(
 /**
  * Initiates browser download of the generated DXF file.
  */
-export function downloadGarageDxf(p: GarageParams, filenamePrefix = "Podorys_Konstrukcie"): void {
+export function downloadGarageDxf(p: GarageParams, filenamePrefix = "Podorys_Konstrukcie", openings?: Parameters<typeof generateGarageDxf>[1]): void {
   try {
-    const dxfContent = generateGarageDxf(p);
+    const dxfContent = generateGarageDxf(p, openings);
     const blob = new Blob([dxfContent], { type: "application/dxf;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

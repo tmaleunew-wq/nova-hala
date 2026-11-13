@@ -2,6 +2,9 @@ import { AccessorySettings } from './AccessorySettings';
 import { calculateAccessories } from '@/lib/materials/accessories';
 import { RoofLoadEstimate } from './RoofLoadEstimate';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import type { Opening } from '@/lib/garage/openingSystem';
+import { steelRoleNames, type SteelReportKind } from '@/lib/materials/steel-report';
 import { DEFAULT_MATERIAL_CATALOG, loadMaterialCatalog, parseMaterialCatalogJson, type PanelProduct } from '@/lib/materials/catalog';
 import { calculateMaterialGeometry, type PanelLayoutSpec, type SteelAssignment } from '@/lib/materials/geometry';
 import { downloadReport, type ExportRows } from '@/lib/materials/material-export';
@@ -36,10 +39,23 @@ function ReportTable({ columns, rows }: { columns: string[]; rows: ExportRows })
   </table></div>;
 }
 
-export function MaterialReport({ project, onChange }: { project: HallMaterialProject; onChange?: (value: HallMaterialProject) => void }) {
+export function MaterialReport({ project, onChange, orderOpenings }: { project: HallMaterialProject; onChange?: (value: HallMaterialProject) => void; orderOpenings?: Opening[] }) {
   const [catalogText, setCatalogText] = useState<string>();
   const [catalogMessage, setCatalogMessage] = useState('');
   const [memberId, setMemberId] = useState('');
+  const [steelRole, setSteelRole] = useState('column');
+
+  async function downloadSteel(kind: SteelReportKind) {
+    try {
+      const [{ buildSteelReport }, { createSteelPdf }] = await Promise.all([
+        import('@/lib/materials/steel-report'), import('@/lib/materials/steel-pdf'),
+      ]);
+      const name = kind === 'primary' ? 'primarna-konstrukcia' : 'sekundarna-konstrukcia';
+      createSteelPdf(buildSteelReport(project, kind, openings)).save(name + '.pdf');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'PDF výkaz sa nepodarilo vytvoriť.');
+    }
+  }
   const settings = project.materialSettings;
   const catalog = useMemo(() => loadMaterialCatalog(settings?.catalog), [settings?.catalog]);
   const wall = catalog.panels.find(panel => panel.id === settings?.wallProductId);
@@ -48,7 +64,7 @@ export function MaterialReport({ project, onChange }: { project: HallMaterialPro
   const slopePercent = 100 * Math.tan(params.roofPitchDeg * Math.PI / 180);
   const wallSpec = panelSpec(wall);
   const roofSpec = panelSpec(roof, slopePercent);
-  const openings = useMemo(() => resolveProjectOpenings(project), [project]);
+  const openings = useMemo(() => orderOpenings ?? resolveProjectOpenings(project), [orderOpenings, project]);
   const assignments: Record<string, SteelAssignment> = {};
   for (const [id, profileId] of Object.entries(settings?.profileAssignments ?? {})) {
     const profile = catalog.steelProfiles.find(item => item.id === profileId);
@@ -112,6 +128,25 @@ export function MaterialReport({ project, onChange }: { project: HallMaterialPro
     <div className="flex flex-wrap items-center gap-2">
       <span className="mr-auto text-xs text-slate-300">{params.width} × {params.length} × {params.clearHeight} m · {params.roofPitchDeg}° · Katalóg {catalog.version}</span>
       {(['csv', 'xlsx'] as const).map(format => <button type="button" key={format} className={control} onClick={() => downloadReport(exportRows, format, 'materialovy-vykaz')}>{format.toUpperCase()}</button>)}
+      <button type="button" className={control} onClick={async () => {
+        try {
+          const [{ buildCladdingReport }, { createCladdingPdf }] = await Promise.all([
+            import('@/lib/materials/cladding-report'),
+            import('@/lib/materials/cladding-pdf'),
+          ]);
+          const reportParams = { ...params, hasStemWall: params.hasStemWall !== false,
+            roofType: catalog.claddingReportRoofType ?? params.roofType,
+            claddingOrientation: settings?.wallOrientation ?? params.claddingOrientation };
+          const reportModel = calculateMaterialGeometry(reportParams, openings, {
+            templateId: project.templateId, wallPanel: wallSpec, roofPanel: roofSpec, claddingReportEnvelope: true,
+          });
+          createCladdingPdf(buildCladdingReport({ ...project, params: reportParams }, reportModel, openings, catalog)).save('vykaz-oplastenia.pdf');
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : 'PDF výkaz sa nepodarilo vytvoriť.');
+        }
+      }}>Výkaz opláštenia PDF</button>
+      <button type="button" className={control} onClick={() => downloadSteel('primary')}>Primárna konštrukcia PDF</button>
+      <button type="button" className={control} onClick={() => downloadSteel('secondary')}>Sekundárna konštrukcia PDF</button>
     </div>
     <ReportTable columns={['Súhrn hlavnej lode', 'Hodnota']} rows={summary} />
     <AccessorySettings value={settings?.accessories} onChange={onChange ? accessories => update({ accessories }) : undefined} />
@@ -132,6 +167,22 @@ export function MaterialReport({ project, onChange }: { project: HallMaterialPro
       </label>)}
       <label className="grid gap-1">Orientácia stien<select className={control} value={settings?.wallOrientation ?? params.claddingOrientation} onChange={event => update({ wallOrientation: event.target.value === 'horizontal' ? 'horizontal' : 'vertical' })}><option value="vertical">Zvislo</option><option value="horizontal">Vodorovne</option></select></label>
       {member && <div className="grid gap-2 sm:col-span-2 sm:grid-cols-2">
+        <label className="grid gap-1">Skupina prvkov pre PDF
+          <select className={control} value={steelRole} onChange={event => setSteelRole(event.target.value)}>
+            {Object.entries(steelRoleNames).map(([role, name]) => <option value={role} key={role}>{name}</option>)}
+          </select>
+        </label>
+        <label className="grid gap-1">Profil skupiny
+          <select className={control} value={settings?.profileAssignments?.[steelRole] ?? ''} onChange={event => {
+            const profileAssignments = { ...settings?.profileAssignments };
+            if (event.target.value) profileAssignments[steelRole] = event.target.value;
+            else delete profileAssignments[steelRole];
+            update({ profileAssignments });
+          }}>
+            <option value="">Neurčený</option>
+            {catalog.steelProfiles.map(profile => <option value={profile.id} key={profile.id}>{profile.designation}</option>)}
+          </select>
+        </label>
         <label className="grid gap-1">Oceľový prvok<select className={control} value={member.id} onChange={event => setMemberId(event.target.value)}>{model.structure.map(item => <option key={item.id} value={item.id}>{roles[item.role]} · {item.id}</option>)}</select></label>
         <label className="grid gap-1">Profil prvku<select className={control} value={member.profileId ?? ''} onChange={event => {
           const profileAssignments = { ...settings?.profileAssignments };
@@ -148,6 +199,9 @@ export function MaterialReport({ project, onChange }: { project: HallMaterialPro
     </details>)}
     {onChange && <details className="rounded-lg border border-white/10 p-3" onToggle={event => { if (event.currentTarget.open) setCatalogText(JSON.stringify(catalog, null, 2)); }}>
       <summary className="cursor-pointer font-semibold">Upraviť katalóg projektu (JSON)</summary>
+      <p className="mt-2 text-xs text-slate-300">
+        Typ strechy pre PDF nastavíte cez claddingReportRoofType. Pre pultovú strechu použite "shed", pre sedlovú "gable" a pre typ z projektu null.
+      </p>
       <textarea aria-label="Katalóg materiálov JSON" className={`${control} mt-3 h-72 w-full font-mono text-xs`} value={catalogText ?? ''} onChange={event => setCatalogText(event.target.value)} spellCheck={false} />
       <button type="button" className={control} onClick={() => {
         try {

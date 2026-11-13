@@ -1,8 +1,11 @@
 {
   "schemaVersion": 1,
+  "stemWallUnitPricePerM3Eur": null,
+  "claddingReportRoofType": null,
   "version": "1.0.0",
   "validFrom": "2026-11-12",
   "checkedAt": "2026-11-12",
+  "claddingEstimate": { "coverWidthM": 1, "minLengthM": 0.01, "maxLengthM": 12 },
   "sources": [
     {
       "id": "arcelormittal-sections-2023",

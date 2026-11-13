@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { ProjectDrawingViewer } from "./ProjectDrawingViewer";
 import type { HallMaterialProject } from "@/lib/materials/project";
 import { calculateWallDrawings, type WallId } from "@/lib/garage/wall-drawings";
 import { createWallDrawingPdf, renderWallDrawingSvg } from "@/lib/garage/wall-drawing-sheets";
@@ -62,6 +63,7 @@ export function TechnicalDrawingsModal({
   const wall = wallDrawings?.walls.find(item => item.id === wallView);
 
   if (!isOpen) return null;
+  if (materialProject) return <ProjectDrawingViewer project={materialProject} onClose={onClose} />;
 
   const currentDef = DRAWING_DEFINITIONS.find((d) => d.id === activeView) || DRAWING_DEFINITIONS[0];
   const svgContent = wall ? renderWallDrawingSvg(wall) : generateDrawingSvg(activeView, params, { openings, templateId, theme });
@@ -79,7 +81,7 @@ export function TechnicalDrawingsModal({
     try {
       setIsExporting(true);
       toast.info("Generujem kompletnú technickú výkresovú dokumentáciu (8 listov PDF)...");
-      downloadMultiPageDrawingsPdf(params, `VBAU_Technicke_Vykresy_${params.width}x${params.length}.pdf`);
+      downloadMultiPageDrawingsPdf(params, `VBAU_Technicke_Vykresy_${params.width}x${params.length}.pdf`, { openings, templateId });
       toast.success("Výkresy boli úspešne stiahnuté vo formáte PDF!");
     } catch (e: any) {
       toast.error(`Chyba pri generovaní PDF: ${e.message}`);

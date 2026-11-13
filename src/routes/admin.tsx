@@ -1,4 +1,8 @@
 import { AdminMaterialReport } from '@/components/garage/AdminMaterialReport';
+import { OrderMaterialReports } from '@/components/garage/OrderMaterialReports';
+import { resolveProjectOpenings } from "@/lib/materials/project";
+import { getOrderReportOpenings } from "@/lib/materials/order-report-openings";
+import type { HallMaterialProject } from '@/lib/materials/project';
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { DEFAULT_PARAMS, type GarageParams } from "@/lib/garage/types";
@@ -41,6 +45,7 @@ export const Route = createFileRoute("/admin")({
 });
 
 interface OrderItem {
+  materialProject?: Pick<HallMaterialProject, 'templateId' | 'openings' | 'replacedWindowIds' | 'materialSettings'>;
   id: string;
   order_id: string;
   created_at?: string;
@@ -168,6 +173,10 @@ function AdminDashboard() {
         message: o.message || "",
         params: o.params || DEFAULT_PARAMS,
         total_price: o.total_price || 0,
+        materialProject: o.params?._materialProject ?? (o.params?.templateId ? {
+          templateId: o.params.templateId, openings: o.params.openings,
+          replacedWindowIds: o.params.replacedWindowIds, materialSettings: o.params.materialSettings,
+        } : undefined),
         evaluation_url: o.evaluation_url || "",
         status: o.status || o.params?._status || "Nový",
       }));
@@ -185,6 +194,10 @@ function AdminDashboard() {
           message: o.message || "",
           params: o.params || DEFAULT_PARAMS,
           total_price: o.totalWithVat || 0,
+          materialProject: o.materialProject ?? o.params?._materialProject ?? (o.params?.templateId ? {
+            templateId: o.params.templateId, openings: o.params.openings,
+            replacedWindowIds: o.params.replacedWindowIds, materialSettings: o.params.materialSettings,
+          } : undefined),
           evaluation_url: o.evaluationUrl || "",
           status: o.status || o.params?._status || "Nový",
         }));
@@ -205,6 +218,8 @@ function AdminDashboard() {
             phone: p.phone || "",
             message: p.notes || "",
             params: p.params || DEFAULT_PARAMS,
+            materialProject: { templateId: p.templateId ?? 'prazdna_hala', openings: p.openings,
+              replacedWindowIds: p.replacedWindowIds, materialSettings: p.materialSettings },
             total_price: p.estimatedPriceEur || 0,
             status: p.status === "new" ? "Nový" : p.status || "Nový",
           });
@@ -453,18 +468,30 @@ function AdminDashboard() {
     window.open(`/?${currentParams.toString()}`, "_blank");
   };
 
+  const drawingSource = orders.find(order => order.id === selectedOrderId)?.materialProject;
+  const drawingProject: HallMaterialProject = {
+    schemaVersion: 1, id: selectedOrderId ?? undefined, name: clientName,
+    templateId: drawingSource?.templateId ?? 'prazdna_hala',
+    params: { ...DEFAULT_PARAMS, ...params }, ...drawingSource,
+  };
+  const drawingOpenings = drawingSource ? resolveProjectOpenings(drawingProject) : getOrderReportOpenings(drawingProject.params);
+  const drawingOptions = { templateId: drawingProject.templateId, openings: drawingOpenings };
+
   const handleDownloadDxf = () => {
     try {
-      downloadGarageDxf(params, `VBAU-Vykres-${params.width}x${params.length}m`);
+      downloadGarageDxf(params, `VBAU-Vykres-${params.width}x${params.length}m`, drawingOpenings);
       toast.success("AutoCAD DXF výkres bol vygenerovaný a stiahnutý.");
     } catch (e) {
       toast.error("Chyba pri generovaní DXF.");
     }
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     try {
-      downloadMultiPageDrawingsPdf(params, `VBAU-Vykresova-Dokumentacia-${params.width}x${params.length}m.pdf`);
+      toast.info("Generujem výkresy z modelu haly…");
+      const { generateProjectDrawings, saveProjectDrawingPdf } = await import("@/lib/garage/project-scene-drawings");
+      const project = { ...drawingProject, openings: drawingOpenings };
+      saveProjectDrawingPdf(project, await generateProjectDrawings(project));
       toast.success("PDF výkresová dokumentácia (8 listov) bola stiahnutá.");
     } catch (e) {
       toast.error("Chyba pri generovaní PDF výkresov.");
@@ -830,6 +857,9 @@ function AdminDashboard() {
           {/* MODUL A: PROJEKTY A CRM */}
           {activeAdminModule === "crm" && (
             <div className="space-y-4">
+              <OrderMaterialReports key={selectedOrderId ?? 'current'} id={selectedOrderId ?? undefined}
+                name={clientName || 'Oceľová hala'} params={params}
+                savedProject={orders.find(order => order.id === selectedOrderId)?.materialProject} />
               <div className="rounded-lg border border-white/10 bg-[#0e1218] p-4 sm:p-5 space-y-4">
                 <div className="flex items-center justify-between border-b border-white/10 pb-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
@@ -909,7 +939,7 @@ function AdminDashboard() {
                     2D Technická výkresová dokumentácia
                   </h3>
                   <p className="text-xs text-white/50 mt-0.5">
-                    Kompletná inžinierska projektová dokumentácia generovaná priamo z 3D dát projektu.
+                    Ortogonálne pohľady a rezy z modelu vybranej haly vrátane uložených otvorov.
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -927,7 +957,7 @@ function AdminDashboard() {
                     title="Stiahnuť viacstránkový PDF výkres"
                   >
                     <Download className="h-3.5 w-3.5" />
-                    Stiahnuť PDF (8 listov)
+                    Stiahnuť PDF výkresy
                   </button>
                 </div>
               </div>
@@ -944,18 +974,18 @@ function AdminDashboard() {
               {/* Sheets Grid */}
               <div className="space-y-2 pt-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 block">
-                  Obsah projektovej dokumentácie (8 výkresov v mierke):
+                  Obsah projektovej dokumentácie (mierka je uvedená na každom liste):
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   {[
-                    { num: "01", name: "Pôdorys základovej dosky", scale: "1:100", desc: "Kotevné body pätiek, obvodový prah, raster osí" },
-                    { num: "02", name: "Pôdorys oceľovej konštrukcie", scale: "1:100", desc: "Nosné rámy, stĺpy IPE, nábehy a polia" },
-                    { num: "03", name: "Pôdorys strešnej roviny", scale: "1:100", desc: "Z-väznice, strešné stužidlá X-bracing, hrebeň" },
-                    { num: "04", name: "Priečny rez halou A-A", scale: "1:50", desc: "Nábehy rámov, väznice, základová doska, výškové kóty ±0.000" },
-                    { num: "05", name: "Pohľad predný štítový", scale: "1:100", desc: "Štítové stĺpiky, vráta, atika a sklony strechy" },
-                    { num: "06", name: "Pohľad zadný štítový", scale: "1:100", desc: "Zadná fasáda, dvere a lemovanie štítu" },
-                    { num: "07", name: "Pohľad bočný pozdĺžny ľavý", scale: "1:100", desc: "Opláštenie, odkvapový žľab, stĺpy v module" },
-                    { num: "08", name: "Pohľad bočný pozdĺžny pravý", scale: "1:100", desc: "Pozdĺžna fasáda s presvetlením a lemovaniami" },
+                    { num: "01", name: "Pôdorys konštrukcie", scale: "A4", desc: "Ortogonálny pohľad na konštrukciu modelu" },
+                    { num: "02", name: "Pôdorys strechy", scale: "A4", desc: "Strešné roviny, svetlíky a prístavby" },
+                    { num: "03", name: "Predný pohľad", scale: "A4", desc: "Fasáda a uložené otvory" },
+                    { num: "04", name: "Zadný pohľad", scale: "A4", desc: "Zadná fasáda a uložené otvory" },
+                    { num: "05", name: "Ľavý pohľad", scale: "A4", desc: "Ľavá fasáda vrátane prístavieb" },
+                    { num: "06", name: "Pravý pohľad", scale: "A4", desc: "Pravá fasáda vrátane prístavieb" },
+                    { num: "07", name: "Priečny rez A–A", scale: "A4", desc: "Rez stredom hlavnej lode" },
+                    { num: "08", name: "Pozdĺžny rez B–B", scale: "A4", desc: "Rez stredom hlavnej lode" },
                   ].map((s) => (
                     <div key={s.num} className="p-2.5 rounded-lg bg-black/40 border border-white/5 flex items-start gap-2.5">
                       <span className="font-mono text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded text-[11px]">
@@ -1127,8 +1157,9 @@ function AdminDashboard() {
         onClose={() => setIsTechnicalDrawingsOpen(false)}
         params={params}
         hallName={clientName ? `Projekt: ${clientName}` : `${params.hallType || "Oceľová hala"} (${params.width}×${params.length}m)`}
-        templateId={params.hallType || "blank"}
-        openings={[]}
+        templateId={drawingProject.templateId}
+        materialProject={{ ...drawingProject, openings: drawingOpenings }}
+        openings={drawingOpenings}
       />
     </div>
   );

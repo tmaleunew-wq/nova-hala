@@ -8,12 +8,19 @@ const id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,99}$/i);
 const source = z.object({ id, title: z.string().min(1), url: z.string().url().regex(/^https?:\/\//i, 'url must use HTTP(S)'), version: z.string().nullable(), validFrom: date, checkedAt: date, status: provenance, notes: z.array(z.string()) });
 const product = z.object({ id, sourceId: id.nullable(), status: provenance, limitations: z.array(z.string()) });
 const steel = product.extend({ family: z.string().min(1), designation: z.string().min(1), kgPerM: positive,
+  steelGrade: z.string().trim().min(1).optional(),
+  surfaceM2PerM: positive.optional(),
+  unitPricePerMEur: z.number().finite().nonnegative().nullable().optional(),
   heightMm: positive.optional(), widthMm: positive.optional(), webThicknessMm: positive.optional(), flangeThicknessMm: positive.optional(), wallThicknessMm: positive.optional() });
 const panel = product.extend({ name: z.string().min(1), manufacturer: z.string().min(1), core: z.enum(['PIR', 'PUR', 'MW']), usage: z.enum(['wall', 'roof']),
+  unitPricePerM2Eur: z.number().finite().nonnegative().nullable().optional(),
   thicknessMm: positive, coverWidthMm: positive, overallWidthMm: positive, minLengthMm: positive, maxLengthMm: positive, kgPerM2: positive,
   minRoofSlopePercent: z.number().finite().nonnegative().nullable(), joinedRoofSlopePercent: z.number().finite().nonnegative().nullable() });
 const schema = z.object({ schemaVersion: z.literal(1), version: z.string().min(1), validFrom: date, checkedAt: date,
-  sources: z.array(source), steelProfiles: z.array(steel), panels: z.array(panel) });
+  sources: z.array(source),
+  stemWallUnitPricePerM3Eur: z.number().finite().nonnegative().nullable().optional(),
+  claddingEstimate: z.object({ coverWidthM: z.number().positive().default(defaults.claddingEstimate.coverWidthM), minLengthM: z.number().positive().default(defaults.claddingEstimate.minLengthM), maxLengthM: z.number().positive().default(defaults.claddingEstimate.maxLengthM) }).optional(),
+  claddingReportRoofType: z.enum(['gable', 'shed']).nullable().optional(), steelProfiles: z.array(steel), panels: z.array(panel) });
 export type MaterialCatalog = z.infer<typeof schema>;
 export type PanelProduct = z.infer<typeof panel>;
 export type SteelProfile = z.infer<typeof steel>;

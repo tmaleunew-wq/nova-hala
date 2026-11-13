@@ -53,8 +53,8 @@ export function AdminMaterialReport() {
     }
   }
 
-  return <details id="material-report" className="mb-5 rounded-lg border border-white/10 bg-[#0e1218]" open>
-    <summary className="cursor-pointer p-4 text-sm font-bold text-white">Materiálový výkaz</summary>
+  return <details id="material-report" className="mb-5 rounded-lg border-2 border-emerald-400/60 bg-emerald-500/10">
+    <summary className="cursor-pointer rounded-lg p-4 text-base font-bold text-emerald-300 transition-colors hover:bg-emerald-500/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400">Materiálový výkaz</summary>
     <div className="space-y-4 px-4 pb-4">
       <label className="flex flex-wrap items-center gap-2 text-sm">Projekt
         <select className="max-w-full rounded border border-white/15 bg-slate-950 px-2 py-1.5 text-white" value={selectedId} onChange={event => setSelectedId(event.target.value)}>

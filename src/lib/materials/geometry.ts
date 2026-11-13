@@ -12,6 +12,7 @@ export interface MaterialGeometryOptions {
   templateId?: string;
   /** Defaults to renderer roof dimensions; false explicitly requests the nominal envelope. */
   includeRenderedRoofAllowances?: boolean;
+  claddingReportEnvelope?: boolean;
   wallPanel?: PanelLayoutSpec;
   roofPanel?: PanelLayoutSpec;
   /** An element ID overrides its role's default assignment. No implied profile from mesh size. */
@@ -141,6 +142,12 @@ export function calculateMaterialGeometry(p: GarageParams, openings: readonly Op
   if(!validSpec(options.wallPanel)) limitations.push('Výrobný rozpis stien chýba: vyberte panel s overenou krycou šírkou a minimálnou/maximálnou výrobnou dĺžkou.');
   if(!validSpec(options.roofPanel)) limitations.push('Výrobný rozpis strechy chýba: vyberte panel s overenou krycou šírkou a minimálnou/maximálnou výrobnou dĺžkou.');
   const surfaces=result.surfaces;
+  const shed = options.claddingReportEnvelope && p.roofType === 'shed' && !p.twinRoof && !p.hasAttic;
+  const high = H + W * Math.tan(a);
+  if (shed && !['open', 'plinth'].includes(p.wallMode ?? '')) {
+    const index = limitations.findIndex(note => note.startsWith('Neúplná geometria: adaptér'));
+    if (index >= 0) limitations.splice(index, 1);
+  }
   const addSurface=(id:string,kind:'wall'|'roof',polygon:Point2[])=>surfaces.push({id,kind,polygon,openings:[],grossAreaM2:area(polygon),openingAreaM2:0,netAreaM2:0,strips:[]});
   // Column insets and the renderer's .08 Z-fighting offsets are visual, not material deductions.
   // Bay subdivisions remain physical panel end joints while preserving the full wall area.
@@ -149,6 +156,16 @@ export function calculateMaterialGeometry(p: GarageParams, openings: readonly Op
   const roofExtra=options.includeRenderedRoofAllowances!==false?.25:0, endExtra=options.includeRenderedRoofAllowances!==false?.4:0;
   for(const side of ['left','right']) addSurface(`roof-${side}`,'roof',rectPoly(0,0,slope+roofExtra,L+endExtra));
   const bays=buildBays(p), byBay=new Map(bays.map(b=>[b.id,b]));
+  if (shed) {
+    for (const surface of surfaces) {
+      if (surface.id.startsWith('right:')) surface.polygon = surface.polygon.map(([x, y]) => [x, y === H ? high : y]);
+      if (surface.id === 'front') surface.polygon = [[0,stem],[W,stem],[W,H],[0,high]];
+      if (surface.id === 'back') surface.polygon = [[0,stem],[W,stem],[W,high],[0,H]];
+      surface.grossAreaM2 = area(surface.polygon);
+    }
+    surfaces.splice(surfaces.findIndex(surface => surface.id === 'roof-left'), 2);
+    addSurface('roof-left', 'roof', rectPoly(0, 0, 2 * slope + 2 * roofExtra, L + endExtra));
+  }
   for(const opening of [...openings].sort((a,b)=>a.id.localeCompare(b.id)||a.bayId.localeCompare(b.bayId)||a.x-b.x||a.y-b.y)) {
     const bay=byBay.get(opening.bayId);
     if(!bay||![opening.x,opening.y,opening.width,opening.height].every(Number.isFinite)||opening.width<=0||opening.height<=0){limitations.push(`Otvor ${opening.id}: neplatné rozmery alebo neznáme pole.`);continue;}
@@ -159,6 +176,12 @@ export function calculateMaterialGeometry(p: GarageParams, openings: readonly Op
     if(bay.roof) {
       // buildBays Euler(-π/2, side*a, 0): local +X follows the slope, local +Y is world -Z.
       r.x+=roofExtra/2; r.y+=halfL-bay.position3D[2]-bay.height/2+endExtra/2;
+      if (shed) {
+        if (bay.surface === 'roof-left') r.x += roofExtra / 2;
+        else r.x += slope + roofExtra / 2;
+        surfaces.find(s => s.id === 'roof-left')!.openings.push(r);
+        continue;
+      }
       surfaces.find(s=>s.id===bay.surface)!.openings.push(r);
     } else {
       if(bay.surface==='left') r.x+=bay.position3D[2]+halfL-bay.width/2;

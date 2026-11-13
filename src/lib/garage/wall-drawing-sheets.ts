@@ -98,8 +98,8 @@ export function renderWallDrawingSvg(wall: WallDrawing): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${width} ${height * pages.length}" font-family="Arial, sans-serif">${content}</svg>`;
 }
 
-export function createWallDrawingPdf(walls: WallDrawing[]) {
-  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+export function createWallDrawingPdf(walls: WallDrawing[], target?: jsPDF) {
+  const pdf = target ?? new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   pdf.addFileToVFS('Roboto-Regular.ttf', ROBOTO_REGULAR_B64);
   pdf.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
   pdf.setFont('Roboto', 'normal');
