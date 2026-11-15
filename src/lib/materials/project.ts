@@ -12,6 +12,11 @@ export interface ProjectMaterialSettings {
   roofProductId?: string;
   wallOrientation?: 'vertical' | 'horizontal';
   profileAssignments?: Record<string, string>;
+  viewSettings?: {
+    show3DDims?: boolean;
+    outlines?: boolean;
+    technicalView?: boolean;
+  };
 }
 
 /** Only confirmed model data belongs here; editor drafts and view flags are not inputs. */

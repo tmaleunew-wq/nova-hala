@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Copy, Trash2 } from 'lucide-react';
 import type { GarageParams } from '@/lib/garage/types';
 import type { Opening } from '@/lib/garage/openingSystem';
 import { createBuildingObject, getBuildingObjectGeometry, validateBuildingObjects, type BuildingObject, type BuildingObjectPatch } from '@/lib/garage/buildingObjects';
@@ -26,15 +27,19 @@ function NumberField({ label, value, onChange, min, max, step = 0.1 }: {
   </label>;
 }
 
-export function BuildingObjectPanel({ objects, selectedId, params, openings, catalog, onSelect, onUpdate, onAdd }: {
+export function BuildingObjectPanel({ objects, selectedId, params, openings, catalog, onSelect, onUpdate, onAdd, onDelete, onDuplicate }: {
   objects: BuildingObject[]; selectedId: string; params: GarageParams; openings: Opening[]; catalog: MaterialCatalog;
   onSelect: (id: string) => void; onUpdate: (id: string, patch: BuildingObjectPatch) => void;
   onAdd: (object: BuildingObject) => void;
+  onDelete?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
 }) {
   const object = objects.find(item => item.id === selectedId);
   const [positions, setPositions] = useState('');
   const [positionError, setPositionError] = useState('');
   const [newType, setNewType] = useState<'canopy' | 'office_annex' | 'storage_annex'>('canopy');
+  const [deletingObject, setDeletingObject] = useState<BuildingObject | null>(null);
+
   useEffect(() => {
     setPositions(object?.parameters.columnPositions?.join('; ') ?? '');
     setPositionError('');
@@ -60,21 +65,166 @@ export function BuildingObjectPanel({ objects, selectedId, params, openings, cat
   };
   return <section data-testid="building-object-panel" className="space-y-3 border-b border-white/15 pb-4">
     <h2 className="font-semibold text-sm text-sky-300">Objekty projektu</h2>
-    <div className="space-y-1" role="list" aria-label="Objekty projektu">
-      {objects.map(item => <button key={item.id} type="button" data-object-id={item.id}
-        aria-pressed={selectedId === item.id} onClick={() => onSelect(selectedId === item.id ? '' : item.id)}
-        className={`block w-full text-left rounded px-3 py-2 ${selectedId === item.id ? 'bg-sky-500/25 border border-sky-400 text-sky-100' : 'bg-white/5 border border-transparent hover:bg-white/10'}`}>
-        {item.parentId ? '↳ ' : ''}{item.name}{warnings.some(warning => warning.objectId === item.id) ? ' ⚠' : ''}
-      </button>)}
+    <div className="space-y-1.5" role="list" aria-label="Objekty projektu">
+      {objects.map(item => {
+        const isMain = item.type === 'main_hall';
+        const isSelected = selectedId === item.id;
+        const hasWarning = warnings.some(w => w.objectId === item.id);
+        return (
+          <div
+            key={item.id}
+            data-object-id={item.id}
+            className={`flex items-center justify-between gap-1 rounded-lg px-2.5 py-1.5 transition ${
+              isSelected
+                ? 'bg-sky-500/20 border border-sky-400 text-sky-100 shadow-[0_0_10px_rgba(14,165,233,0.15)]'
+                : 'bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200'
+            }`}
+          >
+            <button
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => onSelect(isSelected ? '' : item.id)}
+              className="flex-1 text-left truncate flex items-center gap-1.5 cursor-pointer text-xs font-medium py-0.5"
+            >
+              {item.parentId ? <span className="text-slate-400">↳</span> : null}
+              <span className="truncate">{item.name}</span>
+              {hasWarning && <span title="Objekt má varovania geometrie alebo kolízie" className="text-amber-400">⚠</span>}
+            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              {isMain ? (
+                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-400/20">
+                  Hlavná
+                </span>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    title={`Duplikovať objekt ${item.name}`}
+                    aria-label={`Duplikovať ${item.name}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onDuplicate) onDuplicate(item.id);
+                    }}
+                    className="p-1 rounded text-slate-400 hover:text-sky-300 hover:bg-sky-500/20 transition cursor-pointer"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    title={`Odstrániť objekt ${item.name}`}
+                    aria-label={`Odstrániť ${item.name}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeletingObject(item);
+                    }}
+                    className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 transition cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
+
+    {deletingObject && (
+      <div
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-object-title"
+      >
+        <div className="w-full max-w-sm rounded-xl border border-white/20 bg-slate-900 p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center gap-2 text-rose-400">
+            <Trash2 className="w-5 h-5 shrink-0" />
+            <h3 id="delete-object-title" className="font-bold text-sm text-white">
+              Odstrániť objekt
+            </h3>
+          </div>
+          <p className="text-xs text-slate-200">
+            Naozaj chcete odstrániť objekt <strong>{deletingObject.name}</strong>?
+          </p>
+          {objects.some(o => o.parentId === deletingObject.id) && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-[11px] text-amber-200">
+              <span className="font-semibold block mb-0.5">Upozornenie:</span>
+              Tento objekt má závislé stavebné časti ({objects.filter(o => o.parentId === deletingObject.id).map(o => o.name).join(', ')}), ktoré budú taktiež odstránené.
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setDeletingObject(null)}
+              className="rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-white/10 cursor-pointer"
+            >
+              Zrušiť
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const id = deletingObject.id;
+                setDeletingObject(null);
+                if (onDelete) onDelete(id);
+              }}
+              className="rounded-lg bg-rose-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-500 cursor-pointer shadow-lg shadow-rose-600/30"
+            >
+              Odstrániť
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
     <div className="flex gap-2">
       <select aria-label="Typ nového objektu" className={control} value={newType} onChange={event => setNewType(event.target.value as typeof newType)}>
         <option value="canopy">Prístrešok</option><option value="office_annex">Kancelárska prístavba</option><option value="storage_annex">Skladová prístavba</option>
       </select>
-      <button type="button" className="rounded bg-sky-600 px-3 hover:bg-sky-500" onClick={() => {
-        const main = objects.find(item => item.type === 'main_hall');
-        if (main) onAdd(createBuildingObject(newType, main.id));
-      }}>Pridať</button>
+      <button
+        type="button"
+        className="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-500 cursor-pointer transition shrink-0"
+        onClick={() => {
+          const main = objects.find(item => item.type === 'main_hall');
+          if (main) {
+            const sameTypeCount = objects.filter(item => item.type === newType).length;
+            const baseNames: Record<typeof newType, string> = {
+              canopy: 'Prístrešok',
+              office_annex: 'Kancelárska prístavba',
+              storage_annex: 'Skladová prístavba',
+            };
+            const defaultSide: BuildingObject['attachment']['side'] = newType === 'canopy' ? 'left' : 'right';
+            const name = sameTypeCount > 0 ? `${baseNames[newType]} ${sameTypeCount + 1}` : `${baseNames[newType]} 1`;
+
+            const testSides: BuildingObject['attachment']['side'][] = [defaultSide, defaultSide === 'left' ? 'right' : 'left', 'front', 'back'];
+            let bestSide = defaultSide;
+            let bestOffset = 0;
+
+            for (const s of testSides) {
+              const maxL = ['left', 'right'].includes(s) ? params.length : params.width;
+              const existingOnSide = objects.filter(o => o.type !== 'main_hall' && o.attachment.side === s);
+              if (existingOnSide.length === 0) {
+                bestSide = s;
+                bestOffset = 0;
+                break;
+              }
+              const maxEnd = Math.max(...existingOnSide.map(o => o.attachment.offset + o.parameters.length));
+              if (maxEnd + 5 <= maxL) {
+                bestSide = s;
+                bestOffset = maxEnd + 0.5;
+                break;
+              }
+            }
+
+            const newObj = createBuildingObject(newType, main.id, {
+              name,
+              attachment: { side: bestSide, offset: bestOffset },
+            });
+            onAdd(newObj);
+          }
+        }}
+      >
+        Pridať
+      </button>
     </div>
     {attached && geometry && <div className="space-y-3" data-testid="attachment-editor">
       <h3 className="font-semibold text-sm">{attached.name}</h3>

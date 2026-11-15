@@ -87,3 +87,46 @@ const lowSlope=api.updateBuildingObject(assigned,assigned[1].id,{parameters:{roo
 const strictSlope={...catalog,panels:catalog.panels.map(x=>x.id===panel.id?{...x,minRoofSlopePercent:5}:x)};
 assert.equal(bom.buildBuildingObjectBom({...project,buildingObjects:lowSlope},strictSlope)[0].roofPanelCount,null);
 console.log('PASS shared rendered roof allowances/purlins and unmanufacturable panel quantities withheld');
+
+// --- Test deletion and duplication ---
+const withBoth = [...assigned, api.createBuildingObject('canopy', assigned[0].id, { id: 'test-canopy-2', attachment: { side: 'front', offset: 0 } })];
+assert.equal(withBoth.length, 3);
+
+// Deleting main hall should be rejected (no change)
+assert.equal(api.deleteBuildingObject(withBoth, 'main-hall').length, 3);
+
+// Deleting canopy removes only that object
+const afterDeleteCanopy = api.deleteBuildingObject(withBoth, 'test-canopy-2');
+assert.equal(afterDeleteCanopy.length, 2);
+assert.equal(afterDeleteCanopy.find(o => o.id === 'test-canopy-2'), undefined);
+assert.equal(afterDeleteCanopy.find(o => o.id === assigned[1].id)?.id, assigned[1].id);
+
+// Deleting parent object cascade-deletes its dependent children
+const parentChildList = [assigned[0], host, child];
+assert.equal(parentChildList.length, 3);
+const afterDeleteHost = api.deleteBuildingObject(parentChildList, 'host');
+assert.equal(afterDeleteHost.length, 1);
+assert.equal(afterDeleteHost[0].id, 'main-hall');
+
+// Duplicating an attachment produces unique ID and preserved parameters
+const dupRes = api.duplicateBuildingObject(assigned, assigned[1].id, p);
+assert.equal(dupRes.objects.length, 3);
+assert.ok(dupRes.newObject);
+assert.notEqual(dupRes.newObject.id, assigned[1].id);
+assert.equal(dupRes.newObject.parameters.width, assigned[1].parameters.width);
+assert.equal(dupRes.newObject.parameters.innerHeight, assigned[1].parameters.innerHeight);
+
+// View settings persistence: clean 3D default & saved explicit visibility
+const projectWithViewSettings = persistence.createMaterialProject({
+  ...project,
+  materialSettings: {
+    ...project.materialSettings,
+    viewSettings: { show3DDims: true, outlines: true }
+  }
+});
+assert.equal(projectWithViewSettings.materialSettings.viewSettings.show3DDims, true);
+assert.equal(projectWithViewSettings.materialSettings.viewSettings.outlines, true);
+assert.ok(persistence.writeMaterialProject(projectWithViewSettings, storage));
+const loadedWithView = persistence.readMaterialProject(storage);
+assert.equal(loadedWithView.materialSettings.viewSettings.show3DDims, true);
+console.log('PASS building object deletion, duplication, cascade removal, and viewSettings persistence');

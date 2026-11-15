@@ -68,6 +68,91 @@ export function updateBuildingObject(objects: BuildingObject[], id: string, patc
   });
 }
 
+export function deleteBuildingObject(objects: BuildingObject[], id: string): BuildingObject[] {
+  const target = objects.find(o => o.id === id);
+  if (!target || target.type === 'main_hall') return objects;
+  const idsToDelete = new Set<string>([id]);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const o of objects) {
+      if (o.parentId && idsToDelete.has(o.parentId) && !idsToDelete.has(o.id)) {
+        idsToDelete.add(o.id);
+        changed = true;
+      }
+    }
+  }
+  return objects.filter(o => !idsToDelete.has(o.id));
+}
+
+export function duplicateBuildingObject(
+  objects: BuildingObject[],
+  id: string,
+  params: GarageParams
+): { objects: BuildingObject[]; newObject?: BuildingObject; warning?: string } {
+  const source = objects.find(o => o.id === id);
+  if (!source || source.type === 'main_hall') return { objects };
+
+  const sameTypeCount = objects.filter(o => o.type === source.type).length;
+  const baseName = defaults.names[source.type] || source.name.replace(/\s*\(\d+\)|\s*\d+$/, '');
+  const newName = `${source.name} (kópia ${sameTypeCount + 1})`;
+  const newId = globalThis.crypto?.randomUUID?.() ?? `object-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  const sides: BuildingObject['attachment']['side'][] = [
+    source.attachment.side,
+    source.attachment.side === 'left' ? 'right' : source.attachment.side === 'right' ? 'left' : 'right',
+    'front',
+    'back',
+  ];
+
+  let bestSide = source.attachment.side;
+  let bestOffset = source.attachment.offset + source.parameters.length + 0.5;
+  let foundValid = false;
+
+  for (const side of sides) {
+    const sideMaxL = ['left', 'right'].includes(side) ? params.length : params.width;
+    const testOffsets = [
+      side === source.attachment.side ? source.attachment.offset + source.parameters.length + 0.5 : 0,
+      0,
+      Math.max(0, sideMaxL - source.parameters.length),
+    ].filter(off => off >= 0 && off + source.parameters.length <= sideMaxL + 0.05);
+
+    for (const off of testOffsets) {
+      const testObj = createBuildingObject(source.type, source.parentId, {
+        ...structuredClone(source),
+        id: newId,
+        name: newName,
+        attachment: { ...source.attachment, side, offset: off },
+      });
+      const testWarnings = validateBuildingObjects([...objects, testObj], params);
+      const hasFatalOverlap = testWarnings.some(w => w.objectId === newId && (w.code === 'overlap' || w.code === 'bounds'));
+      if (!hasFatalOverlap) {
+        bestSide = side;
+        bestOffset = off;
+        foundValid = true;
+        break;
+      }
+    }
+    if (foundValid) break;
+  }
+
+  const newObj = createBuildingObject(source.type, source.parentId, {
+    ...structuredClone(source),
+    id: newId,
+    name: newName,
+    attachment: { ...source.attachment, side: bestSide, offset: bestOffset },
+  });
+
+  const warnings = validateBuildingObjects([...objects, newObj], params);
+  const collisionWarning = warnings.find(w => w.objectId === newId && w.code === 'overlap')?.message;
+
+  return {
+    objects: [...objects, newObj],
+    newObject: newObj,
+    warning: collisionWarning,
+  };
+}
+
 export interface BuildingObjectGeometry {
   width:number; length:number; innerHeight:number; outerHeight:number; slopeLength:number;
   roofSlopeLength:number; roofLength:number; purlinPositions:number[];

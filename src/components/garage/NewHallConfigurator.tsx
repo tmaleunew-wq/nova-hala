@@ -37,7 +37,7 @@ import { OpeningPanel } from './openings/OpeningPanel';
 import { BayOpeningMeshes } from './openings/BayOpeningMeshes';
 
 import { BuildingObjectPanel } from './BuildingObjectPanel';
-import { resolveBuildingObjects, updateBuildingObject, type BuildingObject } from '@/lib/garage/buildingObjects';
+import { resolveBuildingObjects, updateBuildingObject, deleteBuildingObject, duplicateBuildingObject, type BuildingObject } from '@/lib/garage/buildingObjects';
 import { loadMaterialCatalog } from '@/lib/materials/catalog';
 import { RoofOverhangControls } from './RoofOverhangControls';
 
@@ -290,22 +290,9 @@ export default function NewHallConfigurator() {
   const [showDrawingsModal, setShowDrawingsModal] = useState<boolean>(false);
   const [showCrmModal, setShowCrmModal] = useState<boolean>(false);
   const [showLayerMenu, setShowLayerMenu] = useState<boolean>(false);
-  const [show3DDims, setShow3DDims] = useState<boolean>(true);
   const [sectionCutPct, setSectionCutPct] = useState<number>(100);
   const [activeStep, setActiveStep] = useState<HiStructStep>("Geometry");
   const [viewMode, setViewMode] = useState<"both" | "xray" | "structure">("both");
-
-  const [layerToggles, setLayerToggles] = useState<HiStructLayerToggles>({
-    panels: true,
-    openings: true,
-    frames: true,
-    purlins: true,
-    girts: true,
-    flashings: true,
-    structuralComponents: true,
-    basePlate: true,
-    outlines: true,
-  });
 
   const [restoredMaterialProject] = useState(() => readMaterialProject());
   const allTemplates = templatesData as HallTemplateItem[];
@@ -316,6 +303,34 @@ export default function NewHallConfigurator() {
   const [projectMetadata, setProjectMetadata] = useState<Pick<HallMaterialProject, "id" | "name" | "materialSettings">>(() => ({
     id: initialMaterialProject?.id, name: initialMaterialProject?.name, materialSettings: initialMaterialProject?.materialSettings,
   }));
+
+  const savedViewSettings = initialMaterialProject?.materialSettings?.viewSettings;
+  const [show3DDims, setShow3DDims] = useState<boolean>(() => savedViewSettings?.show3DDims ?? false);
+
+  const [layerToggles, setLayerToggles] = useState<HiStructLayerToggles>(() => ({
+    panels: true,
+    openings: true,
+    frames: true,
+    purlins: true,
+    girts: true,
+    flashings: true,
+    structuralComponents: true,
+    basePlate: true,
+    outlines: savedViewSettings?.outlines ?? false,
+  }));
+
+  const updateViewSettings = (patch: { show3DDims?: boolean; outlines?: boolean }) => {
+    setProjectMetadata((prev) => ({
+      ...prev,
+      materialSettings: {
+        ...prev.materialSettings,
+        viewSettings: {
+          ...prev.materialSettings?.viewSettings,
+          ...patch,
+        },
+      },
+    }));
+  };
 
   const [params, setParams] = useState<GarageParams>(() => ({
     ...DEFAULT_PARAMS,
@@ -770,12 +785,16 @@ export default function NewHallConfigurator() {
                     <input
                       type="checkbox"
                       checked={layerToggles[item.key]}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const checked = e.target.checked;
                         setLayerToggles((prev) => ({
                           ...prev,
-                          [item.key]: e.target.checked,
-                        }))
-                      }
+                          [item.key]: checked,
+                        }));
+                        if (item.key === "outlines") {
+                          updateViewSettings({ outlines: checked });
+                        }
+                      }}
                       className="accent-emerald-500 h-3.5 w-3.5 cursor-pointer"
                     />
                   </label>
@@ -784,8 +803,36 @@ export default function NewHallConfigurator() {
             )}
           </div>
 
+          {/* Master Toggle: Technické zobrazenie */}
           <button
-            onClick={() => setShow3DDims((v) => !v)}
+            type="button"
+            onClick={() => {
+              const isTechActive = show3DDims || layerToggles.outlines;
+              const nextState = !isTechActive;
+              setShow3DDims(nextState);
+              setLayerToggles((prev) => ({ ...prev, outlines: nextState }));
+              updateViewSettings({ show3DDims: nextState, outlines: nextState });
+            }}
+            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
+              show3DDims || layerToggles.outlines
+                ? "border-amber-400/60 bg-amber-500/20 text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.25)]"
+                : "border-white/15 bg-white/5 text-slate-300 hover:bg-white/10"
+            }`}
+            title="Spoločné zapnutie / vypnutie technického zobrazenia (obrysy, 3D kóty a osi)"
+          >
+            <Eye className="h-3.5 w-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Technické zobrazenie</span>
+            <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-black/30 border border-white/10">
+              {show3DDims || layerToggles.outlines ? "ON" : "OFF"}
+            </span>
+          </button>
+
+          <button
+            onClick={() => {
+              const nextVal = !show3DDims;
+              setShow3DDims(nextVal);
+              updateViewSettings({ show3DDims: nextVal });
+            }}
             className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
               show3DDims
                 ? "border-sky-400/50 bg-sky-500/20 text-sky-200"
@@ -1398,11 +1445,29 @@ export default function NewHallConfigurator() {
             <p className="text-[11px] text-slate-400">{activeTemplate.framework} · {activeTemplate.subtitle}</p>
           </div>
 
-          <BuildingObjectPanel objects={buildingObjects} selectedId={selectedObjectId} params={params}
-            openings={openingEditor.openings} catalog={materialCatalog}
+          <BuildingObjectPanel
+            objects={buildingObjects}
+            selectedId={selectedObjectId}
+            params={params}
+            openings={openingEditor.openings}
+            catalog={materialCatalog}
             onSelect={id => { setSelectedObjectId(id); openingEditor.setModal(null); }}
             onUpdate={(id, patch) => setBuildingObjects(previous => updateBuildingObject(previous, id, patch))}
-            onAdd={object => { setBuildingObjects(previous => [...previous, object]); setSelectedObjectId(object.id); }} />
+            onAdd={object => { setBuildingObjects(previous => [...previous, object]); setSelectedObjectId(object.id); }}
+            onDelete={id => {
+              setBuildingObjects(previous => deleteBuildingObject(previous, id));
+              if (selectedObjectId === id) {
+                setSelectedObjectId('main-hall');
+              }
+            }}
+            onDuplicate={id => {
+              const res = duplicateBuildingObject(buildingObjects, id, params);
+              setBuildingObjects(res.objects);
+              if (res.newObject) {
+                setSelectedObjectId(res.newObject.id);
+              }
+            }}
+          />
 
           {/* Live Geometry Calculations */}
           <div className="space-y-2 p-3 rounded-xl bg-white/[0.03] border border-white/10 font-mono text-[11px]">
