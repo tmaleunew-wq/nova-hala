@@ -54,6 +54,7 @@ export interface HallProjectRecord {
   openings?: Opening[];
   replacedWindowIds?: string[];
   materialSettings?: ProjectMaterialSettings;
+  buildingObjects?: HallMaterialProject['buildingObjects'];
 }
 
 const STATUS_CONFIG: Record<
@@ -205,6 +206,7 @@ export function ProjectsCrmModal({
       openings: currentProject?.openings?.map(opening => ({ ...opening })),
       replacedWindowIds: currentProject?.replacedWindowIds ? [...currentProject.replacedWindowIds] : undefined,
       materialSettings: currentProject?.materialSettings,
+      buildingObjects: currentProject?.buildingObjects,
       notes: notes.trim() || undefined,
       estimatedPriceEur: Math.round(currentParams.width * currentParams.length * 240),
     };

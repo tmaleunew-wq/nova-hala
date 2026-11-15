@@ -1,3 +1,4 @@
+import { resolveBuildingObjects, isBuildingObject, type BuildingObject } from '../garage/buildingObjects';
 import type { GarageParams } from '../garage/types';
 import { buildBays, fitOpening, type Opening } from '../garage/openingSystem';
 import { getTemplateDefaultOpenings } from '../garage/templateDefaults';
@@ -21,6 +22,7 @@ export interface HallMaterialProject {
   templateId: string;
   params: GarageParams;
   openings?: Opening[];
+  buildingObjects?: BuildingObject[];
   replacedWindowIds?: string[];
   materialSettings?: ProjectMaterialSettings;
 }
@@ -29,6 +31,7 @@ export type MaterialProjectInput = Omit<HallMaterialProject, 'schemaVersion'> & 
 type ProjectStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
 export function createMaterialProject(input: MaterialProjectInput): HallMaterialProject {
+  if (input.buildingObjects !== undefined && (!Array.isArray(input.buildingObjects) || !input.buildingObjects.every(isBuildingObject))) throw new Error('Invalid building objects in project');
   return JSON.parse(JSON.stringify({
     schemaVersion: 1,
     id: input.id,
@@ -36,6 +39,7 @@ export function createMaterialProject(input: MaterialProjectInput): HallMaterial
     templateId: input.templateId,
     params: input.params,
     openings: input.openings,
+    buildingObjects: input.buildingObjects === undefined ? undefined : resolveBuildingObjects(input),
     replacedWindowIds: input.replacedWindowIds,
     materialSettings: input.materialSettings,
   }));

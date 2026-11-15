@@ -1,0 +1,9 @@
+{
+  "parameters": {"width": 4.5, "length": 6, "innerHeight": 4, "outerHeight": 3.2, "roofColor": "#2b2f36", "wallColor": "#ffffff", "columnCount": 3},
+  "attachment": {"side": "right", "offset": 0, "heightMode": "fixed", "heightOffset": 0},
+  "accessories": {"gutter": false, "downpipe": false},
+  "roofSlopeAllowanceM": 0.25,
+  "roofLengthAllowanceM": 0.3,
+  "purlinFractions": [0.25, 0.5, 0.75, 1],
+  "names": {"main_hall": "Hlavná hala", "canopy": "Prístrešok", "office_annex": "Kancelárska prístavba", "storage_annex": "Skladová prístavba"}
+}

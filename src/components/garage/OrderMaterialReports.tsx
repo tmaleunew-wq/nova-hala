@@ -4,7 +4,7 @@ import { DEFAULT_PARAMS, type GarageParams } from '@/lib/garage/types';
 import { createMaterialProject, type HallMaterialProject, type ProjectMaterialSettings } from '@/lib/materials/project';
 import { getOrderReportOpenings } from '@/lib/materials/order-report-openings';
 
-type SavedProject = Pick<HallMaterialProject, 'templateId' | 'openings' | 'replacedWindowIds' | 'materialSettings'>;
+type SavedProject = Pick<HallMaterialProject, 'templateId' | 'openings' | 'replacedWindowIds' | 'materialSettings' | 'buildingObjects'>;
 const settingsPrefix = 'vbau_admin_material_report_v1:';
 
 export function OrderMaterialReports({ id, name, params, savedProject }: {
@@ -27,6 +27,7 @@ export function OrderMaterialReports({ id, name, params, savedProject }: {
     id, name, params: normalized, templateId: savedProject?.templateId ?? 'prazdna_hala',
     openings: savedProject?.openings,
     replacedWindowIds: savedProject?.replacedWindowIds,
+    buildingObjects: savedProject?.buildingObjects,
     materialSettings: settings ?? savedProject?.materialSettings,
   });
 

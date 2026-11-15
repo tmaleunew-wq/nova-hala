@@ -1,4 +1,6 @@
 import React from "react";
+import { BuildingObjectReport } from "./BuildingObjectReport";
+import type { HallMaterialProject } from "@/lib/materials/project";
 import { type GarageParams } from "@/lib/garage/types";
 import { X, Printer, Download, Layers, ShieldCheck, Box, Ruler, FileSpreadsheet, FileText } from "lucide-react";
 import { toast } from "sonner";
@@ -8,15 +10,32 @@ interface NewHallBOMModalProps {
   onClose: () => void;
   params: GarageParams;
   hallName?: string;
+  project?: HallMaterialProject;
 }
 
 export function NewHallBOMModal({
   isOpen,
   onClose,
   params,
+  project,
   hallName = "Nová priemyselná hala",
 }: NewHallBOMModalProps) {
   if (!isOpen) return null;
+
+  if (project) return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+      <div role="dialog" aria-modal="true" aria-label="Výkaz materiálu podľa objektov" className="flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-cyan-500/30 bg-slate-900 text-slate-100 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+          <div><h2 className="font-bold">Výkaz materiálu podľa objektov (BOM)</h2><p className="text-xs text-slate-400">{hallName}</p></div>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => window.print()} className="rounded border border-white/15 px-3 py-1.5 text-xs">Tlač</button>
+            <button type="button" onClick={onClose} aria-label="Zavrieť výkaz" className="rounded p-2 hover:bg-white/10"><X className="h-5 w-5" /></button>
+          </div>
+        </div>
+        <div className="overflow-y-auto p-6"><BuildingObjectReport project={project} /></div>
+      </div>
+    </div>
+  );
 
   const w = params.width;
   const l = params.length;

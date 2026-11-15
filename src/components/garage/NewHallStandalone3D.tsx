@@ -2,6 +2,9 @@ import React, { useMemo, useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { SteelTube, SteelPlate } from "./SteelTube";
+import { BuildingObjects3D, ObjectOutline } from "./BuildingObjects3D";
+import { resolveBuildingObjects, getBuildingObjectGeometry, type BuildingObject } from "@/lib/garage/buildingObjects";
+import { type MaterialCatalog } from "@/lib/materials/catalog";
 import { type GarageParams } from "@/lib/garage/types";
 import { PersonalDoorDetails, WindowDetails } from "./AccessoryDetails";
 import { PersonalDoorLeafFinish, PersonalDoorFrameFinish } from "./PersonalDoorFinish";
@@ -28,6 +31,10 @@ interface NewHallStandalone3DProps {
   layerToggles?: HiStructLayerToggles;
   editedSurfaces?: string[];
   replacedWindowIds?: string[];
+  buildingObjects?: BuildingObject[];
+  selectedObjectId?: string;
+  onSelectObject?: (id: string) => void;
+  materialCatalog?: MaterialCatalog;
 }
 
 /**
@@ -41,6 +48,7 @@ export function NewHallStandalone3D({
   layerToggles,
   editedSurfaces = [],
   replacedWindowIds = [],
+  buildingObjects, selectedObjectId, onSelectObject, materialCatalog,
 }: NewHallStandalone3DProps) {
   const lt: HiStructLayerToggles = layerToggles ?? {
     panels: true,
@@ -102,10 +110,21 @@ export function NewHallStandalone3D({
     templateId === "dvojlodna_hala" ||
     !!p.hasRidgeSkylight;
 
+  const managedObjects = useMemo(() => resolveBuildingObjects({ templateId, params: p, buildingObjects }), [templateId, p, buildingObjects]);
+  const attachmentCorners = managedObjects.filter(object => object.type !== "main_hall").flatMap(object => {
+    try {
+      const g = getBuildingObjectGeometry(object, managedObjects, p);
+      return [g.toWorld(0, 0, 0), g.toWorld(g.width, 0, 0), g.toWorld(0, 0, g.length), g.toWorld(g.width, 0, g.length)];
+    } catch { return []; }
+  });
+  const attachmentMinX = Math.min(-halfW, ...attachmentCorners.map(point => point[0])) - .3;
+  const attachmentMaxX = Math.max(halfW, ...attachmentCorners.map(point => point[0])) + .3;
+  const slabMinZ = Math.min(-halfL, ...attachmentCorners.map(point => point[2])) - .3;
+  const slabMaxZ = Math.max(halfL, ...attachmentCorners.map(point => point[2])) + .3;
   const slabMinX = -halfW - 0.3 - (isSideCanopy ? (p.canopyWidth || 4.5) : isBothLeans || isLShape ? 5.3 : 0);
   const slabMaxX = halfW + 0.3 + (isProdWithOffice || isBothLeans || isOfficeWithStorage ? 6.0 : 0);
-  const slabWidth = slabMaxX - slabMinX;
-  const slabCenterX = (slabMinX + slabMaxX) / 2;
+  const slabWidth = Math.max(slabMaxX, attachmentMaxX) - Math.min(slabMinX, attachmentMinX);
+  const slabCenterX = (Math.min(slabMinX, attachmentMinX) + Math.max(slabMaxX, attachmentMaxX)) / 2;
 
   // Colors & Materials (defaulting steel to HiStruct blue #3b83bd)
   const steelColor = p.steelColor || "#3b83bd";
@@ -504,8 +523,8 @@ export function NewHallStandalone3D({
         {/* Base Concrete Slab (Základová doska pre celý stavebný komplex) */}
         {p.showFoundation !== false && lt.basePlate && (
           <group name="base-plate">
-            <mesh position={[slabCenterX, -0.08, 0]} receiveShadow>
-              <boxGeometry args={[slabWidth, 0.16, L + 0.6]} />
+            <mesh position={[slabCenterX, -0.08, (slabMinZ + slabMaxZ) / 2]} receiveShadow>
+              <boxGeometry args={[slabWidth, 0.16, slabMaxZ - slabMinZ]} />
               <primitive object={concreteMat} attach="material" />
             </mesh>
           </group>
@@ -1152,6 +1171,7 @@ export function NewHallStandalone3D({
     isOpenCanopy: boolean,
     hasOfficeWindows: boolean
   ) => {
+    if (managedObjects) return null;
     const zStart = frameZs[startBayIdx] ?? -halfL;
     const zEnd = frameZs[endBayIdx] ?? halfL;
     const len = zEnd - zStart;
@@ -1298,7 +1318,9 @@ export function NewHallStandalone3D({
   // Structural features using hoisted archetype definitions
 
   return (
-    <group name={`standalone-hall-${templateId}`}>
+    <group name={`standalone-hall-${templateId}`} onClick={event => { event.stopPropagation(); onSelectObject?.("main-hall"); }}>
+      <BuildingObjects3D objects={managedObjects} params={p} selectedObjectId={selectedObjectId} onSelectObject={onSelectObject} catalog={materialCatalog} layers={lt} opacity={claddingOpacity} renderWindow={renderWindow} />
+      {selectedObjectId === "main-hall" && <group position={[-halfW, 0, -halfL]}><ObjectOutline width={W} length={L} innerHeight={Hridge} outerHeight={Hridge} name={managedObjects.find(object => object.id === "main-hall")?.name ?? "Hlavná hala"} /></group>}
       {/* 1. Primary Steel Structure */}
       {showStruct && renderMainPortalFrames(isDoubleSpan, isOfficeWithStorage ? 2 : 0)}
 

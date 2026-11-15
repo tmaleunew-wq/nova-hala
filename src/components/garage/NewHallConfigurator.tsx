@@ -36,6 +36,10 @@ import { OpeningHotspots } from './openings/OpeningHotspots';
 import { OpeningPanel } from './openings/OpeningPanel';
 import { BayOpeningMeshes } from './openings/BayOpeningMeshes';
 
+import { BuildingObjectPanel } from './BuildingObjectPanel';
+import { resolveBuildingObjects, updateBuildingObject, type BuildingObject } from '@/lib/garage/buildingObjects';
+import { loadMaterialCatalog } from '@/lib/materials/catalog';
+
 type HiStructStep = "Geometry" | "Bays" | "Sheeting" | "Openings" | "Structure" | "GetQuote";
 
 const HISTRUCT_STEPS: { id: HiStructStep; label: string; desc: string; icon: any }[] = [
@@ -338,6 +342,12 @@ export default function NewHallConfigurator() {
     ...initialMaterialProject?.params,
   }));
 
+  const [buildingObjects, setBuildingObjects] = useState<BuildingObject[]>(() => resolveBuildingObjects({
+    templateId: initialTpl.id, params, buildingObjects: initialMaterialProject?.buildingObjects,
+  }));
+  const [selectedObjectId, setSelectedObjectId] = useState('main-hall');
+  const materialCatalog = useMemo(() => loadMaterialCatalog(projectMetadata.materialSettings?.catalog), [projectMetadata.materialSettings?.catalog]);
+
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     handleResize();
@@ -355,9 +365,10 @@ export default function NewHallConfigurator() {
     name: projectMetadata.name ?? `${activeTemplate.title} (${params.width}×${params.length}m)`,
     templateId: activeTemplate.id,
     params,
+    buildingObjects,
     openings: openingEditor.openings,
     replacedWindowIds: openingEditor.confirmedReplacedWindowIds,
-  }), [projectMetadata, activeTemplate.id, activeTemplate.title, params, openingEditor.openings, openingEditor.confirmedReplacedWindowIds]);
+  }), [projectMetadata, activeTemplate.id, activeTemplate.title, params, buildingObjects, openingEditor.openings, openingEditor.confirmedReplacedWindowIds]);
   useEffect(() => { writeMaterialProject(materialProject); }, [materialProject]);
   useEffect(() => {
     function receiveMaterialSettings(event: StorageEvent) {
@@ -381,6 +392,8 @@ export default function NewHallConfigurator() {
     openingEditor.restoreProject({
       templateId: resolvedTemplateId, params: newParams, openings: project?.openings, replacedWindowIds: project?.replacedWindowIds,
     });
+    setBuildingObjects(resolveBuildingObjects({ templateId: resolvedTemplateId, params: newParams, buildingObjects: project?.buildingObjects }));
+    setSelectedObjectId('main-hall');
     setProjectMetadata({ id: project?.id, name: project?.name, materialSettings: project?.materialSettings });
     if (templateId) {
       const found = allTemplates.find((t) => t.id === templateId);
@@ -392,6 +405,12 @@ export default function NewHallConfigurator() {
   const handleSelectTemplate = (tpl: HallTemplateItem) => {
     setProjectMetadata({});
     setActiveTemplate(tpl);
+    setSelectedObjectId('main-hall');
+    setBuildingObjects(resolveBuildingObjects({ templateId: tpl.id, params: {
+      ...params, width: tpl.width, length: tpl.length, clearHeight: tpl.clearHeight,
+      bayCount: tpl.bayCount ?? Math.max(3, Math.round(tpl.length / 6)), canopyWidth: tpl.canopyWidth ?? 4.5,
+      roofColor: tpl.roofColor || '#6b7280', claddingColor: tpl.claddingColor || '#d1d5db',
+    } }));
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       url.searchParams.set("template", tpl.id);
@@ -443,6 +462,7 @@ export default function NewHallConfigurator() {
         openings: openingEditor.openings,
         replacedWindowIds: openingEditor.confirmedReplacedWindowIds,
         materialSettings: materialProject.materialSettings,
+        buildingObjects: materialProject.buildingObjects,
         notes: `Uložený návrh. Rozmery: ${params.width}×${params.length}×${params.clearHeight}m (${params.bayCount} polí).`,
       };
 
@@ -530,6 +550,10 @@ export default function NewHallConfigurator() {
             templateId={activeTemplate.id}
             claddingOpacity={claddingOpacity}
             layerToggles={layerToggles}
+            buildingObjects={buildingObjects}
+            selectedObjectId={selectedObjectId}
+            onSelectObject={id => { setSelectedObjectId(id); setShowRightPanel(true); openingEditor.setModal(null); }}
+            materialCatalog={materialCatalog}
             editedSurfaces={openingEditor.surfaces}
             replacedWindowIds={openingEditor.replacedWindowIds}
           />
@@ -1346,7 +1370,7 @@ export default function NewHallConfigurator() {
 
       {/* Right Spec Summary Panel (Desktop clean building parameters) */}
       {showRightPanel ? (
-        <aside className="hidden xl:flex flex-col absolute right-3.5 top-16 z-20 w-[300px] max-h-[calc(100vh-110px)] overflow-y-auto rounded-2xl bg-slate-900/92 text-white border border-white/15 backdrop-blur-md shadow-2xl p-4 space-y-4 font-sans text-xs">
+        <aside className="flex flex-col absolute right-3.5 top-16 z-20 w-[300px] max-h-[calc(100vh-110px)] overflow-y-auto rounded-2xl bg-slate-900/92 text-white border border-white/15 backdrop-blur-md shadow-2xl p-4 space-y-4 font-sans text-xs">
           <div>
             <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
               <span className="text-[10px] font-mono uppercase tracking-wider text-sky-400 font-bold">
@@ -1363,6 +1387,12 @@ export default function NewHallConfigurator() {
             <h3 className="text-sm font-bold text-white mt-2 truncate">{activeTemplate.title}</h3>
             <p className="text-[11px] text-slate-400">{activeTemplate.framework} · {activeTemplate.subtitle}</p>
           </div>
+
+          <BuildingObjectPanel objects={buildingObjects} selectedId={selectedObjectId} params={params}
+            openings={openingEditor.openings} catalog={materialCatalog}
+            onSelect={id => { setSelectedObjectId(id); openingEditor.setModal(null); }}
+            onUpdate={(id, patch) => setBuildingObjects(previous => updateBuildingObject(previous, id, patch))}
+            onAdd={object => { setBuildingObjects(previous => [...previous, object]); setSelectedObjectId(object.id); }} />
 
           {/* Live Geometry Calculations */}
           <div className="space-y-2 p-3 rounded-xl bg-white/[0.03] border border-white/10 font-mono text-[11px]">
@@ -1451,6 +1481,7 @@ export default function NewHallConfigurator() {
         isOpen={showBOM}
         onClose={() => setShowBOM(false)}
         params={params}
+        project={materialProject}
         hallName={`${activeTemplate.title} (${activeTemplate.subtitle})`}
       />
 

@@ -7,6 +7,7 @@ import { buildBays } from './openingSystem';
 import { getTemplateDefaultOpenings, isTemplateDefaultOpening } from './templateDefaults';
 import { resolveProjectOpenings, type HallMaterialProject } from '../materials/project';
 import { jsPDF } from 'jspdf';
+import { loadMaterialCatalog } from '../materials/catalog';
 import { ROBOTO_REGULAR_B64 } from './pdfFonts';
 
 export const PROJECT_DRAWING_VIEWS = [
@@ -57,14 +58,14 @@ function ProjectScene({ project, ready }: { project: HallMaterialProject; ready:
   useEffect(() => { if (shell.current && structure.current) ready(shell.current, structure.current); }, [ready]);
   return <>
     <group ref={shell}>
-      <NewHallStandalone3D p={p} templateId={project.templateId}
+      <NewHallStandalone3D p={p} templateId={project.templateId} buildingObjects={project.buildingObjects} materialCatalog={loadMaterialCatalog(project.materialSettings?.catalog)}
         editedSurfaces={state.surfaces} replacedWindowIds={state.replacedWindowIds} />
       <BayOpeningMeshes {...state} color={p.claddingColor} roofColor={p.roofColor}
         opacity={1} showOpenings stemHeight={p.hasStemWall !== false ? p.stemWallHeight ?? .27 : 0}
         stemColor={p.stemWallColor ?? '#a5a5a5'} stemThickness={(p.stemWallThickness ?? .1) + .04} />
     </group>
     <group ref={structure}>
-      <NewHallStandalone3D p={{...p, showCladding: false}} templateId={project.templateId}
+      <NewHallStandalone3D p={{...p, showCladding: false}} templateId={project.templateId} buildingObjects={project.buildingObjects} materialCatalog={loadMaterialCatalog(project.materialSettings?.catalog)}
         editedSurfaces={state.surfaces} replacedWindowIds={state.replacedWindowIds}
         layerToggles={{ panels:false, openings:false, frames:true, purlins:true, girts:true,
           flashings:false, structuralComponents:true, basePlate:true }} />

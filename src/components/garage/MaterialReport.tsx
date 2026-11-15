@@ -1,3 +1,4 @@
+import { BuildingObjectReport } from './BuildingObjectReport';
 import { AccessorySettings } from './AccessorySettings';
 import { calculateAccessories } from '@/lib/materials/accessories';
 import { RoofLoadEstimate } from './RoofLoadEstimate';
@@ -150,6 +151,8 @@ export function MaterialReport({ project, onChange, orderOpenings }: { project: 
   ];
 
   return <div className="space-y-4 text-sm text-slate-100">
+    <BuildingObjectReport project={orderOpenings ? { ...project, openings: orderOpenings } : project} catalog={catalog} />
+    <p className="border-t border-white/15 pt-4 text-xs text-slate-300">Podrobný výkaz a PDF nižšie: hlavná hala. Prístavby a spoločný súčet sú vo výkaze podľa objektov vyššie.</p>
     <div className="flex flex-wrap items-center gap-2">
       <span className="mr-auto text-xs text-slate-300">{params.width} × {params.length} × {params.clearHeight} m · {params.roofPitchDeg}° · Katalóg {catalog.version}</span>
       {(['csv', 'xlsx'] as const).map(format => <button type="button" key={format} className={control} onClick={() => downloadReport(exportRows, format, 'materialovy-vykaz')}>{format.toUpperCase()}</button>)}
