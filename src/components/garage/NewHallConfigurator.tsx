@@ -39,6 +39,7 @@ import { BayOpeningMeshes } from './openings/BayOpeningMeshes';
 import { BuildingObjectPanel } from './BuildingObjectPanel';
 import { resolveBuildingObjects, updateBuildingObject, type BuildingObject } from '@/lib/garage/buildingObjects';
 import { loadMaterialCatalog } from '@/lib/materials/catalog';
+import { RoofOverhangControls } from './RoofOverhangControls';
 
 type HiStructStep = "Geometry" | "Bays" | "Sheeting" | "Openings" | "Structure" | "GetQuote";
 
@@ -1185,6 +1186,13 @@ export default function NewHallConfigurator() {
                 </span>
               </div>
             </div>
+
+            {/* 4. Parametrický presah strechy */}
+            <RoofOverhangControls
+              params={params}
+              onChange={handleSetParams}
+              buildingObjects={buildingObjects}
+            />
           </div>
         )}
 

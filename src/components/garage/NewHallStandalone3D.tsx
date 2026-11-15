@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { SteelTube, SteelPlate } from "./SteelTube";
 import { BuildingObjects3D, ObjectOutline } from "./BuildingObjects3D";
 import { resolveBuildingObjects, getBuildingObjectGeometry, type BuildingObject } from "@/lib/garage/buildingObjects";
+import { calculateRoofGeometry } from "@/lib/garage/roofOverhangs";
 import { type MaterialCatalog } from "@/lib/materials/catalog";
 import { type GarageParams } from "@/lib/garage/types";
 import { PersonalDoorDetails, WindowDetails } from "./AccessoryDetails";
@@ -475,21 +476,24 @@ export function NewHallStandalone3D({
           </group>
         )}
 
-        {/* Longitudinal Roof Purlins (Z-väznice) */}
-        {lt.purlins &&
-          Array.from({ length: purlinCount + 1 }).map((_, pi) => {
+        {/* Longitudinal Roof Purlins (Z-väznice s podporou presahu) */}
+        {lt.purlins && (() => {
+          const purlinZ0 = -halfL - (p.roofOverhangFront ?? 0);
+          const purlinZ1 = halfL + (p.roofOverhangBack ?? 0);
+          return Array.from({ length: purlinCount + 1 }).map((_, pi) => {
             const t = pi / purlinCount;
             const xOff = t * halfW;
             const yPos = H + (1 - t) * (Hridge - H) + 0.08;
             return (
               <group key={`purlin-row-${pi}`}>
-                <SteelTube from={[-xOff, yPos, -halfL]} to={[-xOff, yPos, halfL]} size={0.07} color={purlinColor} />
+                <SteelTube from={[-xOff, yPos, purlinZ0]} to={[-xOff, yPos, purlinZ1]} size={0.07} color={purlinColor} />
                 {pi > 0 && (
-                  <SteelTube from={[xOff, yPos, -halfL]} to={[xOff, yPos, halfL]} size={0.07} color={purlinColor} />
+                  <SteelTube from={[xOff, yPos, purlinZ0]} to={[xOff, yPos, purlinZ1]} size={0.07} color={purlinColor} />
                 )}
               </group>
             );
-          })}
+          });
+        })()}
 
         {/* Wall Girts (Stenové paždíky) */}
         {lt.girts &&
@@ -539,7 +543,12 @@ export function NewHallStandalone3D({
   const renderMainEnvelope = () => {
     const colSize = p.profileSize || 0.22;
     const colHalf = colSize / 2;
-    const slopeLen = Math.hypot(halfW, Hridge - H) + 0.25;
+    const roofGeom = calculateRoofGeometry(p);
+    const effL = roofGeom.effLength + 0.4;
+    const roofCenterZ = roofGeom.centerZ;
+    const leftSlopeLen = roofGeom.leftSlopeLen + 0.25;
+    const rightSlopeLen = roofGeom.rightSlopeLen + 0.25;
+    const slopeLen = Math.max(leftSlopeLen, rightSlopeLen);
     const wallH = H - stemH;
     const wallMidY = stemH + wallH / 2;
 
@@ -715,44 +724,49 @@ export function NewHallStandalone3D({
 
         {/* Left & Right Roof Slopes */}
         <mesh
-          position={[-halfW / 2, (H + Hridge) / 2 + 0.08, 0]}
+          position={[roofGeom.leftSlopeCenterX, roofGeom.leftSlopeCenterY + 0.08, roofCenterZ]}
           rotation={[0, 0, pitchRad]}
           castShadow
         >
-          <boxGeometry args={[slopeLen, 0.1, L + 0.4]} />
+          <boxGeometry args={[leftSlopeLen, 0.1, effL]} />
           <primitive object={roofMat} attach="material" />
         </mesh>
         <mesh
-          position={[halfW / 2, (H + Hridge) / 2 + 0.08, 0]}
+          position={[roofGeom.rightSlopeCenterX, roofGeom.rightSlopeCenterY + 0.08, roofCenterZ]}
           rotation={[0, 0, -pitchRad]}
           castShadow
         >
-          <boxGeometry args={[slopeLen, 0.1, L + 0.4]} />
+          <boxGeometry args={[rightSlopeLen, 0.1, effL]} />
           <primitive object={roofMat} attach="material" />
         </mesh>
 
         {/* Corner & Ridge Flashings (Klampiarske lemovanie) */}
-        {[-1, 1].map(side => (
-          <group key={`roof-detail-${side}`}
-            position={[side * halfW / 2, (H + Hridge) / 2 + .08, 0]}
-            rotation={[-Math.PI / 2, side * pitchRad, 0]}>
-            {!editedSurfaces.includes(side < 0 ? 'roof-left' : 'roof-right') && (
-              <RoofSheetDetails width={slopeLen} height={L + .4} offset={-halfL - .2}
-                color={roofColor} opacity={claddingOpacity} receiveShadow={false} />
-            )}
-            {lt.flashings && <>
-              {[-1, 1].map(end => <mesh key={`verge-${end}`} position={[0, end * (halfL + .2), .065]}>
-                <boxGeometry args={[slopeLen, .075, .08]} />
-                <primitive object={trimMat} attach="material" />
-              </mesh>)}
-              <mesh position={[side * slopeLen / 2, 0, .025]}>
-                <boxGeometry args={[.075, L + .4, .14]} />
-                <primitive object={trimMat} attach="material" />
-              </mesh>
-{/* Apex cap handled cleanly by continuous unified ridge flashing */}
-            </>}
-          </group>
-        ))}
+        {[-1, 1].map(side => {
+          const isLeft = side < 0;
+          const curSlopeLen = isLeft ? leftSlopeLen : rightSlopeLen;
+          const curCenterX = isLeft ? roofGeom.leftSlopeCenterX : roofGeom.rightSlopeCenterX;
+          const curCenterY = isLeft ? roofGeom.leftSlopeCenterY : roofGeom.rightSlopeCenterY;
+          return (
+            <group key={`roof-detail-${side}`}
+              position={[curCenterX, curCenterY + .08, roofCenterZ]}
+              rotation={[-Math.PI / 2, side * pitchRad, 0]}>
+              {!editedSurfaces.includes(isLeft ? 'roof-left' : 'roof-right') && (
+                <RoofSheetDetails width={curSlopeLen} height={effL} offset={-effL / 2}
+                  color={roofColor} opacity={claddingOpacity} receiveShadow={false} />
+              )}
+              {lt.flashings && <>
+                {[-1, 1].map(end => <mesh key={`verge-${end}`} position={[0, end * (effL / 2), .065]}>
+                  <boxGeometry args={[curSlopeLen, .075, .08]} />
+                  <primitive object={trimMat} attach="material" />
+                </mesh>)}
+                <mesh position={[side * curSlopeLen / 2, 0, .025]}>
+                  <boxGeometry args={[.075, effL, .14]} />
+                  <primitive object={trimMat} attach="material" />
+                </mesh>
+              </>}
+            </group>
+          );
+        })}
         {lt.flashings && (
           <>
             {/* Corner trims: only used in cladding-only mode without structural frame to prevent clipping steel corner columns */}
@@ -778,8 +792,8 @@ export function NewHallStandalone3D({
               })}
 
             {/* Solid Unified Ridge Cap (Hrebenáč bez Z-fighting) */}
-            <mesh position={[0, Hridge + 0.12, 0]}>
-              <boxGeometry args={[0.42, 0.09, L + 0.44]} />
+            <mesh position={[0, Hridge + 0.12, roofCenterZ]}>
+              <boxGeometry args={[0.42, 0.09, effL + 0.04]} />
               <primitive object={trimMat} attach="material" />
             </mesh>
           </>

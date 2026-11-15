@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X, ChevronDown, ChevronRight } from "lucide-react";
 import { type GarageParams } from "@/lib/garage/types";
+import { RoofOverhangControls } from "./RoofOverhangControls";
 
 interface NewHallSheetingModalProps {
   isOpen: boolean;
@@ -542,6 +543,10 @@ export function NewHallSheetingModal({
                     <option value="Vonkajšie rámy">Vonkajšie rámy</option>
                     <option value="Medzi rámy">Medzi rámy</option>
                   </select>
+                </div>
+
+                <div className="pt-2">
+                  <RoofOverhangControls params={p} onChange={onChange} compact />
                 </div>
               </div>
             )}

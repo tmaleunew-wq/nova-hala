@@ -125,14 +125,20 @@ export function calculateMaterialGeometry(p: GarageParams, openings: readonly Op
   if(![W,L,H].every(v=>Number.isFinite(v)&&v>0)||!Number.isFinite(a)||a<0||a>=Math.PI/2||!Number.isInteger(p.bayCount)||p.bayCount<1||p.bayCount>1000) {
     limitations.push('Neplatné rozmery, sklon alebo počet polí.'); return result;
   }
-  const n=Math.max(2,p.bayCount), depth=L/n, halfW=W/2, halfL=L/2, ridge=H+halfW*Math.tan(a), slope=halfW/Math.cos(a);
+  const n=Math.max(2,p.bayCount), depth=L/n, halfW=W/2, halfL=L/2, ridge=H+halfW*Math.tan(a);
+  const overF = p.roofOverhangFront ?? 0, overB = p.roofOverhangBack ?? 0;
+  const overL = p.roofOverhangLeft ?? 0, overR = p.roofOverhangRight ?? 0;
+  const effL = L + overF + overB;
+  const leftSlope = (halfW + overL) / Math.cos(a);
+  const rightSlope = (halfW + overR) / Math.cos(a);
+  const slope = halfW / Math.cos(a);
   const col=p.profileSize||.22, stem=p.hasStemWall===true?(p.stemWallHeight??.27):0;
   if(!Number.isFinite(col)||col<=0||col>=Math.min(W,depth)||!Number.isFinite(stem)||stem<0||stem>=H) {
     limitations.push('Profil alebo sokel presahuje geometriu obálky.'); return result;
   }
   result.totals.nominalWallGrossM2=2*(W+L)*H+W*(ridge-H);
-  result.totals.nominalRoofGrossM2=2*slope*L;
-  result.totals.renderedRoofGrossM2=2*(slope+.25)*(L+.4);
+  result.totals.nominalRoofGrossM2=(leftSlope + rightSlope)*effL;
+  result.totals.renderedRoofGrossM2=(leftSlope + .25 + rightSlope + .25)*(effL + .4)/2;
   result.totals.roofAllowanceM2=result.totals.renderedRoofGrossM2-result.totals.nominalRoofGrossM2;
   const template=options.templateId??'prazdna_hala';
   const unsupported=['vyrobna_hala','kancelarska_budova','budova_pristresok','budova_pristavky','nakreslit_pudorys'];
@@ -154,7 +160,8 @@ export function calculateMaterialGeometry(p: GarageParams, openings: readonly Op
   for(let i=0;i<n;i++) for(const side of ['left','right']) addSurface(`${side}:${i+1}`,'wall',rectPoly(i*depth,stem,depth,H-stem));
   for(const side of ['front','back']) addSurface(side,'wall',[[0,stem],[W,stem],[W,H],[halfW,ridge],[0,H]]);
   const roofExtra=options.includeRenderedRoofAllowances!==false?.25:0, endExtra=options.includeRenderedRoofAllowances!==false?.4:0;
-  for(const side of ['left','right']) addSurface(`roof-${side}`,'roof',rectPoly(0,0,slope+roofExtra,L+endExtra));
+  addSurface('roof-left','roof',rectPoly(0,0,leftSlope+roofExtra,effL+endExtra));
+  addSurface('roof-right','roof',rectPoly(0,0,rightSlope+roofExtra,effL+endExtra));
   const bays=buildBays(p), byBay=new Map(bays.map(b=>[b.id,b]));
   if (shed) {
     for (const surface of surfaces) {

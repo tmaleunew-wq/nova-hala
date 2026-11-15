@@ -1,6 +1,7 @@
 import type { GarageParams } from "./types";
 import { ridgeHeight, highEave } from "@/components/garage/Structure";
 import { getCladdingConfig } from "./configHelper";
+import { calculateRoofGeometry } from "./roofOverhangs";
 
 export interface BomItem {
   id: string;
@@ -95,12 +96,8 @@ export function calculateGarageBom(p: GarageParams): BomSummary {
   // 4. Cladding Areas
   const wallGrossArea = 2 * W * Heave + 2 * L * Heave;
   const gableArea = p.roofType === "gable" ? W * (Hridge - Heave) : 0;
-  let roofArea = 0;
-  if (p.roofType === "gable") {
-    roofArea = 2 * Math.hypot(W / 2, Hridge - Heave) * L;
-  } else {
-    roofArea = Math.hypot(W, Hhi - Heave) * L;
-  }
+  const roofGeom = calculateRoofGeometry(p);
+  const roofArea = roofGeom.totalRoofAreaM2;
 
   // Deductions for openings
   const gateArea = ((p.gateCount ?? 1) + (p.hasBackDoor ? 1 : 0)) * (p.doorWidth ?? 2.5) * (p.doorHeight ?? 2.2);
@@ -110,9 +107,9 @@ export function calculateGarageBom(p: GarageParams): BomSummary {
 
   // 5. Flashings (Klampiarske prvky v bm)
   const cornerFlashingBm = 4 * Heave;
-  const eaveFlashingBm = 2 * L;
-  const ridgeFlashingBm = p.roofType === "gable" ? L : 0;
-  const bargeboardFlashingBm = p.roofType === "gable" ? 4 * Math.hypot(W / 2, Hridge - Heave) : 2 * Math.hypot(W, Hhi - Heave);
+  const eaveFlashingBm = roofGeom.eavesLengthM;
+  const ridgeFlashingBm = roofGeom.ridgeLengthM;
+  const bargeboardFlashingBm = roofGeom.vergeLengthM;
   const totalFlashingBm = cornerFlashingBm + eaveFlashingBm + ridgeFlashingBm + bargeboardFlashingBm;
 
   // 6. Fasteners (Kotvy a skrutky)
@@ -337,9 +334,7 @@ export function calculateUnifiedGaragePricing(
 
   const wallArea = 2 * W * Heave + 2 * L * Heave;
   const gableArea = p.roofType === "gable" ? W * (Hridge - Heave) : 0;
-  const roofArea = p.roofType === "gable"
-    ? 2 * Math.hypot(W / 2, Hridge - Heave) * L
-    : Math.hypot(W, Hhi - Heave) * L;
+  const roofArea = calculateRoofGeometry(p).totalRoofAreaM2;
   const extRoofArea = p.hasExtension ? Math.hypot(extW, 0.3) * L : 0;
   const extWallArea = p.hasExtension && p.extensionType !== "carport" ? (2 * extW * Heave + L * Heave) : 0;
   const totalCladdingArea = wallArea + gableArea + roofArea + extRoofArea + extWallArea;

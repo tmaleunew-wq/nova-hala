@@ -11,6 +11,10 @@ export interface GarageParams {
   clearHeight: number;  // Z (eave height)
   roofType: RoofType;
   roofPitchDeg: number; // °
+  roofOverhangFront?: number; // [m] predný presah strechy
+  roofOverhangBack?: number;  // [m] zadný presah strechy
+  roofOverhangLeft?: number;  // [m] ľavý presah strechy
+  roofOverhangRight?: number; // [m] pravý presah strechy
   // structure
   bayCount: number;          // number of portal frames along length
   profileSize: number;       // jakl side [m] e.g. 0.1
@@ -132,6 +136,10 @@ export const DEFAULT_PARAMS: GarageParams = {
   clearHeight: defaultG.clearHeight ?? 2.6,
   roofType: "gable",
   roofPitchDeg: 15,
+  roofOverhangFront: 0,
+  roofOverhangBack: 0,
+  roofOverhangLeft: 0,
+  roofOverhangRight: 0,
   bayCount: defaultG.bayCount ?? 2,
   profileSize: 0.1,
   profileThickness: 0.004,

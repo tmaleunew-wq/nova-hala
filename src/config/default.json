@@ -26,6 +26,17 @@
   "jointType": "Viditeľný spoj",
   "fasteners": "Pozinkované skrutky s EPDM podložkou",
   "flashingsAndSeals": "Štandardné klampiarske prvky",
+  "roofOverhangs": {
+    "min": 0,
+    "max": 2.5,
+    "step": 0.05,
+    "defaultFront": 0,
+    "defaultBack": 0,
+    "defaultLeft": 0,
+    "defaultRight": 0,
+    "maxSafeCantileverM": 0.5,
+    "warningMessage": "Presah nad 0,5 m vyžaduje individuálne statické posúdenie konzolových väzníc a spevnenie konštrukcie."
+  },
   "staticWarning": "",
   "sandwichPricePerSqM": 32.50,
   "trapezoidPricePerSqM": 16.80,
