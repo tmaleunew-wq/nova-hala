@@ -32,12 +32,28 @@ function Member({ from, to, profile, fallback, color }: { from: Point; to: Point
   return <mesh geometry={geometry} position={from} quaternion={quaternion} castShadow receiveShadow><meshStandardMaterial color={color} metalness={.65} roughness={.4}/></mesh>;
 }
 
-export function ObjectOutline({ width, length, innerHeight, outerHeight, name }: {width:number;length:number;innerHeight:number;outerHeight:number;name:string}) {
+export function ObjectOutline({ width, length, innerHeight, outerHeight, name, ridgeHeight }: {width:number;length:number;innerHeight:number;outerHeight:number;name:string;ridgeHeight?:number}) {
   const vertices = useMemo(() => {
+    if (ridgeHeight !== undefined && Number.isFinite(ridgeHeight)) {
+      const corners = [
+        [0, 0, 0], [width, 0, 0], [width, 0, length], [0, 0, length],
+        [0, innerHeight, 0], [width, outerHeight, 0], [width, outerHeight, length], [0, innerHeight, length],
+        [width / 2, ridgeHeight, 0], [width / 2, ridgeHeight, length],
+      ];
+      return new Float32Array([
+        [0, 1], [1, 2], [2, 3], [3, 0],
+        [0, 4], [1, 5], [2, 6], [3, 7],
+        [4, 7], [5, 6],
+        [4, 8], [8, 5],
+        [7, 9], [9, 6],
+        [8, 9]
+      ].flatMap(([a, b]) => [...corners[a], ...corners[b]]));
+    }
     const corners = [[0,0,0],[width,0,0],[width,0,length],[0,0,length],[0,innerHeight,0],[width,outerHeight,0],[width,outerHeight,length],[0,innerHeight,length]];
     return new Float32Array([[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]].flatMap(([a,b]) => [...corners[a],...corners[b]]));
-  },[width,length,innerHeight,outerHeight]);
-  return <><lineSegments raycast={() => null} renderOrder={20}><bufferGeometry><bufferAttribute attach="attributes-position" args={[vertices,3]}/></bufferGeometry><lineBasicMaterial color="#ffad19" depthTest={false}/></lineSegments><Html position={[width/2,Math.max(innerHeight,outerHeight)+.45,length/2]} center style={{pointerEvents:'none',whiteSpace:'nowrap',background:'#222',color:'#ffcd61',padding:'4px 8px',borderRadius:4,fontSize:12}}>{name}</Html></>;
+  },[width,length,innerHeight,outerHeight,ridgeHeight]);
+  const topY = ridgeHeight !== undefined ? Math.max(innerHeight, outerHeight, ridgeHeight) : Math.max(innerHeight, outerHeight);
+  return <><lineSegments raycast={() => null} renderOrder={20}><bufferGeometry><bufferAttribute attach="attributes-position" args={[vertices,3]}/></bufferGeometry><lineBasicMaterial color="#ffad19" depthTest={false}/></lineSegments><Html position={[width/2,topY+.45,length/2]} center style={{pointerEvents:'none',whiteSpace:'nowrap',background:'#222',color:'#ffcd61',padding:'4px 8px',borderRadius:4,fontSize:12}}>{name}</Html></>;
 }
 
 export function BuildingObjects3D({ objects, params, selectedObjectId, onSelectObject, catalog = DEFAULT_MATERIAL_CATALOG, layers, opacity, renderWindow }: {
@@ -84,7 +100,7 @@ export function BuildingObjects3D({ objects, params, selectedObjectId, onSelectO
         {object.accessories.gutter && <mesh position={[g.width+.16,g.outerHeight,g.length/2]} rotation={[Math.PI/2,0,0]}><cylinderGeometry args={[.09,.09,g.length+.3,12,1,true,0,Math.PI]}/><meshStandardMaterial color={p.roofColor} side={THREE.DoubleSide}/></mesh>}
         {object.accessories.downpipe && <mesh position={[g.width+.18,g.outerHeight/2,g.length-.15]}><cylinderGeometry args={[.05,.05,g.outerHeight,12]}/><meshStandardMaterial color={p.roofColor}/></mesh>}
       </>}
-      {selectedObjectId===object.id && <ObjectOutline {...g} name={object.name}/>}
+      {layers.outlines !== false && selectedObjectId===object.id && <ObjectOutline {...g} name={object.name}/>}
     </group>;
   })}</>;
 }

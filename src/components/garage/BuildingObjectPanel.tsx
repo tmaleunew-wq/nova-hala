@@ -62,7 +62,7 @@ export function BuildingObjectPanel({ objects, selectedId, params, openings, cat
     <h2 className="font-semibold text-sm text-sky-300">Objekty projektu</h2>
     <div className="space-y-1" role="list" aria-label="Objekty projektu">
       {objects.map(item => <button key={item.id} type="button" data-object-id={item.id}
-        aria-pressed={selectedId === item.id} onClick={() => onSelect(item.id)}
+        aria-pressed={selectedId === item.id} onClick={() => onSelect(selectedId === item.id ? '' : item.id)}
         className={`block w-full text-left rounded px-3 py-2 ${selectedId === item.id ? 'bg-sky-500/25 border border-sky-400 text-sky-100' : 'bg-white/5 border border-transparent hover:bg-white/10'}`}>
         {item.parentId ? '↳ ' : ''}{item.name}{warnings.some(warning => warning.objectId === item.id) ? ' ⚠' : ''}
       </button>)}

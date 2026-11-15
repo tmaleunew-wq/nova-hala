@@ -22,6 +22,7 @@ export interface HiStructLayerToggles {
   flashings: boolean;
   structuralComponents: boolean;
   basePlate: boolean;
+  outlines?: boolean;
 }
 
 interface NewHallStandalone3DProps {
@@ -59,6 +60,7 @@ export function NewHallStandalone3D({
     flashings: true,
     structuralComponents: true,
     basePlate: true,
+    outlines: true,
   };
 
   const { gl, scene } = useThree();
@@ -1318,9 +1320,9 @@ export function NewHallStandalone3D({
   // Structural features using hoisted archetype definitions
 
   return (
-    <group name={`standalone-hall-${templateId}`} onClick={event => { event.stopPropagation(); onSelectObject?.("main-hall"); }}>
+    <group name={`standalone-hall-${templateId}`} onClick={event => { event.stopPropagation(); onSelectObject?.(selectedObjectId === "main-hall" ? "" : "main-hall"); }}>
       <BuildingObjects3D objects={managedObjects} params={p} selectedObjectId={selectedObjectId} onSelectObject={onSelectObject} catalog={materialCatalog} layers={lt} opacity={claddingOpacity} renderWindow={renderWindow} />
-      {selectedObjectId === "main-hall" && <group position={[-halfW, 0, -halfL]}><ObjectOutline width={W} length={L} innerHeight={Hridge} outerHeight={Hridge} name={managedObjects.find(object => object.id === "main-hall")?.name ?? "Hlavná hala"} /></group>}
+      {lt.outlines !== false && selectedObjectId === "main-hall" && <group position={[-halfW, 0, -halfL]}><ObjectOutline width={W} length={L} innerHeight={H} outerHeight={H} ridgeHeight={Hridge} name={managedObjects.find(object => object.id === "main-hall")?.name ?? "Hlavná hala"} /></group>}
       {/* 1. Primary Steel Structure */}
       {showStruct && renderMainPortalFrames(isDoubleSpan, isOfficeWithStorage ? 2 : 0)}
 

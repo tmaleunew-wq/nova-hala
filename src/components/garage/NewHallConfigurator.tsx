@@ -303,6 +303,7 @@ export default function NewHallConfigurator() {
     flashings: true,
     structuralComponents: true,
     basePlate: true,
+    outlines: true,
   });
 
   const [restoredMaterialProject] = useState(() => readMaterialProject());
@@ -757,6 +758,7 @@ export default function NewHallConfigurator() {
                     { key: "flashings", label: "Lemovanie (Klampiarske prvky)" },
                     { key: "structuralComponents", label: "Štrukturálne komponenty (Vstavba)" },
                     { key: "basePlate", label: "Základná plocha a sokel" },
+                    { key: "outlines", label: "Obrysy objektov (Výber)" },
                   ] as { key: keyof HiStructLayerToggles; label: string }[]
                 ).map((item) => (
                   <label
